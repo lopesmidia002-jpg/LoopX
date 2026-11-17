@@ -36,6 +36,8 @@ export default function VideoPreviewModal({
   const [isPlaying, setIsPlaying] = useState(false);
   const [copiedChapters, setCopiedChapters] = useState(false);
   const [publishedSuccess, setPublishedSuccess] = useState(false);
+  const [publishedData, setPublishedData] = useState<{ watchUrl: string; videoId: string } | null>(null);
+  const [isSubmittingYouTube, setIsSubmittingYouTube] = useState(false);
 
   if (!isOpen) return null;
 
@@ -55,8 +57,31 @@ export default function VideoPreviewModal({
     setTimeout(() => setCopiedChapters(false), 2000);
   };
 
-  const handlePublishYouTube = () => {
-    setPublishedSuccess(true);
+  const handlePublishYouTube = async () => {
+    setIsSubmittingYouTube(true);
+    try {
+      const res = await fetch("/api/youtube/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: `${topicTitle || "Documentário Completo"} (YOUTUBE DARK)`,
+          description: `Documentário completo produzido pelo LoopX.\n\n${chaptersText}`,
+          privacyStatus: "unlisted",
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.result) {
+        setPublishedData({
+          watchUrl: data.result.watchUrl,
+          videoId: data.result.videoId,
+        });
+        setPublishedSuccess(true);
+      }
+    } catch (e) {
+      console.error("Erro ao publicar:", e);
+    } finally {
+      setIsSubmittingYouTube(false);
+    }
   };
 
   return (
@@ -217,12 +242,40 @@ export default function VideoPreviewModal({
                   <p className="text-xs text-slate-300 mt-2 max-w-md mx-auto">
                     O vídeo foi enviado como <strong>Não-Listado / Rascunho</strong> com todos os títulos, descrições e capítulos prontos para monetização.
                   </p>
-                  <button
-                    onClick={() => setPublishedSuccess(false)}
-                    className="mt-6 px-6 py-2.5 rounded-xl bg-surface hover:bg-surface-hover border border-surface-border text-xs font-bold text-white"
-                  >
-                    Voltar ao Estúdio
-                  </button>
+
+                  {publishedData && (
+                    <div className="mt-4 p-3 bg-[#131822] rounded-xl border border-surface-border inline-flex items-center gap-3">
+                      <span className="text-xs font-mono text-slate-400">Link Direto:</span>
+                      <a
+                        href={publishedData.watchUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-bold text-red-400 hover:text-red-300 underline"
+                      >
+                        {publishedData.watchUrl}
+                      </a>
+                    </div>
+                  )}
+
+                  <div className="mt-6 flex items-center justify-center gap-3">
+                    <button
+                      onClick={() => setPublishedSuccess(false)}
+                      className="px-6 py-2.5 rounded-xl bg-surface hover:bg-surface-hover border border-surface-border text-xs font-bold text-white"
+                    >
+                      Voltar ao Estúdio
+                    </button>
+                    {publishedData && (
+                      <a
+                        href={publishedData.watchUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-xs font-bold text-white flex items-center gap-1.5"
+                      >
+                        <Youtube className="w-4 h-4" />
+                        <span>Abrir no YouTube</span>
+                      </a>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-4">

@@ -2,6 +2,9 @@ export type VideoFormat = "DOCUMENTARY" | "TOP_10";
 export type Language = "PT_BR" | "EN" | "ES";
 export type MediaType = "IMAGE" | "VIDEO";
 export type RenderJobStatus = "QUEUED" | "PROCESSING" | "COMPLETED" | "FAILED" | "CANCELED";
+export type PlanTier = "STARTER" | "CREATOR" | "STUDIO" | "SCALE";
+export type BillingCycle = "MONTHLY" | "ANNUAL";
+export type SubscriptionStatus = "ACTIVE" | "PAST_DUE" | "CANCELED" | "TRIAL";
 export type MotionEffect = 
   | "KEN_BURNS_ZOOM_IN"
   | "KEN_BURNS_ZOOM_OUT"

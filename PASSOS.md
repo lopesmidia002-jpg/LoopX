@@ -68,8 +68,30 @@
 
 ---
 
-### [ ] Passo 6: Autenticação Clerk, Gestão de Créditos de Minutos e Publicação no YouTube
-- [ ] Autenticação com Clerk personalizada para tema Dark Mode.
-- [ ] Controle estrito de saldo de minutos e limite de renderizações simultâneas por plano.
-- [ ] Conexão OAuth 2.0 com a YouTube Data API para upload direto do vídeo em 1 clique com capítulos e metadados.
-- [ ] Verificação e testes finais de ponta a ponta no Docker.
+### [x] Passo 6: Autenticação Clerk, Gestão de Créditos de Minutos e Publicação no YouTube
+- [x] Autenticação com Clerk personalizada para tema Dark Mode (`src/lib/auth/clerk-config.ts` e `/api/auth/me`).
+- [x] Controle estrito de saldo de minutos e limite de renderizações simultâneas por plano (`src/lib/billing/credits-manager.ts` e `/api/billing/credits`).
+- [x] Conexão OAuth 2.0 com a YouTube Data API para upload direto do vídeo em 1 clique com capítulos e metadados (`src/lib/youtube/publisher.ts` e `/api/youtube/publish`).
+- [x] Modal de recarga rápida de minutos avulsos integrado no cabeçalho do estúdio (`StudioHeader.tsx`).
+- [x] Modal de prévia com player 1080p, download `.srt` e publicação com link direto gerado (`VideoPreviewModal.tsx`).
+- [x] Verificação e testes finais de ponta a ponta no Docker.
+
+---
+
+### [x] Passo 7: Checkout (Stripe & Pix Asaas), Healthcheck e Suite de Testes E2E no Docker
+- [x] Motor de Checkout e Pagamentos (`src/lib/billing/checkout.ts`):
+  - [x] Geração de sessões de checkout para planos (Starter, Creator, Studio, Scale) com cálculo do ciclo anual (-10%).
+  - [x] Geração de Pix Instantâneo (Payload Copia e Cola compatível com BACEN e QR Code).
+  - [x] Webhook de pagamento (`/api/billing/webhook`) atualizando `Subscription` e gravando em `CreditTransaction`.
+- [x] Rota de Healthcheck do Sistema (`/api/health`):
+  - [x] Monitoramento ativo de PostgreSQL 16, Redis 7 e versão do FFmpeg 8.0.1 no container.
+- [x] Modal de Checkout e Pagamento Interativo na Landing Page (`Pricing.tsx`).
+- [x] Suite Completa de Testes E2E Automatizados (`scripts/test-e2e.mjs` via `npm run test:e2e` no Docker):
+  - [x] 10/10 testes aprovados com sucesso cobrindo todo o ciclo do SaaS.
+
+---
+
+### [ ] Próximos Passos Opcionais (Pós-Lançamento)
+> *Aguardando solicitação explícita do usuário para início de qualquer item adicional.*
+- [ ] Inserção de chaves reais de produção de terceiros no `.env` (`CLERK_SECRET_KEY`, `YOUTUBE_CLIENT_ID`, `OPENAI_API_KEY`, `ELEVENLABS_API_KEY`).
+- [ ] Dashboard analítico de visualizações e retenção de vídeos publicados no canal do YouTube.
