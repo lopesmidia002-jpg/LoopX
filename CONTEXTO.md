@@ -1,7 +1,7 @@
-# CONTEXTO DO PROJETO — VELOVIDE
+# CONTEXTO DO PROJETO — LOOPX
 
 ## 1. Visão Geral do Produto
-O **VeloVide** é uma plataforma SaaS (Software as a Service) de criação automatizada de vídeos documentais e listas "Top 10" para canais dark do YouTube. 
+O **LoopX** (anteriormente VeloVide) é uma plataforma SaaS (Software as a Service) de criação automatizada de vídeos documentais e listas "Top 10" para canais dark do YouTube. 
 
 O objetivo central é permitir que criadores de conteúdo produzam vídeos longos (8 a 15+ minutos), altamente retentivos e cinematográficos, sem precisarem aparecer, sem precisarem gravar voz e sem demandar dezenas de horas de edição manual ou custos elevados com editores freelancers.
 
@@ -24,7 +24,7 @@ A plataforma resolve o gargalo de escala dos maiores canais dark do YouTube:
 - **Fila & Cache:** Redis 7 com arquitetura preparada para BullMQ.
 - **Processamento de Mídia & Vídeo:** Remotion & FFmpeg com aceleração para renderização e mixagem de áudio.
 - **Autenticação:** Clerk (preparado com tema Dark Mode cinematográfico customizado).
-- **Ambiente de Execução:** 100% conteinerizado em Docker via Docker Compose (`velovide-app`, `velovide-postgres`, `velovide-redis`).
+- **Ambiente de Execução:** 100% conteinerizado em Docker via Docker Compose (`loopx-app`, `loopx-postgres`, `loopx-redis`).
 
 ---
 
@@ -62,5 +62,6 @@ O faturamento do SaaS é centrado no consumo de **minutos de renderização** e 
 
 ## 5. Estado Atual do Projeto
 - **Passo 1 (Concluído):** Arquitetura base, Prisma schema, Docker compose (PostgreSQL, Redis, App) e design system cinematográfico.
-- **Passo 2 (Concluído):** Landing Page de alta conversão completa (`/`) e Estúdio de Criação interativo (`/studio`) com seleção de voz/formato, pipeline de 8 etapas animado, Storyboard com troca de mídias e modal de publicação no YouTube. Contêineres ativos e operacionais no Docker.
-- **Passo 3 (Próximo):** Motor de IA para pesquisa de fatos e geração de roteiro estruturado com arco dramático cinematográfico.
+- **Passo 2 (Concluído):** Landing Page de alta conversão completa (`/`) e Estúdio de Criação interativo (`/studio`) com seleção de voz/formato, pipeline de 8 etapas animado, Storyboard com troca de mídias e modal de publicação no YouTube.
+- **Passo 3 (Concluído):** Motor de IA de pesquisa automática de fatos e geração de roteiro estruturado com arco dramático cinematográfico (gancho, desenvolvimento, clímax, conclusão e divisão em cenas com timestamps).
+- **Renomeação do Projeto & Git:** Marca e ecossistema renomeados para **LoopX** e arquivo `.gitignore` configurado.

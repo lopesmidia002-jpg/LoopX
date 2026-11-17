@@ -48,7 +48,7 @@ export default function StudioPage() {
     return () => clearInterval(interval);
   }, [studioStep]);
 
-  const handleStartPipeline = (config: {
+  const handleStartPipeline = async (config: {
     topic: string;
     format: VideoFormat;
     language: Language;
@@ -60,6 +60,21 @@ export default function StudioPage() {
     setPipelineProgress(5);
     setCurrentPipelineStage(1);
     setStudioStep("PROCESSING");
+
+    try {
+      const res = await fetch("/api/script/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(config),
+      });
+      const data = await res.json();
+      if (data.success && data.scenes && data.scenes.length > 0) {
+        setScenes(data.scenes);
+        if (data.title) setTopicTitle(data.title);
+      }
+    } catch (e) {
+      console.error("Erro ao chamar API de roteiro:", e);
+    }
   };
 
   const handleUpdateScene = (sceneId: string, updatedFields: Partial<SceneItem>) => {

@@ -19,7 +19,7 @@ export default function Navbar() {
           </div>
           <div className="flex flex-col">
             <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-brand-300">
-              Velo<span className="text-brand-400">Vide</span>
+              Loop<span className="text-brand-400">X</span>
             </span>
             <span className="text-[9px] uppercase tracking-widest text-slate-400 -mt-1 font-semibold">
               Dark Channels AI

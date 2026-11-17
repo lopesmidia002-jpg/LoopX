@@ -3,13 +3,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: velovide-app
+    container_name: loopx-app
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://velovide:velovide_password@postgres:5432/velovide_db?schema=public
+      - DATABASE_URL=postgresql://loopx:loopx_password@postgres:5432/loopx_db?schema=public
       - REDIS_URL=redis://redis:6379
       - NEXT_PUBLIC_APP_URL=http://localhost:3000
       - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_sample_clerk_key
@@ -20,39 +20,39 @@ services:
       redis:
         condition: service_started
     networks:
-      - velovide-network
+      - loopx-network
 
   postgres:
     image: postgres:16-alpine
-    container_name: velovide-postgres
+    container_name: loopx-postgres
     restart: unless-stopped
     environment:
-      - POSTGRES_USER=velovide
-      - POSTGRES_PASSWORD=velovide_password
-      - POSTGRES_DB=velovide_db
+      - POSTGRES_USER=loopx
+      - POSTGRES_PASSWORD=loopx_password
+      - POSTGRES_DB=loopx_db
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U velovide -d velovide_db"]
+      test: ["CMD-SHELL", "pg_isready -U loopx -d loopx_db"]
       interval: 5s
       timeout: 5s
       retries: 5
       start_period: 10s
     networks:
-      - velovide-network
+      - loopx-network
 
   redis:
     image: redis:7-alpine
-    container_name: velovide-redis
+    container_name: loopx-redis
     restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
-      - velovide-network
+      - loopx-network
 
 volumes:
   postgres_data:
@@ -61,5 +61,5 @@ volumes:
     driver: local
 
 networks:
-  velovide-network:
+  loopx-network:
     driver: bridge

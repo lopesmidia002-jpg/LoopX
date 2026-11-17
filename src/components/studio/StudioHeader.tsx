@@ -44,7 +44,7 @@ export default function StudioHeader({
               </div>
             </div>
             <span className="text-base font-bold text-white hidden sm:inline">
-              Velo<span className="text-brand-400">Vide</span>
+              Loop<span className="text-brand-400">X</span>
             </span>
           </Link>
 

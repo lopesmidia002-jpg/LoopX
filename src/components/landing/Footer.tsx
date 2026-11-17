@@ -21,7 +21,7 @@ export default function Footer() {
               Crie seu primeiro vídeo cinematográfico agora mesmo
             </h3>
             <p className="mt-3 text-slate-300 text-sm sm:text-base">
-              Junte-se a milhares de canais dark escalando receita em dólar e retenção no YouTube com o pipeline autônomo do VeloVide.
+              Junte-se a milhares de canais dark escalando receita em dólar e retenção no YouTube com o pipeline autônomo do LoopX.
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -51,7 +51,7 @@ export default function Footer() {
                 </div>
               </div>
               <span className="text-lg font-bold text-white">
-                Velo<span className="text-brand-400">Vide</span>
+                Loop<span className="text-brand-400">X</span>
               </span>
             </Link>
             <p className="text-xs text-slate-400 leading-relaxed">
@@ -132,7 +132,7 @@ export default function Footer() {
 
         {/* Bottom Bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4">
-          <p>© 2026 VeloVide Inc. Todos os direitos reservados.</p>
+          <p>© 2026 LoopX Inc. Todos os direitos reservados.</p>
           <div className="flex items-center gap-2">
             <span>Desenvolvido com tecnologia de ponta para criadores</span>
             <ShieldCheck className="w-4 h-4 text-brand-400" />

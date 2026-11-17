@@ -16,7 +16,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Generate Prisma Client
-ENV DATABASE_URL="postgresql://velovide:velovide_password@postgres:5432/velovide_db?schema=public"
+ENV DATABASE_URL="postgresql://loopx:loopx_password@postgres:5432/loopx_db?schema=public"
 RUN npx prisma generate
 
 # Disable Next.js telemetry during build

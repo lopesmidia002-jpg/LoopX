@@ -125,7 +125,7 @@ export default function VideoPreviewModal({
                 {/* Subtitles Overlay */}
                 <div className="absolute bottom-6 left-0 right-0 px-8 text-center">
                   <span className="bg-black/85 backdrop-blur-md text-white text-sm sm:text-lg font-black px-4 py-2 rounded-xl border border-white/10 shadow-2xl">
-                    "{scenes[0]?.narrationText || "Narrativa cinematográfica gerada automaticamente pelo VeloVide..."}"
+                    "{scenes[0]?.narrationText || "Narrativa cinematográfica gerada automaticamente pelo LoopX..."}"
                   </span>
                 </div>
 
@@ -160,7 +160,7 @@ export default function VideoPreviewModal({
                     href="#download"
                     onClick={(e) => {
                       e.preventDefault();
-                      alert("Download iniciado: velovide-documentario-1080p.mp4");
+                      alert("Download iniciado: loopx-documentario-1080p.mp4");
                     }}
                     className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20 transition-all"
                   >

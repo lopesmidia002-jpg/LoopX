@@ -254,12 +254,12 @@ export const SHOWCASE_VIDEOS = [
 
 export const FAQ_ITEMS = [
   {
-    question: "Como o VeloVide cria vídeos documentais completos em poucos minutos?",
-    answer: "O VeloVide orquestra um pipeline sequencial de 8 etapas autônomas: ele pesquisa fatos históricos confiáveis, escreve um roteiro com retenção psicológica máxima (gancho, desenvolvimento, clímax), seleciona mídias HD/4K correspondentes, gera narração neural de alta profundidade com cadência cinematográfica, sincroniza legendas palavra por palavra, aplica efeitos de movimento (Ken Burns e Parallax 2.5D) e mixa a trilha sonora com ducking inteligente antes de renderizar em 1080p."
+    question: "Como o LoopX cria vídeos documentais completos em poucos minutos?",
+    answer: "O LoopX orquestra um pipeline sequencial de 8 etapas autônomas: ele pesquisa fatos históricos confiáveis, escreve um roteiro com retenção psicológica máxima (gancho, desenvolvimento, clímax), seleciona mídias HD/4K correspondentes, gera narração neural de alta profundidade com cadência cinematográfica, sincroniza legendas palavra por palavra, aplica efeitos de movimento (Ken Burns e Parallax 2.5D) e mixa a trilha sonora com ducking inteligente antes de renderizar em 1080p."
   },
   {
     question: "Os vídeos gerados são monetizáveis pelo YouTube?",
-    answer: "Sim, 100%! Diferente de ferramentas genéricas de 'slideshow', os vídeos do VeloVide são roteiros originais apurados, com narrativa envolvente, uso de mídias licenciadas (royalty-free) e mixagem de áudio profissional que cumprem integralmente as diretrizes de conteúdo do YouTube para monetização no Programa de Parcerias."
+    answer: "Sim, 100%! Diferente de ferramentas genéricas de 'slideshow', os vídeos do LoopX são roteiros originais apurados, com narrativa envolvente, uso de mídias licenciadas (royalty-free) e mixagem de áudio profissional que cumprem integralmente as diretrizes de conteúdo do YouTube para monetização no Programa de Parcerias."
   },
   {
     question: "Posso trocar mídias ou editar o roteiro antes de renderizar?",
@@ -267,7 +267,7 @@ export const FAQ_ITEMS = [
   },
   {
     question: "Como funciona a publicação em 1 clique no YouTube?",
-    answer: "Basta conectar seu canal através da autenticação segura da YouTube Data API. O VeloVide gera automaticamente o título otimizado para CTR, a descrição com palavras-chave de SEO e os capítulos com timestamps sincronizados com as cenas do vídeo, enviando o MP4 final direto para o seu canal como rascunho ou público."
+    answer: "Basta conectar seu canal através da autenticação segura da YouTube Data API. O LoopX gera automaticamente o título otimizado para CTR, a descrição com palavras-chave de SEO e os capítulos com timestamps sincronizados com as cenas do vídeo, enviando o MP4 final direto para o seu canal como rascunho ou público."
   },
   {
     question: "O que acontece se meus minutos mensais acabarem?",

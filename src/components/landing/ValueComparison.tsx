@@ -14,7 +14,7 @@ export default function ValueComparison() {
             Comparativo de Eficiência
           </span>
           <h2 className="mt-4 text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-            Editor Tradicional vs. VeloVide
+            Editor Tradicional vs. LoopX
           </h2>
           <p className="mt-4 text-slate-300 text-base sm:text-lg">
             Veja a diferença brutal de custos, tempo e previsibilidade para manter um canal dark lucrativo com frequência diária de publicações.
@@ -88,7 +88,7 @@ export default function ValueComparison() {
                     A Nova Era da Automação
                   </span>
                   <h3 className="text-2xl font-bold text-white mt-1">
-                    VeloVide SaaS
+                    LoopX SaaS
                   </h3>
                 </div>
                 <div className="w-10 h-10 rounded-xl bg-brand-500/20 text-brand-300 flex items-center justify-center">

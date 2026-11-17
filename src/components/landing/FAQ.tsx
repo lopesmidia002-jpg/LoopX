@@ -24,7 +24,7 @@ export default function FAQ() {
             Perguntas Frequentes
           </h2>
           <p className="mt-4 text-slate-300 text-sm sm:text-base">
-            Tudo o que você precisa saber sobre a monetização, pipeline de IA e funcionamento do VeloVide.
+            Tudo o que você precisa saber sobre a monetização, pipeline de IA e funcionamento do LoopX.
           </p>
         </div>
 

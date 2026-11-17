@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "VeloVide — Crie Vídeos Documentais e Top 10 com IA em Minutos",
+  title: "LoopX — Crie Vídeos Documentais e Top 10 com IA em Minutos",
   description: "A plataforma definitiva de automação de vídeos cinematográficos para canais dark do YouTube. Roteiro, narração hiper-realista, curadoria 4K, efeitos Ken Burns e publicação em 1 clique.",
-  keywords: ["youtube dark", "automação de vídeo", "ia de vídeo", "gerador de roteiro", "documentários automáticos", "canal dark", "velovide"],
+  keywords: ["youtube dark", "automação de vídeo", "ia de vídeo", "gerador de roteiro", "documentários automáticos", "canal dark", "loopx"],
 };
 
 export default function RootLayout({

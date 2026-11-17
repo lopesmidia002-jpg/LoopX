@@ -1,4 +1,4 @@
-# PASSOS DE IMPLEMENTAÇÃO — VELOVIDE
+# PASSOS DE IMPLEMENTAÇÃO — LOOPX
 
 > **Regra do Projeto:** Só inicie o próximo passo quando o usuário solicitar explicitamente.
 
@@ -7,7 +7,7 @@
 ### [x] Passo 1: Setup do Ambiente Docker, Prisma Schema, Design System & Arquitetura Base
 - [x] Configuração do `package.json` com Next.js 14, Tailwind CSS, Lucide Icons, Framer Motion e Prisma.
 - [x] Configuração do TypeScript (`tsconfig.json`), PostCSS (`postcss.config.mjs`) e Tailwind (`tailwind.config.ts`) com o tema Dark Cinematográfico (`#161b24`, `#1d232e`, `#6366f1`, `#8B5CF6`).
-- [x] Criação do ambiente Docker 100% conteinerizado (`Dockerfile`, `docker-compose.yml`, `.dockerignore`, `.env.example`, `.env`) com serviços de App Next.js, PostgreSQL 16 e Redis 7.
+- [x] Criação do ambiente Docker 100% conteinerizado (`Dockerfile`, `docker-compose.yml`, `.dockerignore`, `.gitignore`, `.env.example`, `.env`) com serviços de App Next.js, PostgreSQL 16 e Redis 7.
 - [x] Modelagem do banco de dados no Prisma (`prisma/schema.prisma`):
   - Modelos: `User`, `Subscription`, `Project`, `Scene`, `RenderJob`, `CreditTransaction`.
   - Enums: Planos, Ciclos de Faturamento, Formatos de Vídeo, Idiomas, Efeitos de Câmera (Ken Burns e Parallax 2.5D), Status do Pipeline de 8 etapas.
@@ -26,7 +26,7 @@
   - [x] Seção "Em Tempo Real" demonstrando as 8 etapas com prévia viva de cenas (`RealtimePipeline.tsx`).
   - [x] Bento Grid de diferenciais técnicos assimétricos (Ken Burns, Parallax 2.5D, Vozes neurais, Roteiro, SFX Ducking, YouTube) (`BentoGrid.tsx`).
   - [x] Mostruário (Showcase) com grade 3x2 de thumbnails 16:9, efeito Ken Burns no hover e modal de play (`Showcase.tsx`).
-  - [x] Comparativo de Valor: Editor tradicional vs VeloVide (`ValueComparison.tsx`).
+  - [x] Comparativo de Valor: Editor tradicional vs LoopX (`ValueComparison.tsx`).
   - [x] Tabela de Preços com os 4 planos (Starter, Creator em destaque, Studio, Scale) + toggle Mensal/Anual (10% off) + compra de minutos avulsos (`Pricing.tsx`).
   - [x] FAQ interativo em acordeão e CTA final com Footer completo (`FAQ.tsx`, `Footer.tsx`).
   - [x] Conexão e integração de todos os componentes na página raiz `src/app/page.tsx`.
@@ -37,18 +37,15 @@
   - [x] Editor de Storyboard pós-geração com visualização em grade, troca de mídia com 1 clique, edição de narração e efeitos de movimento (`StoryboardEditor.tsx`).
   - [x] Player de visualização em 1080p, download de MP4 e modal de publicação em 1 clique no YouTube com título, descrição de SEO e capítulos por timestamp (`VideoPreviewModal.tsx`).
   - [x] Orquestração do ciclo completo no master page `src/app/studio/page.tsx`.
-- [x] Validação e execução 100% no Docker:
-  - [x] Build da imagem `prompt-app` concluído com sucesso.
-  - [x] Contêineres `velovide-app`, `velovide-postgres` (healthy) e `velovide-redis` ativos.
-  - [x] Rotas `/` e `/studio` testadas com retorno HTTP 200 OK.
-  - [x] Banco de dados sincronizado via `prisma db push`.
 
 ---
 
-### [ ] Passo 3: Motor de IA para Pesquisa de Fatos e Roteirização Estruturada
-- [ ] Integração com LLM para apuração de fatos históricos/curiosidades (Etapa 1).
-- [ ] Geração de roteiro estruturado com arco dramático cinematográfico (gancho, desenvolvimento, clímax e desfecho) e divisão em cenas numeradas (Etapa 2).
-- [ ] Geração automática de palavras-chave visuais e descrições para curadoria de mídias por cena.
+### [x] Passo 3: Motor de IA para Pesquisa de Fatos e Roteirização Estruturada
+- [x] Integração com motor de pesquisa automática para apuração de fatos históricos/curiosidades (Etapa 1) (`src/lib/ai/researcher.ts`).
+- [x] Geração de roteiro estruturado com arco dramático cinematográfico (gancho, desenvolvimento, clímax e desfecho) e divisão em cenas numeradas (Etapa 2) (`src/lib/ai/scriptwriter.ts`).
+- [x] Geração automática de palavras-chave visuais e descrições para curadoria de mídias por cena.
+- [x] Rota de API `/api/script/generate` conectada ao estúdio e persistência no PostgreSQL via Prisma.
+- [x] Renomeação completa da marca e de todos os componentes da aplicação para **LoopX**.
 
 ---
 

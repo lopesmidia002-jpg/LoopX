@@ -51,7 +51,7 @@ export default function Hero() {
 
           <p className="mt-6 text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto font-normal leading-relaxed">
             Pesquisa histórica, roteiros com retenção psicológica máxima, narração neural de cinema, curadoria de mídias 4K e edição com Parallax 2.5D. 
-            <strong className="text-white font-semibold"> Tudo 100% automatizado, sem mostrar o rosto.</strong>
+            <strong className="text-white font-semibold"> O LoopX automatiza 100% da criação, sem mostrar o rosto.</strong>
           </p>
 
           {/* Action Buttons */}
@@ -119,7 +119,7 @@ export default function Hero() {
                   <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
                   <div className="w-3 h-3 rounded-full bg-green-500/80" />
                   <span className="ml-3 text-xs text-slate-400 font-mono hidden sm:inline">
-                    velovide-studio // Projeto #892: "O Mistério Inexplicável do Voo MH370"
+                    loopx-studio // Projeto #892: "O Mistério Inexplicável do Voo MH370"
                   </span>
                 </div>
                 

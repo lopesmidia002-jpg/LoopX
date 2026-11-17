@@ -17,7 +17,7 @@ export default function Showcase() {
             Showcase de Canais Dark
           </span>
           <h2 className="mt-4 text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-            Produções criadas 100% pelo VeloVide
+            Produções criadas 100% pelo LoopX
           </h2>
           <p className="mt-4 text-slate-300 text-base sm:text-lg">
             Veja exemplos reais de documentários e listas Top 10 que acumulam milhões de visualizações e monetização máxima no YouTube.
