@@ -91,7 +91,20 @@
 
 ---
 
+### [x] Passo 8: Dashboard Analítico de Desempenho e Métricas do Canal Dark (YouTube Analytics)
+- [x] Motor de Métricas do Canal Dark (`src/lib/youtube/analytics.ts`):
+  - [x] Cálculo e mapeamento da Curva de Retenção de Audiência por ato narrativo (Gancho 0-30s, Mistério, Fatos Inéditos, Clímax, Conclusão).
+  - [x] Agregação de visualizações (30d), tempo de exibição em horas, receita estimada (RPM R$ 15/mil) e novos inscritos.
+  - [x] Geração de dicas estratégicas da IA LoopX para canais Dark (ganchos iniciais, palavras-chave de CTR e retenção).
+- [x] Rota de API dedicada (`/api/youtube/analytics`).
+- [x] Componente do Dashboard no Estúdio (`src/components/studio/AnalyticsDashboard.tsx`):
+  - [x] Seletor de abas ("Estúdio" vs "Métricas do Canal") integrado no `StudioHeader.tsx`.
+  - [x] Gráficos de retenção com anotações e biblioteca de vídeos publicados com link direto para o YouTube.
+- [x] Atualização da suíte de testes E2E com validação do módulo de Analytics (`11/11 testes aprovados no Docker`).
+
+---
+
 ### [ ] Próximos Passos Opcionais (Pós-Lançamento)
 > *Aguardando solicitação explícita do usuário para início de qualquer item adicional.*
 - [ ] Inserção de chaves reais de produção de terceiros no `.env` (`CLERK_SECRET_KEY`, `YOUTUBE_CLIENT_ID`, `OPENAI_API_KEY`, `ELEVENLABS_API_KEY`).
-- [ ] Dashboard analítico de visualizações e retenção de vídeos publicados no canal do YouTube.
+- [ ] Adicionar suporte a múltiplos canais dark no mesmo painel de usuário.

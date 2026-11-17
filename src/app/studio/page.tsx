@@ -6,10 +6,12 @@ import ProjectConfig from "@/components/studio/ProjectConfig";
 import PipelineStatus from "@/components/studio/PipelineStatus";
 import StoryboardEditor from "@/components/studio/StoryboardEditor";
 import VideoPreviewModal from "@/components/studio/VideoPreviewModal";
+import AnalyticsDashboard from "@/components/studio/AnalyticsDashboard";
 import { INITIAL_DEMO_SCENES } from "@/lib/constants";
 import { SceneItem, VideoFormat, Language } from "@/lib/types";
 
 export default function StudioPage() {
+  const [activeTab, setActiveTab] = useState<"STUDIO" | "ANALYTICS">("STUDIO");
   const [studioStep, setStudioStep] = useState<"CONFIG" | "PROCESSING" | "STORYBOARD">("CONFIG");
   const [currentPipelineStage, setCurrentPipelineStage] = useState(1);
   const [pipelineProgress, setPipelineProgress] = useState(0);
@@ -84,6 +86,7 @@ export default function StudioPage() {
   };
 
   const handleNewProject = () => {
+    setActiveTab("STUDIO");
     setStudioStep("CONFIG");
     setPipelineProgress(0);
     setCurrentPipelineStage(1);
@@ -97,38 +100,47 @@ export default function StudioPage() {
         maxMinutes={maxMinutes}
         concurrentRenders={concurrentRenders}
         maxConcurrentRenders={1}
+        activeTab={activeTab}
+        onTabChange={(tab) => setActiveTab(tab)}
         onNewProject={handleNewProject}
+        onMinutesRecharged={(newM) => setAvailableMinutes(newM)}
       />
 
-      {/* Main Studio View Switcher */}
+      {/* Main View Switcher */}
       <main className="flex-1">
-        {studioStep === "CONFIG" && (
-          <ProjectConfig
-            onStartPipeline={handleStartPipeline}
-            isProcessing={false}
-          />
-        )}
+        {activeTab === "ANALYTICS" ? (
+          <AnalyticsDashboard onNewProject={handleNewProject} />
+        ) : (
+          <>
+            {studioStep === "CONFIG" && (
+              <ProjectConfig
+                onStartPipeline={handleStartPipeline}
+                isProcessing={false}
+              />
+            )}
 
-        {studioStep === "PROCESSING" && (
-          <PipelineStatus
-            currentStage={currentPipelineStage}
-            progressPercentage={pipelineProgress}
-            onComplete={() => setStudioStep("STORYBOARD")}
-            topicTitle={topicTitle}
-          />
-        )}
+            {studioStep === "PROCESSING" && (
+              <PipelineStatus
+                currentStage={currentPipelineStage}
+                progressPercentage={pipelineProgress}
+                onComplete={() => setStudioStep("STORYBOARD")}
+                topicTitle={topicTitle}
+              />
+            )}
 
-        {studioStep === "STORYBOARD" && (
-          <StoryboardEditor
-            scenes={scenes}
-            onUpdateScene={handleUpdateScene}
-            onOpenPreviewModal={() => setIsPreviewModalOpen(true)}
-            onOpenYouTubePublishModal={() => {
-              setIsPreviewModalOpen(true);
-              setIsYouTubeModalOpen(true);
-            }}
-            topicTitle={topicTitle}
-          />
+            {studioStep === "STORYBOARD" && (
+              <StoryboardEditor
+                scenes={scenes}
+                onUpdateScene={handleUpdateScene}
+                onOpenPreviewModal={() => setIsPreviewModalOpen(true)}
+                onOpenYouTubePublishModal={() => {
+                  setIsPreviewModalOpen(true);
+                  setIsYouTubeModalOpen(true);
+                }}
+                topicTitle={topicTitle}
+              />
+            )}
+          </>
         )}
       </main>
 

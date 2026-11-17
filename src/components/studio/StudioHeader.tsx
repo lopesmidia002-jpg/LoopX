@@ -12,7 +12,8 @@ import {
   CreditCard,
   X,
   Check,
-  Zap
+  Zap,
+  BarChart3
 } from "lucide-react";
 
 interface StudioHeaderProps {
@@ -20,6 +21,8 @@ interface StudioHeaderProps {
   maxMinutes: number;
   concurrentRenders: number;
   maxConcurrentRenders: number;
+  activeTab?: "STUDIO" | "ANALYTICS";
+  onTabChange?: (tab: "STUDIO" | "ANALYTICS") => void;
   onNewProject: () => void;
   onMinutesRecharged?: (newMinutes: number) => void;
 }
@@ -29,6 +32,8 @@ export default function StudioHeader({
   maxMinutes = 195.0,
   concurrentRenders = 0,
   maxConcurrentRenders = 1,
+  activeTab = "STUDIO",
+  onTabChange,
   onNewProject,
   onMinutesRecharged,
 }: StudioHeaderProps) {
@@ -80,13 +85,30 @@ export default function StudioHeader({
 
           <ChevronRight className="w-4 h-4 text-slate-400" />
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-brand-300 bg-brand-500/15 border border-brand-500/30 px-2.5 py-0.5 rounded-full">
-              Estúdio de Criação
-            </span>
-            <span className="hidden md:inline text-xs text-slate-400">
-              // Motor Autônomo v2.4
-            </span>
+          {/* Navigation Tabs */}
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-surface border border-surface-border">
+            <button
+              onClick={() => onTabChange && onTabChange("STUDIO")}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                activeTab === "STUDIO"
+                  ? "bg-brand-600 text-white shadow-sm"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Estúdio</span>
+            </button>
+            <button
+              onClick={() => onTabChange && onTabChange("ANALYTICS")}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                activeTab === "ANALYTICS"
+                  ? "bg-brand-600 text-white shadow-sm"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+              <span>Métricas do Canal</span>
+            </button>
           </div>
         </div>
 

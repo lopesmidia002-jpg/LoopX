@@ -222,10 +222,29 @@ loopx/
   8. Geração de Checkout & QR Code Pix (`/api/billing/checkout`)
   9. Webhook de Confirmação & Saldo (`/api/billing/webhook`)
   10. Publicação Direta no YouTube (`/api/youtube/publish`)
+  11. Métricas do Canal Dark & Analytics (`/api/youtube/analytics`)
 
 ---
 
-## 7. Como Executar via Docker
+## 7. Módulo de Analytics e Métricas do Canal Dark (Passo 8)
+
+### 7.1. Motor de Inteligência Analítica (`analytics.ts` & `/api/youtube/analytics`)
+- **Curva de Retenção de Audiência:**
+  - Análise dos momentos-chave do vídeo (Gancho Inicial 0-30s com 78.4% de retenção, Ato 1 Mistério, Ato 2 Fatos Inéditos, Ato 3 Clímax e Conclusão com CTA).
+  - Identificação de impactos visuais do efeito Ken Burns e auto-ducking da trilha sobre a retenção.
+- **Métricas Globais do Canal:**
+  - Visualizações totais acumuladas (ex: 1.96M nos últimos 30 dias).
+  - Tempo de exibição em horas (Watch Time), taxa média de cliques (CTR 12.35%) e receita estimada baseada em RPM de canais Dark (R$ 15,00/mil).
+  - Recomendações personalizadas geradas pela IA LoopX para aprimoramento contínuo dos próximos vídeos.
+
+### 7.2. Interface do Dashboard (`AnalyticsDashboard.tsx`)
+- Integrado diretamente ao Estúdio de Criação (`/studio`) através de um seletor no cabeçalho.
+- Cards estatísticos com indicadores de tendência (+28.4% views, +35.4% receita).
+- Grade interativa da biblioteca de vídeos com thumbnails 16:9, formatos e links diretos para o YouTube.
+
+---
+
+## 8. Como Executar via Docker
 
 ### Subir todos os serviços (App, PostgreSQL e Redis)
 ```bash
@@ -250,3 +269,4 @@ docker compose logs -f app
 Acesse a aplicação no navegador em: `http://localhost:3000`
 Acesse o Estúdio de Criação em: `http://localhost:3000/studio`
 Acesse o endpoint de saúde em: `http://localhost:3000/api/health`
+Acesse as métricas do canal em: `http://localhost:3000/api/youtube/analytics`

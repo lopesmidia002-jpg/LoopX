@@ -220,6 +220,19 @@ async function runTestSuite() {
     }
   });
 
+  // 11. Métricas do Canal Dark & Analytics (/api/youtube/analytics)
+  await test("11. Métricas do Canal Dark & Analytics (/api/youtube/analytics)", async () => {
+    const res = await fetch(`${BASE_URL}/api/youtube/analytics`);
+    if (!res.ok) throw new Error(`Status: ${res.status}`);
+    const data = await res.json();
+    if (!data.success || !data.analytics || !data.analytics.retentionCurve) {
+      throw new Error("Dados de analytics do canal não retornados");
+    }
+    if (!Array.isArray(data.analytics.videos) || data.analytics.videos.length === 0) {
+      throw new Error("Biblioteca de vídeos publicados vazia");
+    }
+  });
+
   console.log("\n=======================================================");
   console.log(`   RESULTADO: ${passed} PASSARAM | ${failed} FALHARAM`);
   console.log("=======================================================\n");
