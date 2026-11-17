@@ -156,6 +156,32 @@ export default function VideoPreviewModal({
                 </div>
 
                 <div className="flex items-center gap-3 w-full sm:w-auto">
+                  <button
+                    onClick={() => {
+                      const srtContent = scenes
+                        .map((s, idx) => {
+                          const startSec = idx * 8;
+                          const endSec = (idx + 1) * 8;
+                          const formatTime = (sec: number) => {
+                            const mm = String(Math.floor(sec / 60)).padStart(2, "0");
+                            const ss = String(sec % 60).padStart(2, "0");
+                            return `00:${mm}:${ss},000`;
+                          };
+                          return `${idx + 1}\n${formatTime(startSec)} --> ${formatTime(endSec)}\n${s.narrationText}\n`;
+                        })
+                        .join("\n");
+                      const blob = new Blob([srtContent], { type: "text/plain;charset=utf-8" });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = "loopx-legendas.srt";
+                      a.click();
+                    }}
+                    className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-surface hover:bg-surface-hover border border-surface-border text-slate-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <span>Baixar .SRT</span>
+                  </button>
+
                   <a
                     href="#download"
                     onClick={(e) => {

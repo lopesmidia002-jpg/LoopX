@@ -70,6 +70,10 @@ loopx/
 │   │   ├── studio/
 │   │   │   └── page.tsx         # Interface do Estúdio de Criação de Vídeos
 │   │   └── api/
+│   │       ├── pipeline/
+│   │       │   ├── curate/route.ts   # Curadoria de mídias Pexels/Unsplash/Vault
+│   │       │   ├── tts/route.ts      # Síntese de voz neural realista
+│   │       │   └── subtitles/route.ts# Sincronização palavra por palavra e .SRT
 │   │       ├── projects/route.ts# Endpoints para criação e consulta de projetos
 │   │       ├── render/route.ts  # Endpoints de disparo e progresso de renderização
 │   │       └── script/generate/route.ts # Geração de pesquisa e roteiro estruturado
@@ -91,13 +95,17 @@ loopx/
 │   │       ├── StudioHeader.tsx # Indicadores de minutos e status de fila
 │   │       ├── ProjectConfig.tsx# Configurações de tema, voz e duração
 │   │       ├── PipelineStatus.tsx# Visualizador em tempo real das 8 etapas
-│   │       ├── StoryboardEditor.tsx # Grade de edição e troca de cenas
-│   │       └── VideoPreviewModal.tsx# Player final e publicação no YouTube
+│   │       ├── StoryboardEditor.tsx # Grade de edição e troca de cenas com busca
+│   │       └── VideoPreviewModal.tsx# Player final, exportação de .SRT e YouTube
 │   └── lib/
 │       ├── ai/
 │       │   ├── prompts.ts       # Engenharia de prompts para canais Dark
 │       │   ├── researcher.ts    # Motor de pesquisa factual e apuração
 │       │   └── scriptwriter.ts  # Gerador de roteiro cinematográfico (4 atos e cenas)
+│       ├── pipeline/
+│       │   ├── media-curator.ts # Integração com Pexels/Unsplash e Acervo Vault
+│       │   ├── tts-engine.ts    # Síntese neural (ElevenLabs / OpenAI / Fallback)
+│       │   └── subtitles-sync.ts# Algoritmo de sincronização e formatador .SRT
 │       ├── types.ts             # Definições de tipos TypeScript
 │       ├── constants.ts         # Planos, vozes, etapas e templates
 │       ├── utils.ts             # Funções utilitárias (cn, formatações)
@@ -109,27 +117,21 @@ loopx/
 
 ---
 
-## 4. Telas e Componentes Implementados
+## 4. Módulos do Pipeline Entregues (Passo 4)
 
-### 4.1. Landing Page de Alta Conversão (`/`)
-- **TopBanner:** Banner de escassez com indicador pulsante.
-- **Navbar:** Marca **LoopX** em destaque, navegação fluida e CTA para abertura imediata do estúdio.
-- **Hero Section:** Título de impacto, mockup animado do estúdio, waveform interativo e contador de +3.840 criadores.
-- **Marquee:** Faixa contínua com diamantes (`✦`) evidenciando automação total sem mostrar o rosto.
-- **Como Funciona:** 3 etapas visuais (`01` Ideia, `02` IA autônoma, `03` Publicação).
-- **Em Tempo Real:** Visualização ao vivo das 8 etapas do pipeline.
-- **Bento Grid:** Movimento de câmera cinematográfico (Ken Burns e Parallax 2.5D), vozes neurais e auto-ducking.
-- **Showcase:** Grade 3x2 de thumbnails 16:9 com reprodução interativa.
-- **ValueComparison:** Comparativo transparente: Editor Tradicional vs LoopX.
-- **Pricing:** 4 planos (*Starter* R$ 197, *Creator* R$ 397 destaque, *Studio* R$ 797, *Scale* R$ 1.497) com toggle anual (10% off).
-- **FAQ & Footer:** Respostas para dúvidas de monetização e rodapé institucional.
+### 4.1. Curadoria de Mídias (`media-curator.ts`)
+- Busca automática em bancos de alta definição (Pexels Video/Photo API e Unsplash API) baseada em palavras-chave por cena.
+- Mecanismo de acervo local categorizado (`LOOPX_VAULT`) em 4K (oceano, mistério, militar, espaço, tecnologia, ruínas) garantindo disponibilidade mesmo sem chaves externas.
 
-### 4.2. Estúdio de Criação (`/studio`)
-- **StudioHeader:** Painel fixo com saldo de minutos de vídeo em tempo real e concorrência na fila GPU.
-- **ProjectConfig:** Configuração de tópico/roteiro, formato (*Documentário* vs *Top 10*), idioma (PT-BR, EN, ES) com preview de voz e duração alvo (8 a 15 min).
-- **PipelineStatus:** Painel interativo de progresso em 8 etapas com logs ao vivo e montagem de cenas.
-- **StoryboardEditor:** Editor visual de cenas com troca de mídias 4K, edição de narração e controle de efeitos de câmera.
-- **VideoPreviewModal:** Player 1080p, download MP4 e publicação em 1 clique no YouTube com timestamps e SEO prontos.
+### 4.2. Síntese de Voz Neural Hiper-realista (`tts-engine.ts`)
+- Suporte a ElevenLabs (`eleven_multilingual_v2`) com vozes documentais profundas e configurações de cadência de suspense (`stability: 0.75`, `similarity_boost: 0.85`).
+- Suporte a OpenAI TTS (`tts-1-hd` com vozes `onyx`, `fable`, `echo`).
+- Player de áudio em tempo real integrado a cada card de cena no Storyboard.
+
+### 4.3. Sincronização de Legendas & Exportação (`subtitles-sync.ts`)
+- Cálculo ponderado palavra por palavra com pausas pontuais (vírgulas, reticências, pontos finais).
+- Exportador de arquivos no padrão SubRip (`.srt`) com formatação milimétrica de timecodes (`00:00:00,000 --> 00:00:05,000`).
+- Botão de download direto do arquivo `.srt` disponível tanto no Storyboard quanto no modal de prévia de vídeo.
 
 ---
 

@@ -1,7 +1,7 @@
 # CONTEXTO DO PROJETO — LOOPX
 
 ## 1. Visão Geral do Produto
-O **LoopX** (anteriormente VeloVide) é uma plataforma SaaS (Software as a Service) de criação automatizada de vídeos documentais e listas "Top 10" para canais dark do YouTube. 
+O **LoopX** é uma plataforma SaaS (Software as a Service) de criação automatizada de vídeos documentais e listas "Top 10" para canais dark do YouTube. 
 
 O objetivo central é permitir que criadores de conteúdo produzam vídeos longos (8 a 15+ minutos), altamente retentivos e cinematográficos, sem precisarem aparecer, sem precisarem gravar voz e sem demandar dezenas de horas de edição manual ou custos elevados com editores freelancers.
 
@@ -63,5 +63,6 @@ O faturamento do SaaS é centrado no consumo de **minutos de renderização** e 
 ## 5. Estado Atual do Projeto
 - **Passo 1 (Concluído):** Arquitetura base, Prisma schema, Docker compose (PostgreSQL, Redis, App) e design system cinematográfico.
 - **Passo 2 (Concluído):** Landing Page de alta conversão completa (`/`) e Estúdio de Criação interativo (`/studio`) com seleção de voz/formato, pipeline de 8 etapas animado, Storyboard com troca de mídias e modal de publicação no YouTube.
-- **Passo 3 (Concluído):** Motor de IA de pesquisa automática de fatos e geração de roteiro estruturado com arco dramático cinematográfico (gancho, desenvolvimento, clímax, conclusão e divisão em cenas com timestamps).
-- **Renomeação do Projeto & Git:** Marca e ecossistema renomeados para **LoopX** e arquivo `.gitignore` configurado.
+- **Passo 3 (Concluído):** Motor de IA de pesquisa automática de fatos e geração de roteiro estruturado com arco dramático cinematográfico (gancho, desenvolvimento, clímax e conclusão). Renomeação do ecossistema para **LoopX**.
+- **Passo 4 (Concluído):** Curadoria de mídias 4K (Pexels/Unsplash/LoopX Vault) com busca por palavras-chave, motor de síntese de voz neural realista (TTS) com ElevenLabs/OpenAI TTS e sincronização de legendas palavra por palavra com exportação direta em `.srt`.
+- **Passo 5 (Próximo):** Motor de renderização de vídeo Remotion/FFmpeg com Ken Burns, Parallax 2.5D, mixagem com auto-ducking e filas BullMQ/Redis.

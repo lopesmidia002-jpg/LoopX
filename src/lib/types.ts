@@ -1,5 +1,6 @@
 export type VideoFormat = "DOCUMENTARY" | "TOP_10";
 export type Language = "PT_BR" | "EN" | "ES";
+export type MediaType = "IMAGE" | "VIDEO";
 export type MotionEffect = 
   | "KEN_BURNS_ZOOM_IN"
   | "KEN_BURNS_ZOOM_OUT"

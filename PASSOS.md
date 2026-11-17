@@ -49,10 +49,13 @@
 
 ---
 
-### [ ] Passo 4: Pipeline de Narração Hiper-realista (TTS), Legendas Sincronizadas e Curadoria de Mídia
-- [ ] Curadoria automática de mídias via APIs de bancos de imagens/vídeos (Pexels / Unsplash) baseadas no roteiro (Etapa 3).
-- [ ] Geração de narração neural com pausas dramáticas e cadência de suspense (Etapa 4).
-- [ ] Sincronização de legendas palavra por palavra com timestamps e geração de arquivos `.srt` e JSON estruturado (Etapa 5).
+### [x] Passo 4: Pipeline de Narração Hiper-realista (TTS), Legendas Sincronizadas e Curadoria de Mídia
+- [x] Curadoria automática de mídias via APIs de bancos de imagens/vídeos (Pexels / Unsplash / LoopX Vault) com busca por palavras-chave (Etapa 3) (`src/lib/pipeline/media-curator.ts`).
+- [x] Rota de API `/api/pipeline/curate` conectada ao modal de troca de mídia do Storyboard.
+- [x] Geração de narração neural com pausas dramáticas e cadência de suspense para ElevenLabs, OpenAI TTS e fallback de alta fidelidade (Etapa 4) (`src/lib/pipeline/tts-engine.ts`).
+- [x] Rota de API `/api/pipeline/tts` com player de prévia sonora de voz neural por cena.
+- [x] Sincronização de legendas palavra por palavra com cálculo dinâmico de timestamps e exportação padrão `.srt` (Etapa 5) (`src/lib/pipeline/subtitles-sync.ts`).
+- [x] Rota de API `/api/pipeline/subtitles` e botão de download direto de arquivos `.srt` no Storyboard e no modal de prévia de vídeo.
 
 ---
 
