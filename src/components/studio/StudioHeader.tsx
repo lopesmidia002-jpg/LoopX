@@ -13,8 +13,12 @@ import {
   X,
   Check,
   Zap,
-  BarChart3
+  BarChart3,
+  Key
 } from "lucide-react";
+import ChannelSelector from "./ChannelSelector";
+import ApiSettingsModal from "./ApiSettingsModal";
+import { DarkChannel } from "@/lib/youtube/channel-manager";
 
 interface StudioHeaderProps {
   availableMinutes: number;
@@ -23,6 +27,7 @@ interface StudioHeaderProps {
   maxConcurrentRenders: number;
   activeTab?: "STUDIO" | "ANALYTICS";
   onTabChange?: (tab: "STUDIO" | "ANALYTICS") => void;
+  onChannelChanged?: (channel: DarkChannel) => void;
   onNewProject: () => void;
   onMinutesRecharged?: (newMinutes: number) => void;
 }
@@ -34,10 +39,12 @@ export default function StudioHeader({
   maxConcurrentRenders = 1,
   activeTab = "STUDIO",
   onTabChange,
+  onChannelChanged,
   onNewProject,
   onMinutesRecharged,
 }: StudioHeaderProps) {
   const [isRechargeModalOpen, setIsRechargeModalOpen] = useState(false);
+  const [isApiModalOpen, setIsApiModalOpen] = useState(false);
   const [rechargeLoading, setRechargeLoading] = useState(false);
   const [rechargeSuccess, setRechargeSuccess] = useState(false);
   const percentage = Math.round((availableMinutes / maxMinutes) * 100);
@@ -110,10 +117,24 @@ export default function StudioHeader({
               <span>Métricas do Canal</span>
             </button>
           </div>
+
+          {/* Dark Channel Selector Dropdown */}
+          <div className="hidden lg:block">
+            <ChannelSelector onChannelChanged={onChannelChanged} />
+          </div>
         </div>
 
         {/* Right: Credits, Concurrency & Action */}
-        <div className="flex items-center gap-3 sm:gap-4">
+        <div className="flex items-center gap-2.5 sm:gap-3.5">
+          
+          {/* API Keys BYOK Modal Button */}
+          <button
+            onClick={() => setIsApiModalOpen(true)}
+            className="p-2 rounded-xl bg-surface hover:bg-surface-hover border border-surface-border text-slate-300 hover:text-white transition-all"
+            title="Configurações de APIs e Chaves de Produção (BYOK)"
+          >
+            <Key className="w-4 h-4 text-brand-300" />
+          </button>
           
           {/* Minutes Balance Indicator */}
           <div 
@@ -215,6 +236,11 @@ export default function StudioHeader({
           </div>
         </div>
       )}
+      {/* Api Keys & BYOK Settings Modal */}
+      <ApiSettingsModal
+        isOpen={isApiModalOpen}
+        onClose={() => setIsApiModalOpen(false)}
+      />
     </header>
   );
 }

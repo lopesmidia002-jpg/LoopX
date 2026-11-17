@@ -104,7 +104,20 @@
 
 ---
 
+### [x] Passo 9: Gerenciador de Múltiplos Canais Dark & Chaves de Produção (BYOK)
+- [x] Motor de Múltiplos Canais Dark (`src/lib/youtube/channel-manager.ts`):
+  - [x] Gerenciamento da rede de canais dark do criador com nichos dedicados, estatísticas e parâmetros padrão.
+  - [x] Alternância dinâmica de canal ativo com sincronização de metadados.
+  - [x] Suporte a credenciais de produção e Bring Your Own Key (BYOK) para OpenAI GPT-4o, ElevenLabs, Pexels, Unsplash e YouTube.
+- [x] Rota de API dedicada (`/api/youtube/channels` com listagem, troca de canal ativo e salvamento de chaves customizadas).
+- [x] Componentes no Estúdio de Criação:
+  - [x] Dropdown interativo de canais (`ChannelSelector.tsx`) no cabeçalho com modal de conexão de novos canais por nicho.
+  - [x] Modal de chaves de API e integrações de produção (`ApiSettingsModal.tsx`) acessível no cabeçalho.
+- [x] Atualização da suíte de testes E2E com validação do módulo de canais e chaves (`12/12 testes aprovados no Docker`).
+
+---
+
 ### [ ] Próximos Passos Opcionais (Pós-Lançamento)
 > *Aguardando solicitação explícita do usuário para início de qualquer item adicional.*
 - [ ] Inserção de chaves reais de produção de terceiros no `.env` (`CLERK_SECRET_KEY`, `YOUTUBE_CLIENT_ID`, `OPENAI_API_KEY`, `ELEVENLABS_API_KEY`).
-- [ ] Adicionar suporte a múltiplos canais dark no mesmo painel de usuário.
+- [ ] Sistema de agendamento automático de publicações com calendário de postagens semanais.

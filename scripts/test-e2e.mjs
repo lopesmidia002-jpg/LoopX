@@ -233,6 +233,37 @@ async function runTestSuite() {
     }
   });
 
+  // 12. Gestão de Múltiplos Canais Dark & Chaves BYOK (/api/youtube/channels)
+  await test("12. Múltiplos Canais Dark & Chaves BYOK (/api/youtube/channels)", async () => {
+    // 12.1 Listagem e canal ativo
+    const res = await fetch(`${BASE_URL}/api/youtube/channels`);
+    if (!res.ok) throw new Error(`Status: ${res.status}`);
+    const data = await res.json();
+    if (!data.success || !Array.isArray(data.channels) || data.channels.length === 0) {
+      throw new Error("Rede de canais dark não retornada");
+    }
+
+    // 12.2 Alternância de canal ativo
+    const switchRes = await fetch(`${BASE_URL}/api/youtube/channels`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "SWITCH", channelId: data.channels[1].id }),
+    });
+    if (!switchRes.ok) throw new Error(`Status do switch: ${switchRes.status}`);
+    const switchData = await switchRes.json();
+    if (!switchData.success) throw new Error("Falha ao alternar canal ativo");
+
+    // 12.3 Salvar chave BYOK customizada
+    const keyRes = await fetch(`${BASE_URL}/api/youtube/channels`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "SAVE_KEY", service: "openai", key: "sk-custom-test-key-123456" }),
+    });
+    if (!keyRes.ok) throw new Error(`Status salvar chave: ${keyRes.status}`);
+    const keyData = await keyRes.json();
+    if (!keyData.success) throw new Error("Falha ao salvar chave BYOK");
+  });
+
   console.log("\n=======================================================");
   console.log(`   RESULTADO: ${passed} PASSARAM | ${failed} FALHARAM`);
   console.log("=======================================================\n");

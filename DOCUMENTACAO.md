@@ -223,6 +223,7 @@ loopx/
   9. Webhook de Confirmação & Saldo (`/api/billing/webhook`)
   10. Publicação Direta no YouTube (`/api/youtube/publish`)
   11. Métricas do Canal Dark & Analytics (`/api/youtube/analytics`)
+  12. Múltiplos Canais Dark & Chaves BYOK (`/api/youtube/channels`)
 
 ---
 
@@ -244,7 +245,25 @@ loopx/
 
 ---
 
-## 8. Como Executar via Docker
+## 8. Gerenciador de Múltiplos Canais Dark & Chaves de Produção (Passo 9)
+
+### 8.1. Motor de Rede de Canais (`channel-manager.ts` & `/api/youtube/channels`)
+- Suporte a múltiplos canais dark no mesmo painel (ex: Mistérios, Natureza Abissal, Cosmos).
+- Alternância rápida com sincronização imediata de nicho, estilo de narração e metadados de publicação.
+- Modal de criação de novos canais por nicho temático (`ChannelSelector.tsx`).
+
+### 8.2. Integrações de Produção & BYOK (`ApiSettingsModal.tsx`)
+- Status em tempo real das 5 APIs externas essenciais:
+  1. OpenAI GPT-4o (Roteirização & Pesquisa Factual)
+  2. ElevenLabs (Síntese de Voz Neural Realista)
+  3. Pexels API (Acervo 4K de Imagens e Vídeos)
+  4. Unsplash API (Mídias Cinematográficas)
+  5. YouTube Data API v3 (Publicação Automática)
+- Suporte ao modelo **BYOK (Bring Your Own Key)** com armazenamento seguro no contêiner e máscara de visualização.
+
+---
+
+## 9. Como Executar via Docker
 
 ### Subir todos os serviços (App, PostgreSQL e Redis)
 ```bash
@@ -270,3 +289,4 @@ Acesse a aplicação no navegador em: `http://localhost:3000`
 Acesse o Estúdio de Criação em: `http://localhost:3000/studio`
 Acesse o endpoint de saúde em: `http://localhost:3000/api/health`
 Acesse as métricas do canal em: `http://localhost:3000/api/youtube/analytics`
+Acesse os canais conectados em: `http://localhost:3000/api/youtube/channels`
