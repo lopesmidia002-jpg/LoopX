@@ -1,0 +1,202 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum PlanTier {
+  STARTER
+  CREATOR
+  STUDIO
+  SCALE
+}
+
+enum BillingCycle {
+  MONTHLY
+  ANNUAL
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  TRIAL
+}
+
+enum VideoFormat {
+  DOCUMENTARY
+  TOP_10
+}
+
+enum Language {
+  PT_BR
+  EN
+  ES
+}
+
+enum ProjectStatus {
+  DRAFT
+  GENERATING_SCRIPT
+  CURATING_MEDIA
+  GENERATING_VOICE
+  SYNCING_SUBTITLES
+  RENDERING
+  COMPLETED
+  FAILED
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+enum MotionEffect {
+  KEN_BURNS_ZOOM_IN
+  KEN_BURNS_ZOOM_OUT
+  KEN_BURNS_PAN_LEFT
+  KEN_BURNS_PAN_RIGHT
+  PARALLAX_25D
+  STATIC
+}
+
+enum RenderJobStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELED
+}
+
+enum TransactionType {
+  PLAN_RENEWAL
+  EXTRA_MINUTES_PURCHASE
+  RENDER_DEDUCTION
+  REFUND
+}
+
+model User {
+  id             String          @id @default(uuid())
+  email          String          @unique
+  name           String?
+  clerkId        String?         @unique
+  avatarUrl      String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  subscription   Subscription?
+  projects       Project[]
+  transactions   CreditTransaction[]
+}
+
+model Subscription {
+  id                      String             @id @default(uuid())
+  userId                  String             @unique
+  user                    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  planTier                PlanTier           @default(CREATOR)
+  billingCycle            BillingCycle       @default(MONTHLY)
+  status                  SubscriptionStatus @default(ACTIVE)
+
+  availableMinutes        Float              @default(195.0)
+  usedMinutes             Float              @default(0.0)
+  maxConcurrentRenders    Int                @default(1)
+  currentConcurrentRenders Int               @default(0)
+  extraMinuteRateBRL      Float              @default(2.40)
+  hasPriorityQueue        Boolean            @default(false)
+
+  periodStart             DateTime           @default(now())
+  periodEnd               DateTime
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+}
+
+model Project {
+  id                   String        @id @default(uuid())
+  userId               String
+  user                 User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title                String
+  topicOrIdea          String        @db.Text
+  customScript         String?       @db.Text
+  format               VideoFormat   @default(DOCUMENTARY)
+  language             Language      @default(PT_BR)
+  voiceId              String        @default("pt-br-marcos-deep")
+  customVoiceAudioUrl  String?
+  targetDurationMinutes Int          @default(10)
+  
+  status               ProjectStatus @default(DRAFT)
+  estimatedMinutesCost Float?
+  finalVideoUrl        String?
+  youtubePublishedUrl  String?
+  
+  scenes               Scene[]
+  renderJobs           RenderJob[]
+
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+}
+
+model Scene {
+  id               String       @id @default(uuid())
+  projectId        String
+  project          Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  sceneOrder       Int
+  narrationText    String       @db.Text
+  keywords         String[]
+  
+  mediaUrl         String
+  mediaType        MediaType    @default(IMAGE)
+  motionEffect     MotionEffect @default(KEN_BURNS_ZOOM_IN)
+  
+  voiceoverAudioUrl String?
+  durationSeconds  Float        @default(6.5)
+  subtitlesJson    Json?
+
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([projectId, sceneOrder])
+}
+
+model RenderJob {
+  id                 String          @id @default(uuid())
+  projectId          String
+  project            Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  status             RenderJobStatus @default(QUEUED)
+  currentStage       Int             @default(1)
+  totalStages        Int             @default(8)
+  progressPercentage Int             @default(0)
+  
+  isPriority         Boolean         @default(false)
+  outputVideoUrl     String?
+  resolution         String          @default("1080p")
+  aspectRatio        String          @default("16:9")
+  errorMessage       String?         @db.Text
+  pipelineLogs       Json?
+  
+  startedAt          DateTime?
+  completedAt        DateTime?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  @@index([projectId, status])
+}
+
+model CreditTransaction {
+  id          String          @id @default(uuid())
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type        TransactionType
+  minutes     Float
+  amountBRL   Float?
+  description String?
+  createdAt   DateTime        @default(now())
+
+  @@index([userId, createdAt])
+}

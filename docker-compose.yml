@@ -1,0 +1,65 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: velovide-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://velovide:velovide_password@postgres:5432/velovide_db?schema=public
+      - REDIS_URL=redis://redis:6379
+      - NEXT_PUBLIC_APP_URL=http://localhost:3000
+      - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_sample_clerk_key
+      - CLERK_SECRET_KEY=sk_test_sample_clerk_key
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - velovide-network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: velovide-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=velovide
+      - POSTGRES_PASSWORD=velovide_password
+      - POSTGRES_DB=velovide_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U velovide -d velovide_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - velovide-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: velovide-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - velovide-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  velovide-network:
+    driver: bridge

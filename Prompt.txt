@@ -1,0 +1,55 @@
+Atue como um Engenheiro de Software Full-Stack Sênior e Product Designer especialista em aplicações SaaS de IA e edição de vídeo automatizada. Crie uma plataforma web completa chamada **VeloVide**, um SaaS de criação automatizada de vídeos documentais e listas "Top 10" para canais dark do YouTube.
+
+### 1. Stack Tecnológica
+- **Framework:** Next.js (App Router) com TypeScript.
+- **Estilização & Animações:** Tailwind CSS, Framer Motion e Lucide Icons.
+- **Autenticação:** Clerk (com tema customizado Dark Mode).
+- **Backend / Processamento de Vídeo:** Arquitetura baseada em filas (BullMQ/Redis ou similar) integrada a APIs de LLM (pesquisa e roteiro), TTS (narração realista), bancos de mídia (Pexels/Unsplash/Storyblocks API) e FFmpeg/Remotion para renderização com efeitos de câmera e mixagem de áudio.
+
+### 2. Design System & Identidade Visual
+- **Tema:** Dark Mode cinematográfico (`#161b24` background principal, superfícies em `#1d232e` com `backdrop-blur-xl` e bordas sutis).
+- **Cores de Destaque:** Gradientes e acentos em Indigo/Violeta (`#6366f1`, `#8B5CF6`, `#8aa0ff`).
+- **Efeitos Visuais:** Grid sutil de fundo (`64px`) com máscara radial no topo, brilho aurora suave e barra de progresso de carregamento no topo (`#8B5CF6`).
+
+### 3. Funcionalidades Principais (O Estúdio de Criação)
+Desenvolva o painel principal (`/studio`) onde o usuário cria um vídeo a partir de um prompt simples:
+1. **Configuração do Projeto:**
+   - Campo de input para ideia, tópico, título ou roteiro próprio.
+   - Seletor de formato: *Documentário* ou *Top 10 / Ranking*.
+   - Seletor de idioma (`PT-BR`, `EN`, `ES`) e escolha de voz realista (com preview de áudio) ou upload de narração própria.
+   - Duração alvo do vídeo (ex: 8 a 15 minutos).
+2. **Pipeline Visual em Tempo Real (8 Etapas):**
+   Exiba um painel de progresso interativo mostrando o status em tempo real com barra de porcentagem e prévia das cenas:
+   - Etapa 1: Pesquisa automática e apuração de fatos sobre o tema.
+   - Etapa 2: Escrita do roteiro estruturado com arco narrativo (gancho, desenvolvimento, clímax e conclusão).
+   - Etapa 3: Curadoria automática de imagens e clipes de vídeo para cada cena.
+   - Etapa 4: Geração da narração com IA.
+   - Etapa 5: Sincronização de legendas palavra por palavra.
+   - Etapa 6: Aplicação de movimento cinematográfico (efeito Ken Burns, Parallax 2.5D e transições rítmicas).
+   - Etapa 7: Mixagem automática de trilha sonora de fundo e efeitos sonoros (SFX) com ducking na voz.
+   - Etapa 8: Renderização final em MP4 (1080p 16:9).
+3. **Editor Rápido Pós-Geração & Exportação:**
+   - Visualização das cenas geradas em formato de storyboard/grade (permitindo trocar a imagem/vídeo de uma cena específica sem refazer o vídeo todo).
+   - Download do arquivo MP4 final.
+   - Integração com YouTube Data API para publicação em 1 clique (preenchendo título, descrição e capítulos automaticamente).
+
+### 4. Sistema de Planos, Créditos e Monetização
+Implemente controle de saldo baseado em **minutos de vídeo disponíveis** e **renderizações simultâneas**:
+- **Starter (R$ 197/mês):** 91 min/mês, 1 renderização por vez, minuto extra a R$ 2,80.
+- **Creator (R$ 397/mês - Destaque):** 195 min/mês, 1 renderização por vez, minuto extra a R$ 2,40.
+- **Studio (R$ 797/mês):** 416 min/mês, 2 renderizações simultâneas, minuto extra a R$ 2,00.
+- **Scale (R$ 1.497/mês):** 845 min/mês, 3 renderizações simultâneas, fila prioritária, minuto extra a R$ 1,90.
+- Suporte a cobrança mensal ou anual (com 10% de desconto à vista) e compra de minutos avulsos.
+
+### 5. Landing Page de Alta Conversão (`/`)
+Crie também a página inicial seguindo esta estrutura exata:
+- **Barra de aviso superior fixa:** Banner de escassez com indicador pulsante ("Vagas limitadas — quando acabarem, o cadastro fecha").
+- **Hero Section:** Título de impacto ("Da ideia ao vídeo cinematográfico — em minutos"), CTA principal, botão secundário para comunidade no WhatsApp, contador social de criadores na lista e um mockup animado interativo simulando o estúdio montando cenas com ondas sonoras (waveform).
+- **Faixa Marquee Infinita:** Listando os recursos-chave separados por ícones de diamante.
+- **Seção "Como funciona":** 3 cards numerados (`01` Descreva a ideia, `02` A IA cria tudo, `03` Publique).
+- **Seção "Em tempo real":** Demonstração animada das 8 etapas do pipeline ao lado de uma grade de cenas ganhando vida e barra de progresso.
+- **Bento Grid de Recursos:** Cards assimétricos destacando Movimento Cinematográfico, Vozes Realistas, Pesquisa + Roteiro, Trilha + Efeitos, YouTube em 1 clique e Velocidade.
+- **Mostruário (Showcase):** Grade 3x2 de thumbnails 16:9 com categorias (História, Natureza, Ciência, Geopolítica, Tecnologia), efeito Ken Burns no hover e botão de play.
+- **Comparativo de Valor & Preços:** Bloco contrastando o custo/tempo de um editor tradicional vs. VeloVide, tabela de preços dos 4 planos, seção de FAQ em acordeão e CTA final.
+
+Comece estruturando a arquitetura de pastas do projeto, o schema do banco de dados (usuários, assinaturas, projetos, cenas e jobs de renderização) e o código completo da interface principal do Estúdio e da Landing Page.
