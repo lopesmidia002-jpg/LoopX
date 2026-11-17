@@ -50,7 +50,7 @@ A arquitetura do sistema foi projetada para orquestrar um pipeline sequencial de
 ```
 loopx/
 ├── .gitignore                   # Regras de exclusão do Git (node_modules, .env, builds)
-├── Dockerfile                   # Build e containerização da aplicação Next.js
+├── Dockerfile                   # Build e containerização da aplicação Next.js com FFmpeg
 ├── docker-compose.yml           # Orquestração do app, postgres e redis
 ├── .dockerignore                # Arquivos ignorados no contexto Docker
 ├── .env.example                 # Exemplo documentado das variáveis de ambiente
@@ -75,7 +75,9 @@ loopx/
 │   │       │   ├── tts/route.ts      # Síntese de voz neural realista
 │   │       │   └── subtitles/route.ts# Sincronização palavra por palavra e .SRT
 │   │       ├── projects/route.ts# Endpoints para criação e consulta de projetos
-│   │       ├── render/route.ts  # Endpoints de disparo e progresso de renderização
+│   │       ├── render/
+│   │       │   ├── route.ts     # Disparo e verificação de jobs
+│   │       │   └── queue/route.ts# Fila de concorrência e prioridade no Redis
 │   │       └── script/generate/route.ts # Geração de pesquisa e roteiro estruturado
 │   ├── components/
 │   │   ├── landing/             # Componentes modulares da Landing Page
@@ -106,6 +108,11 @@ loopx/
 │       │   ├── media-curator.ts # Integração com Pexels/Unsplash e Acervo Vault
 │       │   ├── tts-engine.ts    # Síntese neural (ElevenLabs / OpenAI / Fallback)
 │       │   └── subtitles-sync.ts# Algoritmo de sincronização e formatador .SRT
+│       ├── render/
+│       │   ├── motion-effects.ts# Filtros FFmpeg para Ken Burns e Parallax 2.5D
+│       │   ├── audio-mixer.ts   # Mixagem estéreo com sidechain compress (ducking)
+│       │   ├── queue.ts         # Fila assíncrona, concorrência e prioridade
+│       │   └── video-renderer.ts# Construtor do comando final de exportação MP4
 │       ├── types.ts             # Definições de tipos TypeScript
 │       ├── constants.ts         # Planos, vozes, etapas e templates
 │       ├── utils.ts             # Funções utilitárias (cn, formatações)
@@ -117,21 +124,27 @@ loopx/
 
 ---
 
-## 4. Módulos do Pipeline Entregues (Passo 4)
+## 4. Módulos de Renderização e Vídeo (Passo 5)
 
-### 4.1. Curadoria de Mídias (`media-curator.ts`)
-- Busca automática em bancos de alta definição (Pexels Video/Photo API e Unsplash API) baseada em palavras-chave por cena.
-- Mecanismo de acervo local categorizado (`LOOPX_VAULT`) em 4K (oceano, mistério, militar, espaço, tecnologia, ruínas) garantindo disponibilidade mesmo sem chaves externas.
+### 4.1. Movimento Cinematográfico (`motion-effects.ts`)
+- Filtros nativos do FFmpeg (`zoompan`, `scale`, `pad`, `setsar`) para geração de movimento contínuo:
+  - **Ken Burns Zoom In:** aproximação suave de 1.0x para 1.18x focada no centro dramático.
+  - **Ken Burns Zoom Out:** recuo suave de 1.18x para 1.0x revelando contexto.
+  - **Panorâmica Lateral:** deslocamento sutil de câmera (esquerda e direita).
+  - **Parallax 2.5D:** combinação de zoom progressivo e micro-shake senoidal (`sin(on/8)*4`) simulando profundidade e câmera na mão.
 
-### 4.2. Síntese de Voz Neural Hiper-realista (`tts-engine.ts`)
-- Suporte a ElevenLabs (`eleven_multilingual_v2`) com vozes documentais profundas e configurações de cadência de suspense (`stability: 0.75`, `similarity_boost: 0.85`).
-- Suporte a OpenAI TTS (`tts-1-hd` com vozes `onyx`, `fable`, `echo`).
-- Player de áudio em tempo real integrado a cada card de cena no Storyboard.
+### 4.2. Mixagem com Auto-Ducking (`audio-mixer.ts`)
+- Grafo de filtros FFmpeg com compressão sidechain (`sidechaincompress=threshold=0.08:ratio=5:attack=150:release=450`):
+  - Atenuação automática da música de fundo em -14dB enquanto a narração está ativa.
+  - Retorno suave do volume musical nos intervalos de silêncio e nas transições de cena.
+  - Presets de trilha sonora orquestral e efeitos sonoros sincronizados (whoosh, batida cardíaca, sub-bass).
 
-### 4.3. Sincronização de Legendas & Exportação (`subtitles-sync.ts`)
-- Cálculo ponderado palavra por palavra com pausas pontuais (vírgulas, reticências, pontos finais).
-- Exportador de arquivos no padrão SubRip (`.srt`) com formatação milimétrica de timecodes (`00:00:00,000 --> 00:00:05,000`).
-- Botão de download direto do arquivo `.srt` disponível tanto no Storyboard quanto no modal de prévia de vídeo.
+### 4.3. Gerenciador de Filas e Concorrência (`queue.ts` & `/api/render/queue`)
+- Controle de limites simultâneos por plano de assinatura:
+  - Starter & Creator: 1 renderização concorrente.
+  - Studio: 2 renderizações concorrentes.
+  - Scale: 3 renderizações concorrentes + fila de prioridade máxima.
+- Acompanhamento do progresso de 0 a 100% com logs dinâmicos e persistência no PostgreSQL através da tabela `RenderJob`.
 
 ---
 

@@ -59,11 +59,12 @@
 
 ---
 
-### [ ] Passo 5: Motor de Renderização de Vídeo (Remotion/FFmpeg) e Filas de Processamento (BullMQ)
-- [ ] Configuração de filas assíncronas com Redis e BullMQ para controle de concorrência e fila prioritária.
-- [ ] Aplicação de movimentação cinematográfica nas cenas (Ken Burns Zoom/Pan e Parallax 2.5D) (Etapa 6).
-- [ ] Mixagem de áudio com auto-ducking (diminuição da trilha de fundo quando há voz) e efeitos sonoros (SFX) (Etapa 7).
-- [ ] Renderização final em MP4 1080p 16:9 e geração do arquivo para download (Etapa 8).
+### [x] Passo 5: Motor de Renderização de Vídeo (Remotion/FFmpeg) e Filas de Processamento (BullMQ/Redis)
+- [x] Configuração de filas assíncronas no Redis com controle de concorrência e fila prioritária (`src/lib/render/queue.ts`).
+- [x] Aplicação de movimentação cinematográfica nas cenas com filtros FFmpeg para Ken Burns (Zoom In, Zoom Out, Pan) e Parallax 2.5D (Etapa 6) (`src/lib/render/motion-effects.ts`).
+- [x] Mixagem de áudio estéreo com compressão sidechain (auto-ducking -14dB dinâmico sob a voz) e efeitos sonoros SFX (Etapa 7) (`src/lib/render/audio-mixer.ts`).
+- [x] Orquestrador de renderização final em MP4 Full HD 1080p 16:9 60fps (Etapa 8) (`src/lib/render/video-renderer.ts`).
+- [x] Rota de API `/api/render/queue` com disparo, enfileiramento e monitoramento de progresso com logs por etapa.
 
 ---
 

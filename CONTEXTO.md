@@ -65,4 +65,5 @@ O faturamento do SaaS é centrado no consumo de **minutos de renderização** e 
 - **Passo 2 (Concluído):** Landing Page de alta conversão completa (`/`) e Estúdio de Criação interativo (`/studio`) com seleção de voz/formato, pipeline de 8 etapas animado, Storyboard com troca de mídias e modal de publicação no YouTube.
 - **Passo 3 (Concluído):** Motor de IA de pesquisa automática de fatos e geração de roteiro estruturado com arco dramático cinematográfico (gancho, desenvolvimento, clímax e conclusão). Renomeação do ecossistema para **LoopX**.
 - **Passo 4 (Concluído):** Curadoria de mídias 4K (Pexels/Unsplash/LoopX Vault) com busca por palavras-chave, motor de síntese de voz neural realista (TTS) com ElevenLabs/OpenAI TTS e sincronização de legendas palavra por palavra com exportação direta em `.srt`.
-- **Passo 5 (Próximo):** Motor de renderização de vídeo Remotion/FFmpeg com Ken Burns, Parallax 2.5D, mixagem com auto-ducking e filas BullMQ/Redis.
+- **Passo 5 (Concluído):** Motor de renderização de vídeo Remotion/FFmpeg com filtros de movimento (Ken Burns e Parallax 2.5D), mixagem com auto-ducking estéreo, orquestrador de exportação em MP4 1080p e fila assíncrona no Redis (`/api/render/queue`).
+- **Passo 6 (Próximo):** Autenticação Clerk, gestão de saldo de créditos e publicação direta no YouTube via OAuth 2.0.
