@@ -295,7 +295,38 @@ loopx/
 
 ---
 
-## 11. Como Executar via Docker
+## 11. Landing Page Cinematográfica Liquid Glass & Vídeos em Loop (Passo 12)
+
+### 11.1. Arquitetura Visual e Design System Liquid Glass
+- **Fundo Puro Black (`bg-black`)**: Aplicação uniforme do fundo escuro em toda a extensão da Landing Page.
+- **Tipografia Instrument Serif**: Importação via Google Fonts (`@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');`) e mapeamento no Tailwind (`font-serif`).
+- **Classe `.liquid-glass`**: Estilização com `backdrop-filter: blur(4px)`, `background-blend-mode: luminosity`, sombra interna e pseudo-elemento `::before` com borda em gradiente e `mask-composite: exclude`.
+
+### 11.2. Componentes Estruturais da Nova Landing Page
+1. **Hero Section (`LiquidHero.tsx`)**:
+   - Container `min-h-screen relative overflow-hidden flex flex-col`.
+   - Vídeo de fundo em tela cheia com transição suave via vanilla JavaScript (`requestAnimationFrame`) entre eventos `canplay`, `timeupdate <= 0.55s` e `ended` com crossfade limpo para preto.
+   - Navbar com pílula flutuante em Liquid Glass, branding Asme/Globe e links de navegação.
+   - Tipografia de destaque: `Know it then all.` em Instrument Serif (`text-7xl md:text-9xl`).
+   - Formulário de newsletter em Liquid Glass com botão circular branco e seta direcional.
+   - Botão de Manifesto e rodapé com 3 ícones sociais (Instagram, Twitter, Globe) em Liquid Glass.
+2. **About Section (`AboutSection.tsx`)**:
+   - Detecção de visibilidade no viewport via `useInView` do Framer Motion.
+   - Gradiente radial sutil e tipografia em Instrument Serif itálico com `text-white/60`.
+3. **Featured Video Section (`FeaturedVideoSection.tsx`)**:
+   - Container `rounded-3xl` em proporção `aspect-video` com vídeo de alta resolução em streaming CloudFront.
+   - Card flutuante Liquid Glass de "Our Approach" com botão interativo "Explore more" com microinterações no hover/tap.
+4. **Philosophy / Innovation x Vision (`PhilosophySection.tsx`)**:
+   - Título de impacto `Innovation x Vision` com divisor e grade assimétrica em duas colunas.
+   - Coluna esquerda com vídeo `aspect-[4/3]` e coluna direita com blocos narrativos "Choose your space" e "Shape the future".
+5. **Services / What We Do (`ServicesSection.tsx`)**:
+   - Grade com dois cards Liquid Glass com vídeos interativos em hover-zoom (`group-hover:scale-105`), tags contextuais ("Strategy", "Craft"), ícones `ArrowUpRight` e descrição conceitual.
+6. **Planos & Checkout Integrado (`Pricing.tsx` & `Footer.tsx`)**:
+   - Seção de precificação com integração nativa ao ecossistema de checkout Pix instantâneo e Stripe, harmonizada com o tema escuro.
+
+---
+
+## 12. Como Executar via Docker
 
 ### Subir todos os serviços (App, PostgreSQL e Redis)
 ```bash

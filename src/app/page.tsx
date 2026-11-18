@@ -1,54 +1,34 @@
 import React from "react";
-import TopBanner from "@/components/landing/TopBanner";
-import Navbar from "@/components/landing/Navbar";
-import Hero from "@/components/landing/Hero";
-import Marquee from "@/components/landing/Marquee";
-import HowItWorks from "@/components/landing/HowItWorks";
-import RealtimePipeline from "@/components/landing/RealtimePipeline";
-import BentoGrid from "@/components/landing/BentoGrid";
-import Showcase from "@/components/landing/Showcase";
-import ValueComparison from "@/components/landing/ValueComparison";
+import LiquidHero from "@/components/landing/LiquidHero";
+import AboutSection from "@/components/landing/AboutSection";
+import FeaturedVideoSection from "@/components/landing/FeaturedVideoSection";
+import PhilosophySection from "@/components/landing/PhilosophySection";
+import ServicesSection from "@/components/landing/ServicesSection";
 import Pricing from "@/components/landing/Pricing";
-import FAQ from "@/components/landing/FAQ";
 import Footer from "@/components/landing/Footer";
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen flex flex-col bg-background text-slate-100">
-      {/* 1. Fixed Scarcity Top Banner */}
-      <TopBanner />
+    <main className="min-h-screen flex flex-col bg-black text-white selection:bg-white/20 selection:text-white">
+      {/* SECTION 1 -- HERO (Liquid Glass & Cinematic Fade Loop Video) */}
+      <LiquidHero />
 
-      {/* 2. Cinematic Navbar */}
-      <Navbar />
+      {/* SECTION 2 -- ABOUT SECTION */}
+      <AboutSection />
 
-      {/* 3. Hero Section with Mockup & Audio Waveform */}
-      <Hero />
+      {/* SECTION 3 -- FEATURED VIDEO */}
+      <FeaturedVideoSection />
 
-      {/* 4. Infinite Marquee with Diamond Separators */}
-      <Marquee />
+      {/* SECTION 4 -- PHILOSOPHY / INNOVATION x VISION */}
+      <PhilosophySection />
 
-      {/* 5. How It Works (3 Numbered Cards) */}
-      <HowItWorks />
+      {/* SECTION 5 -- SERVICES / WHAT WE DO */}
+      <ServicesSection />
 
-      {/* 6. Realtime Pipeline (8 Stages Animated) */}
-      <RealtimePipeline />
-
-      {/* 7. Asymmetric Bento Grid Features */}
-      <BentoGrid />
-
-      {/* 8. Showcase: 3x2 16:9 Thumbnails with Ken Burns */}
-      <Showcase />
-
-      {/* 9. Traditional Editor vs VeloVide Value Comparison */}
-      <ValueComparison />
-
-      {/* 10. Pricing Table (4 Plans + Monthly/Annual Toggle) */}
+      {/* SECTION 6 -- PRICING PLANS & PIX / STRIPE CHECKOUT */}
       <Pricing />
 
-      {/* 11. FAQ Interactive Accordion */}
-      <FAQ />
-
-      {/* 12. Final CTA & Footer */}
+      {/* FOOTER & CALL TO ACTION */}
       <Footer />
     </main>
   );

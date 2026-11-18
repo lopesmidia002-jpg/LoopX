@@ -302,6 +302,16 @@ async function runTestSuite() {
     if (!cancelData.success) throw new Error("Falha ao cancelar publicação agendada");
   });
 
+  // 14. Validação da Nova Landing Page Cinematográfica (Liquid Glass & Video Loop)
+  await test("14. Landing Page Cinematográfica Liquid Glass (GET /)", async () => {
+    const res = await fetch(`${BASE_URL}/`);
+    if (!res.ok) throw new Error(`Status da página inicial: ${res.status}`);
+    const html = await res.text();
+    if (!html.includes("Know it then") || !html.includes("Asme")) {
+      throw new Error("Elementos visuais do design Liquid Glass não encontrados no HTML");
+    }
+  });
+
   console.log("\n=======================================================");
   console.log(`   RESULTADO: ${passed} PASSARAM | ${failed} FALHARAM`);
   console.log("=======================================================\n");

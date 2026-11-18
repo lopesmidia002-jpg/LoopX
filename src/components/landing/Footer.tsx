@@ -6,7 +6,7 @@ import { Play, Sparkles, ArrowRight, ShieldCheck, Heart } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="relative bg-[#0f131a] border-t border-surface-border pt-16 pb-12 overflow-hidden">
+    <footer className="relative bg-black border-t border-white/10 pt-16 pb-12 overflow-hidden">
       
       {/* Pre-footer Big CTA Banner */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-16">

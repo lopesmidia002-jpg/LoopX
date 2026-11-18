@@ -98,7 +98,7 @@ export default function Pricing() {
   };
 
   return (
-    <section id="precos" className="py-24 relative bg-[#131822] border-y border-surface-border">
+    <section id="pricing" className="py-24 relative bg-black border-t border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}

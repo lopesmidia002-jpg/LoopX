@@ -9,6 +9,9 @@ const config: Config = {
   darkMode: "class",
   theme: {
     extend: {
+      fontFamily: {
+        serif: ['"Instrument Serif"', "serif"],
+      },
       colors: {
         background: "#161b24",
         surface: {
