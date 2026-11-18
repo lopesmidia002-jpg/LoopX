@@ -206,3 +206,7 @@
   - [x] Migração de todas as modais (`ChannelSelector`, `ApiSettingsModal`, `ScheduleCalendarModal`, `ABTestingModal`, `VideoPreviewModal`, `AuthModal` e recarga) para montagem direta no `document.body` com `z-[9999]`.
   - [x] Suporte a SSR seguro com verificação de estado `mounted` via `useEffect`.
   - [x] Validação completa no Docker com zero erros TypeScript e 17/17 testes E2E aprovados.
+- [x] Inicialização do Impeccable Design System (`/impeccable init`):
+  - [x] Execução do setup de contexto via `impeccable.cmd context` para plataforma `web`.
+  - [x] Entrevista estruturada de alinhamento de público-alvo, posicionamento e formatos estratégicos.
+  - [x] Criação de `PRODUCT.md` com a verdade durável do produto (usuários, propósito, posicionamento, contexto operacional, capacidades, compromissos de marca e princípios estratégicos).

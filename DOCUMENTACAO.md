@@ -50,6 +50,7 @@ A arquitetura do sistema foi projetada para orquestrar um pipeline sequencial de
 ```
 loopx/
 ├── README.md                    # Documentação principal e guia rápido do projeto
+├── PRODUCT.md                   # Verdade durável do produto capturada pelo Impeccable
 ├── .gitignore                   # Regras de exclusão do Git (node_modules, .env, builds)
 ├── Dockerfile                   # Build e containerização da aplicação Next.js com FFmpeg
 ├── docker-compose.yml           # Orquestração do app, postgres e redis
