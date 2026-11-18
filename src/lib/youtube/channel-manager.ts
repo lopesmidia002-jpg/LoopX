@@ -19,7 +19,7 @@ export interface DarkChannel {
 }
 
 export interface ApiServiceStatus {
-  service: "openai" | "elevenlabs" | "pexels" | "unsplash" | "youtube";
+  service: "openai" | "google_ai_studio" | "elevenlabs" | "unsplash" | "pixabay" | "youtube";
   name: string;
   configured: boolean;
   source: "ENVIRONMENT" | "CUSTOM_BYOK" | "LOOPX_VAULT";
@@ -142,42 +142,40 @@ export class ChannelManager {
         source: customApiKeys.openai
           ? "CUSTOM_BYOK"
           : process.env.OPENAI_API_KEY
-          ? "ENVIRONMENT"
-          : "LOOPX_VAULT",
+            ? "ENVIRONMENT"
+            : "LOOPX_VAULT",
         maskedKey: maskKey(customApiKeys.openai || process.env.OPENAI_API_KEY || "lx-sk-vault-ai-987"),
       },
       {
-        service: "elevenlabs",
-        name: "ElevenLabs Voice (Narração Neural Cinematográfica)",
-        configured: Boolean(process.env.ELEVENLABS_API_KEY || customApiKeys.elevenlabs),
-        source: customApiKeys.elevenlabs
+        service: "google_ai_studio",
+        name: "Google AI Studio (Narração Neural Hiper-realista Gemini)",
+        configured: Boolean(
+          process.env.GOOGLE_AI_STUDIO_API_KEY ||
+          process.env.GEMINI_API_KEY ||
+          customApiKeys.google_ai_studio
+        ),
+        source: customApiKeys.google_ai_studio
           ? "CUSTOM_BYOK"
-          : process.env.ELEVENLABS_API_KEY
+          : (process.env.GOOGLE_AI_STUDIO_API_KEY || process.env.GEMINI_API_KEY)
           ? "ENVIRONMENT"
           : "LOOPX_VAULT",
-        maskedKey: maskKey(customApiKeys.elevenlabs || process.env.ELEVENLABS_API_KEY || "lx-el-vault-tts-456"),
-      },
-      {
-        service: "pexels",
-        name: "Pexels API (Acervo 4K de Imagens e Vídeos)",
-        configured: Boolean(process.env.PEXELS_API_KEY || customApiKeys.pexels),
-        source: customApiKeys.pexels
-          ? "CUSTOM_BYOK"
-          : process.env.PEXELS_API_KEY
-          ? "ENVIRONMENT"
-          : "LOOPX_VAULT",
-        maskedKey: maskKey(customApiKeys.pexels || process.env.PEXELS_API_KEY || "lx-px-vault-4k-123"),
+        maskedKey: maskKey(
+          customApiKeys.google_ai_studio ||
+          process.env.GOOGLE_AI_STUDIO_API_KEY ||
+          process.env.GEMINI_API_KEY ||
+          "AIzaSy-vault-google-tts-456"
+        ),
       },
       {
         service: "unsplash",
-        name: "Unsplash API (Mídias Cinematográficas)",
+        name: "Unsplash API (Acervo 4K de Imagens Cinematográficas)",
         configured: Boolean(process.env.UNSPLASH_ACCESS_KEY || customApiKeys.unsplash),
         source: customApiKeys.unsplash
           ? "CUSTOM_BYOK"
           : process.env.UNSPLASH_ACCESS_KEY
           ? "ENVIRONMENT"
           : "LOOPX_VAULT",
-        maskedKey: maskKey(customApiKeys.unsplash || process.env.UNSPLASH_ACCESS_KEY || "lx-un-vault-4k-789"),
+        maskedKey: maskKey(customApiKeys.unsplash || process.env.UNSPLASH_ACCESS_KEY || "un-unsplash-vault-4k-5566"),
       },
       {
         service: "youtube",
@@ -196,9 +194,9 @@ export class ChannelManager {
   /**
    * Salva chave de API customizada (Bring Your Own Key)
    */
-  static async setCustomApiKey(service: string, key: string): Promise<boolean> {
-    if (!service || !key) return false;
-    customApiKeys[service.toLowerCase()] = key.trim();
-    return true;
+  static async setCustomApiKey(service: string, key: string): Promise < boolean > {
+  if(!service || !key) return false;
+customApiKeys[service.toLowerCase()] = key.trim();
+return true;
   }
 }

@@ -68,16 +68,19 @@ export async function POST(req: NextRequest) {
       avatarUrl = "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=120&q=80",
     } = body;
 
-    if (!name || !handle || !niche) {
+    const formattedHandle = handle ? (handle.trim().startsWith("@") ? handle.trim() : `@${handle.trim()}`) : "";
+    const channelName = (name && name.trim()) || (formattedHandle ? formattedHandle.replace(/^@/, "") : "");
+
+    if (!channelName || !formattedHandle || !niche) {
       return NextResponse.json(
-        { success: false, error: "Nome, handle (@) e nicho são obrigatórios" },
+        { success: false, error: "Handle do canal (@) e nicho são obrigatórios" },
         { status: 400 }
       );
     }
 
     const createdChannel = await ChannelManager.createChannel({
-      name,
-      handle,
+      name: channelName,
+      handle: formattedHandle,
       niche,
       subscribers: 0,
       defaultVoiceId,

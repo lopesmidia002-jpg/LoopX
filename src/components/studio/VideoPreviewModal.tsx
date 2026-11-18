@@ -14,10 +14,12 @@ import {
   Layers,
   Copy,
   CheckCircle2,
-  Calendar
+  Calendar,
+  Split
 } from "lucide-react";
 import { SceneItem } from "@/lib/types";
 import ScheduleCalendarModal from "./ScheduleCalendarModal";
+import ABTestingModal from "./ABTestingModal";
 
 interface VideoPreviewModalProps {
   isOpen: boolean;
@@ -41,6 +43,7 @@ export default function VideoPreviewModal({
   const [publishedData, setPublishedData] = useState<{ watchUrl: string; videoId: string } | null>(null);
   const [isSubmittingYouTube, setIsSubmittingYouTube] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isABModalOpen, setIsABModalOpen] = useState(false);
 
   if (!isOpen) return null;
 
@@ -353,6 +356,14 @@ export default function VideoPreviewModal({
                       <Calendar className="w-4 h-4" />
                       <span>Agendar Lançamento</span>
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsABModalOpen(true)}
+                      className="px-5 py-3.5 rounded-xl bg-purple-950/30 hover:bg-purple-900/40 text-purple-300 hover:text-white border border-purple-500/30 font-bold text-xs flex items-center justify-center gap-2 transition-all"
+                    >
+                      <Split className="w-4 h-4" />
+                      <span>Teste A/B</span>
+                    </button>
                   </div>
                 </div>
               )}
@@ -365,6 +376,14 @@ export default function VideoPreviewModal({
           isOpen={isScheduleModalOpen}
           onClose={() => setIsScheduleModalOpen(false)}
           defaultTitle={topicTitle}
+        />
+
+        {/* A/B Testing Modal */}
+        <ABTestingModal
+          isOpen={isABModalOpen}
+          onClose={() => setIsABModalOpen(false)}
+          currentProjectTopic={topicTitle}
+          currentProjectTitle={topicTitle}
         />
       </div>
     </div>

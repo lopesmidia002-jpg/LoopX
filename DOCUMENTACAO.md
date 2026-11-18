@@ -115,7 +115,7 @@ loopx/
 │       ├── billing/
 │       │   └── credits-manager.ts # Gestão de minutos, concorrência e compra avulsa
 │       ├── pipeline/
-│       │   ├── media-curator.ts # Integração com Pexels/Unsplash e Acervo Vault
+│       │   ├── media-curator.ts # Integração com Pixabay API e Acervo Vault
 │       │   ├── tts-engine.ts    # Síntese neural (ElevenLabs / OpenAI / Fallback)
 │       │   └── subtitles-sync.ts# Algoritmo de sincronização e formatador .SRT
 │       ├── render/
@@ -211,7 +211,7 @@ loopx/
   ```bash
   docker compose exec -T app npm run test:e2e
   ```
-- 10 etapas de validação contínua (10/10 com 100% de sucesso):
+- 17 etapas de validação contínua (17/17 com 100% de sucesso):
   1. Health Check (PostgreSQL, Redis, FFmpeg)
   2. Autenticação & Subscrição (`/api/auth/me`)
   3. IA de Pesquisa e Roteiro (`/api/script/generate`)
@@ -225,6 +225,10 @@ loopx/
   11. Métricas do Canal Dark & Analytics (`/api/youtube/analytics`)
   12. Múltiplos Canais Dark & Chaves BYOK (`/api/youtube/channels`)
   13. Agendamento Automático de Vídeos & Grade Semanal (`/api/youtube/schedule`)
+  14. Landing Page Cinematográfica Liquid Glass em Português (`GET /`)
+  15. Autenticação com E-mail e Senha (`/api/auth/login` e `/api/auth/logout`)
+  16. Chaves de Produção & Status de Integrações (`/api/youtube/channels`)
+  17. Sistema de Testes A/B de Miniaturas e Títulos (`/api/youtube/ab-tests`)
 
 ---
 
@@ -254,13 +258,19 @@ loopx/
 - Modal de criação de novos canais por nicho temático (`ChannelSelector.tsx`).
 
 ### 8.2. Integrações de Produção & BYOK (`ApiSettingsModal.tsx`)
-- Status em tempo real das 5 APIs externas essenciais:
+- Status em tempo real das 4 APIs externas essenciais:
   1. OpenAI GPT-4o (Roteirização & Pesquisa Factual)
-  2. ElevenLabs (Síntese de Voz Neural Realista)
-  3. Pexels API (Acervo 4K de Imagens e Vídeos)
-  4. Unsplash API (Mídias Cinematográficas)
-  5. YouTube Data API v3 (Publicação Automática)
+  2. Google AI Studio (Narração Neural Hiper-realista Gemini 2.0 Audio)
+  3. Unsplash API (Acervo 4K de Imagens Cinematográficas com Pixabay Fallback)
+  4. YouTube Data API v3 (Publicação Automática)
 - Suporte ao modelo **BYOK (Bring Your Own Key)** com armazenamento seguro no contêiner e máscara de visualização.
+- Inserção e propagação de chaves reais de produção de terceiros no `.env` e `docker-compose.yml`:
+  - `CLERK_SECRET_KEY` & `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`: Provedor de autenticação e identidade.
+  - `OPENAI_API_KEY`: Motor GPT-4o para pesquisa e roteiro dramático.
+  - `GOOGLE_AI_STUDIO_API_KEY` & `GEMINI_API_KEY`: Narração neural hiper-realista e modelos multimodais de voz Gemini.
+  - `YOUTUBE_CLIENT_ID` & `YOUTUBE_CLIENT_SECRET`: Publicação direta via OAuth 2.0.
+  - `UNSPLASH_ACCESS_KEY` & `PIXABAY_API_KEY`: Curadoria de acervos 4K de imagens cinematográficas e vídeos.
+  - Template documentado mantido em `.env.example`.
 
 ---
 
@@ -273,6 +283,8 @@ loopx/
 ### 9.2. Normalização e Resiliência de APIs
 - Rota `/api/pipeline/curate`: suporte universal a payloads com `query` ou `keywords`, e `mediaType` ou `preferredType`.
 - Extensão do tipo `MediaType` em `types.ts` para abranger `"IMAGE" | "VIDEO" | "ALL"`.
+- Correção no mapeamento de URLs de autores da Pixabay em `media-curator.ts` (`p.user_id` no escopo de fotos e `v.user_id` no escopo de vídeos).
+- Ajuste na síntese de voz neural (`tts-engine.ts`) com utilização do parâmetro de idioma dinâmico (`targetLang`) no prompt do Google AI Studio (Gemini 2.0 Flash Audio).
 
 ### 9.3. Verificação Estática de Tipagem
 - Checagem completa de tipos executada no contêiner com zero erros:
@@ -332,7 +344,72 @@ loopx/
 
 ---
 
-## 12. Como Executar via Docker
+## 13. Integração Unsplash API & Google AI Studio (Gemini Voice)
+
+### 13.1. Narração Neural com Google AI Studio (`tts-engine.ts`)
+- Substituição do provedor ElevenLabs pela integração com **Google AI Studio** (modelos multimodais de voz Gemini 2.0 Flash Audio).
+- Mapeamento das vozes personalizadas com os timbres prebuilt do Gemini:
+  - `pt-br-marcos-deep` -> `Fenrir` (Barítono grave documental)
+  - `pt-br-helena-epic` -> `Aoede` (Narradora feminina expressiva e cinematográfica)
+  - `pt-br-gabriel-suspense` -> `Charon` (Tom misterioso de conspiração)
+  - `en-us-james-documentary` -> `Fenrir`
+  - `es-la-carlos-historia` -> `Puck`
+- Variáveis `GOOGLE_AI_STUDIO_API_KEY` e `GEMINI_API_KEY` injetadas em `.env`, `.env.example` e `docker-compose.yml`.
+
+### 13.2. Curadoria de Mídias com Unsplash API (`media-curator.ts`)
+- Suporte principal à **Unsplash API** para busca e curadoria de fotografias cinematográficas 4K/Full HD.
+- Variável `UNSPLASH_ACCESS_KEY` configurada no ambiente com fallback automático para Pixabay e LoopX Unsplash Vault (`images.unsplash.com`).
+- Configuração de domínios remotos mantida em `next.config.mjs` (`images.unsplash.com`, `pixabay.com`, `cdn.pixabay.com`).
+
+---
+
+## 14. Sistema de Testes A/B Automatizados de Miniaturas & Títulos (`ab-testing.ts`)
+
+### 14.1. Otimização de CTR para Canais Dark do YouTube
+- **Variantes Competitivas (A / B / C):**
+  - Criação de experimentos com múltiplos pares de miniatura 16:9 e títulos com ganchos narrativos direcionados (*Lacuna de Curiosidade*, *Revelação Chocante*, *Documento Militar Desclassificado*).
+  - Cálculo em tempo real de métricas: Impressões, Cliques, Taxa de Cliques (CTR %) e Tempo Médio de Visualização.
+- **Gerador de Variantes em 1-Clique com IA:**
+  - Aplicação de fórmulas comprovadas de canais Dark para geração instantânea de 3 títulos de alto CTR e sugestões de sobreposições de miniatura (*CENSURADO*, *NÃO OLHE*, *CONFIDENCIAL*).
+- **Eleição Automática de Vencedor:**
+  - Cálculo de significância estatística (Confidence Score).
+  - Aplicação em 1 clique da variante vencedora como miniatura e título definitivos no YouTube.
+
+### 14.2. Rotas e Interface do Usuário
+- Rota de API dedicada: `GET` e `POST` em `/api/youtube/ab-tests`.
+- Modal interativo integrado: `ABTestingModal.tsx` acessível no cabeçalho do estúdio (`StudioHeader.tsx`) através do ícone `Split` e no modal de prévia de publicação (`VideoPreviewModal.tsx`).
+
+---
+
+## 15. Vinculação Ágil de Canais Dark & Responsividade do Modal (`ChannelSelector.tsx`)
+
+### 15.1. Diagnóstico e Resolução de Usabilidade
+- **Causa Raiz Anterior:**
+  - O modal de vinculação de novo canal exigia obrigatoriamente tanto o `Nome do Canal` quanto o `Handle do YouTube`.
+  - Em janelas de navegador com menor altura vertical ou nível de zoom elevado, o alinhamento da modal cortava a parte superior da caixa de diálogo para fora do campo de visão da tela, ocultando o campo "Nome do Canal".
+  - Ao preencher somente o campo visível "Handle do YouTube" (`@Oobservador-rw2gq`) e clicar em "Vincular Canal", a validação silenciosa do formulário impedia a submissão sem exibir nenhum alerta ou retorno visual para o criador.
+- **Melhorias Aplicadas:**
+  - **Derivação Automática de Nome:** O campo "Nome do Canal" tornou-se opcional. Caso o usuário informe apenas o handle (ex: `@Oobservador-rw2gq`), o sistema extrai o nome automaticamente (`Oobservador-rw2gq`) no frontend e na rota de API `/api/youtube/channels`.
+  - **Responsividade e Scroll Suave:** O container da modal foi reconfigurado com `fixed inset-0 overflow-y-auto p-4 flex min-h-full items-center justify-center` e `my-auto`, eliminando qualquer corte no cabeçalho ou botões em telas pequenas, notebooks e celulares.
+  - **Feedback Visual de Status:** Adicionado componente de mensagem de erro/alerta visual dentro do formulário e validação reativa com indicador de carregamento (`Loader2`).
+
+---
+
+## 16. Segurança Git, Higienização de Segredos & Push Protection
+
+### 16.1. Resolução do Bloqueio de Push (GH013)
+- **Causa do Bloqueio pelo GitHub:**
+  - O GitHub possui ativada a proteção de integridade **GitHub Push Protection / Secret Scanning**, que analisa commits e bloqueia pushes contendo chaves ativas ou identificadores de produção (OpenAI, Google Cloud, Clerk e YouTube OAuth).
+  - O arquivo `.env` havia sido inadvertidamente indexado no histórico local antes de ser excluído via `.gitignore`.
+  - O repositório remoto foi renomeado no GitHub de `Prompt.git` para `LoopX.git`.
+- **Procedimento de Correção:**
+  - O remote do Git foi atualizado para `https://github.com/lopesmidia002-jpg/LoopX.git`.
+  - O arquivo `.env` foi totalmente desvinculado do rastreamento do Git (`git rm --cached .env`), garantindo que ele permaneça intacto no disco local para os contêineres Docker sem jamais ser enviado ao repositório público.
+  - O arquivo `docker-compose.yml` foi higienizado, repassando as variáveis diretamente a partir do `.env` local (`${VAR}`) sem valores hardcoded de credenciais.
+
+---
+
+## 17. Como Executar via Docker
 
 ### Subir todos os serviços (App, PostgreSQL e Redis)
 ```bash

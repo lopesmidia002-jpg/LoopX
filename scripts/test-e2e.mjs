@@ -347,6 +347,108 @@ async function runTestSuite() {
     if (!logoutRes.ok) throw new Error(`Status do logout: ${logoutRes.status}`);
   });
 
+  // 16. Chaves Reais de Produção & Status de Integrações de IA (/api/youtube/channels)
+  await test("16. Chaves de Produção & Status de Integrações (/api/youtube/channels)", async () => {
+    const res = await fetch(`${BASE_URL}/api/youtube/channels`);
+    if (!res.ok) throw new Error(`Status: ${res.status}`);
+    const data = await res.json();
+    if (!data.success || !Array.isArray(data.integrations)) {
+      throw new Error("Integrações não retornadas");
+    }
+
+    const openAi = data.integrations.find((i) => i.service === "openai");
+    const googleAi = data.integrations.find((i) => i.service === "google_ai_studio");
+    const unsplash = data.integrations.find((i) => i.service === "unsplash");
+    const youtube = data.integrations.find((i) => i.service === "youtube");
+
+    if (!openAi || !openAi.configured) {
+      throw new Error("OpenAI não configurada via variáveis de ambiente");
+    }
+      if (!googleAi || !googleAi.configured) {
+        throw new Error("Google AI Studio não configurada via variáveis de ambiente");
+      }
+        if (!unsplash || !unsplash.configured) {
+          throw new Error("Unsplash API não configurada via variáveis de ambiente");
+        }
+        if (!youtube || !youtube.configured) {
+          throw new Error("YouTube Data API v3 não configurada via variáveis de ambiente");
+        }
+      });
+
+  // 17. Sistema de Testes A/B de Miniaturas e Títulos (/api/youtube/ab-tests)
+  await test("17. Sistema de Testes A/B de Miniaturas e Títulos (/api/youtube/ab-tests)", async () => {
+    // 17.1 Listagem de experimentos
+    const listRes = await fetch(`${BASE_URL}/api/youtube/ab-tests`);
+    if (!listRes.ok) throw new Error(`Status: ${listRes.status}`);
+    const listData = await listRes.json();
+    if (!listData.success || !Array.isArray(listData.experiments) || listData.experiments.length === 0) {
+      throw new Error("Experimentos A/B não retornados");
+    }
+
+    // 17.2 Geração de sugestões com IA
+    const aiRes = await fetch(`${BASE_URL}/api/youtube/ab-tests?generate=true&topic=Fossas%20Marianas&title=O%20Abismo`);
+    if (!aiRes.ok) throw new Error(`Status da IA: ${aiRes.status}`);
+    const aiData = await aiRes.json();
+    if (!aiData.success || !aiData.aiSuggestions?.suggestions || aiData.aiSuggestions.suggestions.length < 2) {
+      throw new Error("Sugestões de variantes por IA inválidas");
+    }
+
+    // 17.3 Criação de novo experimento A/B
+    const createRes = await fetch(`${BASE_URL}/api/youtube/ab-tests`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "CREATE",
+        videoTitle: "O Segredo Proibido das Fossas Abissais",
+        variants: [
+          {
+            title: "O Que a Marinha Encontrou no Fundo da Fossa Mariana",
+            thumbnailUrl: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1280&q=80",
+            name: "Variante A",
+            hookLabel: "Lacuna de Curiosidade",
+          },
+          {
+            title: "Cientistas Desceram 11.000 Metros e o Radar Registrou Algo",
+            thumbnailUrl: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1280&q=80",
+            name: "Variante B",
+            hookLabel: "Sinal de Alerta & Tensão",
+          },
+        ],
+      }),
+    });
+    if (!createRes.ok) throw new Error(`Status da criação: ${createRes.status}`);
+    const createData = await createRes.json();
+    if (!createData.success || !createData.experiment?.id) {
+      throw new Error("Falha ao criar experimento A/B");
+    }
+
+    const expId = createData.experiment.id;
+
+    // 17.4 Iniciar teste
+    const startRes = await fetch(`${BASE_URL}/api/youtube/ab-tests`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "START", experimentId: expId }),
+    });
+    if (!startRes.ok) throw new Error(`Status de início: ${startRes.status}`);
+    const startData = await startRes.json();
+    if (!startData.success || startData.experiment.status !== "RUNNING") {
+      throw new Error("Falha ao iniciar teste A/B");
+    }
+
+    // 17.5 Concluir e aplicar vencedor
+    const concludeRes = await fetch(`${BASE_URL}/api/youtube/ab-tests`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "CONCLUDE", experimentId: expId }),
+    });
+    if (!concludeRes.ok) throw new Error(`Status da conclusão: ${concludeRes.status}`);
+    const concludeData = await concludeRes.json();
+    if (!concludeData.success || concludeData.experiment.status !== "CONCLUDED" || !concludeData.experiment.winnerVariantId) {
+      throw new Error("Falha ao eleger vencedor do teste A/B");
+    }
+  });
+
   console.log("\n=======================================================");
   console.log(`   RESULTADO: ${passed} PASSARAM | ${failed} FALHARAM`);
   console.log("=======================================================\n");

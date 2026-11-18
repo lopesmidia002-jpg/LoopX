@@ -24,6 +24,7 @@ export default function ChannelSelector({ onChannelChanged }: ChannelSelectorPro
   const [isOpen, setIsOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // New channel form state
   const [newName, setNewName] = useState("");
@@ -75,7 +76,17 @@ export default function ChannelSelector({ onChannelChanged }: ChannelSelectorPro
 
   const handleCreateChannel = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newName || !newHandle) return;
+    setErrorMessage(null);
+
+    const trimmedHandle = newHandle.trim();
+    if (!trimmedHandle) {
+      setErrorMessage("Por favor, informe o @handle do seu canal no YouTube.");
+      return;
+    }
+
+    const formattedHandle = trimmedHandle.startsWith("@") ? trimmedHandle : `@${trimmedHandle}`;
+    const channelName = newName.trim() || formattedHandle.replace(/^@/, "");
+
     setLoading(true);
 
     try {
@@ -83,22 +94,29 @@ export default function ChannelSelector({ onChannelChanged }: ChannelSelectorPro
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: newName,
-          handle: newHandle.startsWith("@") ? newHandle : `@${newHandle}`,
+          name: channelName,
+          handle: formattedHandle,
           niche: newNiche,
         }),
       });
       const data = await res.json();
-      if (data.success && data.channel) {
+      if (!data.success) {
+        setErrorMessage(data.error || "Não foi possível vincular o canal.");
+        return;
+      }
+
+      if (data.channel) {
         setChannels((prev) => [...prev, data.channel]);
         setActiveChannel(data.channel);
         setIsModalOpen(false);
         setNewName("");
         setNewHandle("");
+        setErrorMessage(null);
         if (onChannelChanged) onChannelChanged(data.channel);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Erro ao criar canal:", e);
+      setErrorMessage(e?.message || "Erro de conexão ao vincular o canal.");
     } finally {
       setLoading(false);
     }
@@ -177,6 +195,7 @@ export default function ChannelSelector({ onChannelChanged }: ChannelSelectorPro
             <button
               onClick={() => {
                 setIsOpen(false);
+                setErrorMessage(null);
                 setIsModalOpen(true);
               }}
               className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/25 text-brand-300 hover:text-white text-xs font-bold transition-all"
@@ -190,11 +209,11 @@ export default function ChannelSelector({ onChannelChanged }: ChannelSelectorPro
 
       {/* Modal: Vincular Novo Canal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="relative w-full max-w-md bg-surface border border-surface-border rounded-2xl p-6 shadow-2xl animate-fadeIn">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md overflow-y-auto p-4 flex min-h-full items-center justify-center">
+          <div className="relative w-full max-w-md bg-surface border border-surface-border rounded-2xl p-6 shadow-2xl animate-fadeIn my-auto">
             <button
               onClick={() => setIsModalOpen(false)}
-              className="absolute top-5 right-5 text-slate-400 hover:text-white"
+              className="absolute top-5 right-5 text-slate-400 hover:text-white transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -209,32 +228,37 @@ export default function ChannelSelector({ onChannelChanged }: ChannelSelectorPro
               </div>
             </div>
 
+            {errorMessage && (
+              <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-300">
+                {errorMessage}
+              </div>
+            )}
+
             <form onSubmit={handleCreateChannel} className="space-y-4">
               <div>
                 <label className="text-xs font-semibold text-slate-300 block mb-1">
-                  Nome do Canal:
+                  Nome do Canal <span className="text-[10px] text-slate-400 font-normal">(Opcional)</span>:
                 </label>
                 <input
                   type="text"
-                  required
-                  placeholder="Ex: Arquivos Obscuros"
+                  placeholder="Ex: O Observador (ou preenchido pelo handle)"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  className="w-full bg-[#141923] border border-surface-border rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-brand-500 focus:outline-none"
+                  className="w-full bg-[#141923] border border-surface-border rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-brand-500 focus:outline-none placeholder:text-slate-500"
                 />
               </div>
 
               <div>
                 <label className="text-xs font-semibold text-slate-300 block mb-1">
-                  Handle do YouTube:
+                  Handle do YouTube <span className="text-brand-400">*</span>:
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="@arquivosobscuros"
+                  placeholder="@Oobservador-rw2gq"
                   value={newHandle}
                   onChange={(e) => setNewHandle(e.target.value)}
-                  className="w-full bg-[#141923] border border-surface-border rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-brand-500 focus:outline-none"
+                  className="w-full bg-[#141923] border border-surface-border rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-brand-500 focus:outline-none placeholder:text-slate-500"
                 />
               </div>
 

@@ -1,5 +1,5 @@
 /**
- * Curadoria Automática de Mídias (Pexels & Unsplash APIs)
+ * Curadoria Automática de Mídias (Unsplash API & Fallbacks)
  * Etapa 3 do Pipeline do LoopX
  */
 
@@ -10,7 +10,7 @@ export interface CuratedMediaItem {
   url: string;
   previewUrl: string;
   mediaType: MediaType;
-  source: "PEXELS" | "UNSPLASH" | "LOOPX_VAULT";
+  source: "UNSPLASH" | "PIXABAY" | "LOOPX_VAULT";
   author: string;
   authorUrl?: string;
   width: number;
@@ -18,36 +18,36 @@ export interface CuratedMediaItem {
   duration?: number;
 }
 
-// Acervo Cinematográfico HD/4K categorizado para canais Dark (Fallback de Alta Resolução)
+// Acervo Cinematográfico HD/4K categorizado para canais Dark (Fallback Unsplash & LoopX Vault)
 const VAULT_CATEGORIES: Record<string, string[]> = {
   ocean: [
-    "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1600&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1508614589041-895b88991e3e?q=80&w=1600&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1600&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1920&q=80",
+    "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80",
+    "https://images.unsplash.com/photo-1498084393753-b411b2d26b34?auto=format&fit=crop&w=1920&q=80",
   ],
   radar: [
-    "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=1600&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=1600&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1920&q=80",
+    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1920&q=80",
   ],
   ice: [
-    "https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?q=80&w=1600&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1483921020237-2ff51e8e4b22?q=80&w=1600&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?auto=format&fit=crop&w=1920&q=80",
+    "https://images.unsplash.com/photo-1483921020237-2ff51e8e4b22?auto=format&fit=crop&w=1920&q=80",
   ],
   military: [
-    "https://images.unsplash.com/photo-1579965342575-16428a7c8881?q=80&w=1600&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1541872703-74c5e44368f9?q=80&w=1600&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=1920&q=80",
+    "https://images.unsplash.com/photo-1519074069444-1ba4ea16e676?auto=format&fit=crop&w=1920&q=80",
   ],
   space: [
-    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1600&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?q=80&w=1600&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=1920&q=80",
+    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1920&q=80",
   ],
   technology: [
-    "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?q=80&w=1600&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1600&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=1920&q=80",
+    "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1920&q=80",
   ],
   mystery: [
-    "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1600&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1508614589041-895b88991e3e?q=80&w=1600&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=1920&q=80",
+    "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1920&q=80",
   ],
 };
 
@@ -60,83 +60,92 @@ export async function curateMediaForKeywords(params: {
   const { keywords, preferredType = "IMAGE", page = 1, perPage = 8 } = params;
   const query = keywords.join(" ");
 
-  // 1. Tenta buscar no Pexels se houver PEXELS_API_KEY
-  if (process.env.PEXELS_API_KEY) {
+  // 1. Tenta buscar no Unsplash se houver UNSPLASH_ACCESS_KEY
+  const unsplashKey = process.env.UNSPLASH_ACCESS_KEY;
+  if (unsplashKey && preferredType !== "VIDEO") {
     try {
-      const endpoint =
-        preferredType === "VIDEO"
-          ? `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=${perPage}&page=${page}&orientation=landscape`
-          : `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=${perPage}&page=${page}&orientation=landscape`;
-
-      const response = await fetch(endpoint, {
-        headers: { Authorization: process.env.PEXELS_API_KEY },
+      const endpoint = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=${perPage}&page=${page}&orientation=landscape`;
+      const res = await fetch(endpoint, {
+        headers: {
+          Authorization: `Client-ID ${unsplashKey}`,
+        },
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (preferredType === "VIDEO" && data.videos?.length > 0) {
-          return data.videos.map((v: any) => {
-            const bestFile = v.video_files.find((f: any) => f.quality === "hd" && f.width >= 1280) || v.video_files[0];
-            return {
-              id: `pexels-vid-${v.id}`,
-              url: bestFile.link,
-              previewUrl: v.image,
-              mediaType: "VIDEO" as MediaType,
-              source: "PEXELS",
-              author: v.user.name,
-              authorUrl: v.user.url,
-              width: v.width,
-              height: v.height,
-              duration: v.duration,
-            };
-          });
-        } else if (data.photos?.length > 0) {
-          return data.photos.map((p: any) => ({
-            id: `pexels-img-${p.id}`,
-            url: p.src.large2x || p.src.large,
-            previewUrl: p.src.medium,
+      if (res.ok) {
+        const data = await res.json();
+        if (data.results && data.results.length > 0) {
+          return data.results.map((p: any) => ({
+            id: `unsplash-img-${p.id}`,
+            url: p.urls?.regular || p.urls?.full || p.urls?.small,
+            previewUrl: p.urls?.small || p.urls?.thumb,
             mediaType: "IMAGE" as MediaType,
-            source: "PEXELS",
-            author: p.photographer,
-            authorUrl: p.photographer_url,
-            width: p.width,
-            height: p.height,
+            source: "UNSPLASH" as const,
+            author: p.user?.name || "Unsplash Creator",
+            authorUrl: p.user?.links?.html || `https://unsplash.com/@${p.user?.username}`,
+            width: p.width || 1920,
+            height: p.height || 1080,
           }));
         }
       }
     } catch (e) {
-      console.warn("Aviso na chamada Pexels, recorrendo ao acervo LoopX:", e);
+      console.warn("Aviso na chamada Unsplash, tentando provedores alternativos:", e);
     }
   }
 
-  // 2. Tenta buscar no Unsplash se houver UNSPLASH_ACCESS_KEY
-  if (process.env.UNSPLASH_ACCESS_KEY) {
+  // 2. Tenta buscar no Pixabay se houver PIXABAY_API_KEY (especialmente para vídeos)
+  const pixabayKey = process.env.PIXABAY_API_KEY;
+  if (pixabayKey) {
     try {
-      const response = await fetch(
-        `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=${perPage}&page=${page}&orientation=landscape`,
-        {
-          headers: { Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}` },
-        }
-      );
+      if (preferredType === "VIDEO") {
+        const videoEndpoint = `https://pixabay.com/api/videos/?key=${encodeURIComponent(pixabayKey)}&q=${encodeURIComponent(query)}&per_page=${perPage}&page=${page}&safesearch=true`;
+        const res = await fetch(videoEndpoint);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.hits && data.hits.length > 0) {
+            return data.hits.map((v: any) => {
+              const bestFile = v.videos?.large?.url
+                ? v.videos.large
+                : v.videos?.medium?.url
+                ? v.videos.medium
+                : v.videos?.small || { url: "", width: 1280, height: 720 };
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.results?.length > 0) {
-          return data.results.map((p: any) => ({
-            id: `unsplash-${p.id}`,
-            url: p.urls.regular,
-            previewUrl: p.urls.small,
-            mediaType: "IMAGE" as MediaType,
-            source: "UNSPLASH",
-            author: p.user.name,
-            authorUrl: p.user.links.html,
-            width: p.width,
-            height: p.height,
-          }));
+              return {
+                id: `pixabay-vid-${v.id}`,
+                url: bestFile.url,
+                previewUrl: v.videos?.tiny?.url || v.userImageURL || bestFile.url,
+                mediaType: "VIDEO" as MediaType,
+                source: "PIXABAY" as const,
+                author: v.user || "Pixabay Creator",
+                authorUrl: `https://pixabay.com/users/${v.user}-${v.user_id}/`,
+                width: bestFile.width || 1920,
+                height: bestFile.height || 1080,
+                duration: v.duration,
+              };
+            });
+          }
+        }
+      } else if (!unsplashKey) {
+        const photoEndpoint = `https://pixabay.com/api/?key=${encodeURIComponent(pixabayKey)}&q=${encodeURIComponent(query)}&image_type=photo&orientation=horizontal&per_page=${perPage}&page=${page}&safesearch=true`;
+        const res = await fetch(photoEndpoint);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.hits && data.hits.length > 0) {
+            return data.hits.map((p: any) => ({
+              id: `pixabay-img-${p.id}`,
+              url: p.largeImageURL || p.webformatURL,
+              previewUrl: p.webformatURL || p.previewURL,
+              mediaType: "IMAGE" as MediaType,
+              source: "PIXABAY" as const,
+              author: p.user || "Pixabay Creator",
+              authorUrl: `https://pixabay.com/users/${p.user}-${p.user_id}/`,
+              width: p.imageWidth || 1920,
+              height: p.imageHeight || 1080,
+            }));
+          }
         }
       }
     } catch (e) {
-      console.warn("Aviso na chamada Unsplash, recorrendo ao acervo LoopX:", e);
+      console.warn("Aviso na chamada Pixabay, recorrendo ao acervo LoopX Vault:", e);
     }
   }
 
@@ -170,7 +179,7 @@ function getVaultFallback(keywords: string[], count: number): CuratedMediaItem[]
     previewUrl: url,
     mediaType: "IMAGE",
     source: "LOOPX_VAULT",
-    author: "LoopX Curated Archive",
+    author: "LoopX Unsplash Vault",
     width: 1920,
     height: 1080,
   }));

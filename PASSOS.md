@@ -50,7 +50,7 @@
 ---
 
 ### [x] Passo 4: Pipeline de Narração Hiper-realista (TTS), Legendas Sincronizadas e Curadoria de Mídia
-- [x] Curadoria automática de mídias via APIs de bancos de imagens/vídeos (Pexels / Unsplash / LoopX Vault) com busca por palavras-chave (Etapa 3) (`src/lib/pipeline/media-curator.ts`).
+- [x] Curadoria automática de mídias via APIs de bancos de imagens/vídeos (Pixabay API e LoopX Vault) com busca por palavras-chave (Etapa 3) (`src/lib/pipeline/media-curator.ts`).
 - [x] Rota de API `/api/pipeline/curate` conectada ao modal de troca de mídia do Storyboard.
 - [x] Geração de narração neural com pausas dramáticas e cadência de suspense para ElevenLabs, OpenAI TTS e fallback de alta fidelidade (Etapa 4) (`src/lib/pipeline/tts-engine.ts`).
 - [x] Rota de API `/api/pipeline/tts` com player de prévia sonora de voz neural por cena.
@@ -170,5 +170,28 @@
 
 ### [ ] Próximos Passos Opcionais (Pós-Lançamento)
 > *Aguardando solicitação explícita do usuário para início de qualquer item adicional.*
-- [ ] Inserção de chaves reais de produção de terceiros no `.env` (`CLERK_SECRET_KEY`, `YOUTUBE_CLIENT_ID`, `OPENAI_API_KEY`, `ELEVENLABS_API_KEY`).
-- [ ] Sistema de testes A/B automatizados para miniaturas (thumbnails) e títulos de canais Dark.
+- [x] Inserção de chaves reais de produção de terceiros no `.env` e `docker-compose.yml`:
+  - [x] `CLERK_SECRET_KEY` e `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` (Autenticação).
+  - [x] `OPENAI_API_KEY` (Roteirização & Pesquisa de Fatos Históricos).
+  - [x] `GOOGLE_AI_STUDIO_API_KEY` e `GEMINI_API_KEY` (Narração Neural Hiper-realista Google AI Studio / Gemini Voice).
+  - [x] `YOUTUBE_CLIENT_ID` e `YOUTUBE_CLIENT_SECRET` (Publicação Automática com Capítulos).
+  - [x] `UNSPLASH_ACCESS_KEY` e `PIXABAY_API_KEY` (Curadoria 4K de Imagens Cinematográficas e Vídeos).
+  - [x] Propagação nas variáveis de ambiente do contêiner `loopx-app` e arquivo de exemplo `.env.example`.
+  - [x] Atualização da suíte de testes E2E com validação do status de integrações (`16/16 testes aprovados no Docker`).
+- [x] Integração da Unsplash API como provedor primário de fotos 4K cinematográficas e substituição da ElevenLabs pelo Google AI Studio para síntese de voz neural.
+- [x] Sistema de testes A/B automatizados para miniaturas (thumbnails) e títulos de canais Dark:
+  - [x] Motor de Testes A/B (`src/lib/youtube/ab-testing.ts`) com rotação de variantes (A/B/C), cálculo de CTR em tempo real e significância estatística.
+  - [x] Gerador de variantes de alto CTR por IA baseado em fórmulas de canais Dark (Lacuna de Curiosidade, Choque, Documentos Censurados).
+  - [x] Rota de API dedicada (`/api/youtube/ab-tests`) com suporte a criação, inicialização, pausa, eleição de vencedor e sugestões de IA.
+  - [x] Modal interativo no Estúdio (`src/components/studio/ABTestingModal.tsx`) integrado no cabeçalho (`StudioHeader.tsx`) e no modal de prévia de publicação (`VideoPreviewModal.tsx`).
+  - [x] Atualização da suíte de testes E2E no Docker com validação completa do ciclo de Testes A/B (17/17 testes aprovados).
+- [x] Correção de Usabilidade na Vinculação de Canais Dark & Responsividade do Modal (`ChannelSelector.tsx` e `/api/youtube/channels`):
+  - [x] Extração automática do nome do canal a partir do handle do YouTube caso o campo de nome seja omitido (`@Oobservador-rw2gq` -> `Oobservador-rw2gq`).
+  - [x] Eliminação do bloqueio silencioso de submissão e inclusão de feedback visual de erros/alertas no modal.
+  - [x] Correção do posicionamento em tela com `overflow-y-auto` e `my-auto`, impedindo o corte superior do modal em qualquer resolução ou zoom de tela.
+  - [x] Validação em tempo real e testes end-to-end aprovados no Docker (17/17 testes).
+- [x] Resolução de Bloqueio de Push (GH013 / Push Protection) & Higienização de Segredos:
+  - [x] Atualização da URL remota para `https://github.com/lopesmidia002-jpg/LoopX.git`.
+  - [x] Desvinculação do `.env` do controle de versão (`git rm --cached .env`), preservando as chaves ativas apenas no ambiente local Docker.
+  - [x] Higienização de `docker-compose.yml` eliminando chaves padrão fixas e utilizando interpolação direta das variáveis de ambiente.
+  - [x] Validação estática e execução completa de 17/17 testes E2E aprovados no Docker.

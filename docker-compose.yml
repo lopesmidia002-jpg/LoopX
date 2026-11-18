@@ -12,8 +12,15 @@ services:
       - DATABASE_URL=postgresql://loopx:loopx_password@postgres:5432/loopx_db?schema=public
       - REDIS_URL=redis://redis:6379
       - NEXT_PUBLIC_APP_URL=http://localhost:3000
-      - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_sample_clerk_key
-      - CLERK_SECRET_KEY=sk_test_sample_clerk_key
+      - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GOOGLE_AI_STUDIO_API_KEY=${GOOGLE_AI_STUDIO_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - YOUTUBE_CLIENT_ID=${YOUTUBE_CLIENT_ID}
+      - YOUTUBE_CLIENT_SECRET=${YOUTUBE_CLIENT_SECRET}
+      - UNSPLASH_ACCESS_KEY=${UNSPLASH_ACCESS_KEY}
+      - PIXABAY_API_KEY=${PIXABAY_API_KEY}
     depends_on:
       postgres:
         condition: service_healthy
@@ -35,7 +42,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U loopx -d loopx_db"]
+      test: [ "CMD-SHELL", "pg_isready -U loopx -d loopx_db" ]
       interval: 5s
       timeout: 5s
       retries: 5

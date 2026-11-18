@@ -2,24 +2,26 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { 
-  Play, 
-  Sparkles, 
-  Clock, 
-  Layers, 
-  PlusCircle, 
-  ChevronRight, 
+import {
+  Play,
+  Sparkles,
+  Clock,
+  Layers,
+  PlusCircle,
+  ChevronRight,
   CreditCard,
   X,
   Check,
   Zap,
   BarChart3,
   Key,
-  Calendar
+  Calendar,
+  Split
 } from "lucide-react";
 import ChannelSelector from "./ChannelSelector";
 import ApiSettingsModal from "./ApiSettingsModal";
 import ScheduleCalendarModal from "./ScheduleCalendarModal";
+import ABTestingModal from "./ABTestingModal";
 import { DarkChannel } from "@/lib/youtube/channel-manager";
 
 interface StudioHeaderProps {
@@ -48,6 +50,7 @@ export default function StudioHeader({
   const [isRechargeModalOpen, setIsRechargeModalOpen] = useState(false);
   const [isApiModalOpen, setIsApiModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isABModalOpen, setIsABModalOpen] = useState(false);
   const [rechargeLoading, setRechargeLoading] = useState(false);
   const [rechargeSuccess, setRechargeSuccess] = useState(false);
   const percentage = Math.round((availableMinutes / maxMinutes) * 100);
@@ -79,7 +82,7 @@ export default function StudioHeader({
   return (
     <header className="sticky top-0 z-40 bg-[#141923]/95 backdrop-blur-xl border-b border-surface-border px-4 sm:px-6 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-        
+
         {/* Left: Brand & Breadcrumb */}
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2 group">
@@ -99,22 +102,20 @@ export default function StudioHeader({
           <div className="flex items-center gap-1.5 p-1 rounded-xl bg-surface border border-surface-border">
             <button
               onClick={() => onTabChange && onTabChange("STUDIO")}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                activeTab === "STUDIO"
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${activeTab === "STUDIO"
                   ? "bg-brand-600 text-white shadow-sm"
                   : "text-slate-400 hover:text-white"
-              }`}
+                }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Estúdio</span>
             </button>
             <button
               onClick={() => onTabChange && onTabChange("ANALYTICS")}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                activeTab === "ANALYTICS"
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${activeTab === "ANALYTICS"
                   ? "bg-brand-600 text-white shadow-sm"
                   : "text-slate-400 hover:text-white"
-              }`}
+                }`}
             >
               <BarChart3 className="w-3.5 h-3.5" />
               <span>Métricas do Canal</span>
@@ -129,7 +130,7 @@ export default function StudioHeader({
 
         {/* Right: Credits, Concurrency & Action */}
         <div className="flex items-center gap-2.5 sm:gap-3.5">
-          
+
           {/* API Keys BYOK Modal Button */}
           <button
             onClick={() => setIsApiModalOpen(true)}
@@ -147,9 +148,18 @@ export default function StudioHeader({
           >
             <Calendar className="w-4 h-4 text-emerald-400" />
           </button>
-          
+
+          {/* A/B Testing Modal Button */}
+          <button
+            onClick={() => setIsABModalOpen(true)}
+            className="p-2 rounded-xl bg-surface hover:bg-surface-hover border border-surface-border text-slate-300 hover:text-white transition-all"
+            title="Testes A/B de Miniaturas & Títulos (CTR Optimizer)"
+          >
+            <Split className="w-4 h-4 text-purple-400" />
+          </button>
+
           {/* Minutes Balance Indicator */}
-          <div 
+          <div
             onClick={() => setIsRechargeModalOpen(true)}
             className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-surface border border-surface-border cursor-pointer hover:border-brand-500/40 transition-colors"
             title="Clique para recarregar minutos"
@@ -258,6 +268,12 @@ export default function StudioHeader({
       <ScheduleCalendarModal
         isOpen={isScheduleModalOpen}
         onClose={() => setIsScheduleModalOpen(false)}
+      />
+
+      {/* A/B Testing Modal */}
+      <ABTestingModal
+        isOpen={isABModalOpen}
+        onClose={() => setIsABModalOpen(false)}
       />
     </header>
   );
