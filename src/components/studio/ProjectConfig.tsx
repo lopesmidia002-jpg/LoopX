@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { VOICE_OPTIONS } from "@/lib/constants";
 import { VideoFormat, Language, VoiceOption } from "@/lib/types";
+import { DarkChannel } from "@/lib/youtube/channel-manager";
 
 interface ProjectConfigProps {
   onStartPipeline: (config: {
@@ -29,6 +30,7 @@ interface ProjectConfigProps {
   }) => void;
   isProcessing: boolean;
   resetKey?: number;
+  activeChannel?: DarkChannel | null;
 }
 
 const TEMPLATE_SUGGESTIONS = [
@@ -39,7 +41,7 @@ const TEMPLATE_SUGGESTIONS = [
   "O Que a Ciência Descobriu no Fundo da Fossa das Marianas",
 ];
 
-export default function ProjectConfig({ onStartPipeline, isProcessing, resetKey }: ProjectConfigProps) {
+export default function ProjectConfig({ onStartPipeline, isProcessing, resetKey, activeChannel }: ProjectConfigProps) {
   const [topic, setTopic] = useState("");
   const [customScript, setCustomScript] = useState("");
   const [hasCustomScript, setHasCustomScript] = useState(false);
@@ -97,6 +99,22 @@ export default function ProjectConfig({ onStartPipeline, isProcessing, resetKey 
         <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-slate-400">
           Defina o tema, formato e estilo narrativo. O pipeline autônomo cuidará de todo o resto.
         </p>
+
+        {activeChannel && (
+          <div className="inline-flex items-center gap-2 mt-3 px-3.5 py-1.5 rounded-full bg-surface border border-surface-border text-xs text-slate-300 shadow-sm animate-fadeIn">
+            {activeChannel.avatarUrl && (
+              <img
+                src={activeChannel.avatarUrl}
+                alt={activeChannel.name}
+                className="w-4 h-4 rounded-full object-cover border border-brand-500/30"
+              />
+            )}
+            <span>
+              Canal Vinculado: <strong className="text-white">{activeChannel.name}</strong>{" "}
+              <span className="text-brand-300 font-mono">({activeChannel.handle || `${activeChannel.subscribers.toLocaleString("pt-BR")} inscritos`})</span>
+            </span>
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-7">

@@ -128,6 +128,7 @@ export default function StudioPage() {
         maxConcurrentRenders={1}
         activeTab={activeTab}
         onTabChange={(tab) => setActiveTab(tab)}
+        activeChannel={activeChannel}
         onChannelChanged={(channel) => setActiveChannel(channel)}
         onNewProject={handleNewProject}
         onMinutesRecharged={(newM) => setAvailableMinutes(newM)}
@@ -147,6 +148,7 @@ export default function StudioPage() {
                 onStartPipeline={handleStartPipeline}
                 isProcessing={false}
                 resetKey={projectResetKey}
+                activeChannel={activeChannel}
               />
             )}
 
@@ -191,6 +193,7 @@ export default function StudioPage() {
         onClose={() => setIsNewProjectModalOpen(false)}
         onSubmit={handleStartPipeline}
         initialTopic=""
+        activeChannel={activeChannel}
       />
 
       {/* Toast Notification Feedback */}

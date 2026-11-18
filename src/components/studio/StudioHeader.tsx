@@ -38,6 +38,7 @@ interface StudioHeaderProps {
   maxConcurrentRenders: number;
   activeTab?: "STUDIO" | "ANALYTICS";
   onTabChange?: (tab: "STUDIO" | "ANALYTICS") => void;
+  activeChannel?: DarkChannel | null;
   onChannelChanged?: (channel: DarkChannel) => void;
   onNewProject: () => void;
   onMinutesRecharged?: (newMinutes: number) => void;
@@ -50,6 +51,7 @@ export default function StudioHeader({
   maxConcurrentRenders = 1,
   activeTab = "STUDIO",
   onTabChange,
+  activeChannel,
   onChannelChanged,
   onNewProject,
   onMinutesRecharged,
@@ -170,7 +172,7 @@ export default function StudioHeader({
 
             {/* Desktop Channel Selector & ADM Button */}
             <div className="hidden sm:flex items-center gap-2">
-              <ChannelSelector onChannelChanged={onChannelChanged} />
+              <ChannelSelector selectedChannel={activeChannel} onChannelChanged={onChannelChanged} />
               {isAdmin && (
                 <button
                   onClick={() => setIsAdminModalOpen(true)}
@@ -399,6 +401,7 @@ export default function StudioHeader({
                 </div>
                 <div>
                   <ChannelSelector
+                    selectedChannel={activeChannel}
                     onChannelChanged={(ch) => {
                       onChannelChanged?.(ch);
                       setIsMobileMenuOpen(false);

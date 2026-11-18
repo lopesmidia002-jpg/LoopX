@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { VOICE_OPTIONS } from "@/lib/constants";
 import { VideoFormat, Language, VoiceOption } from "@/lib/types";
+import { DarkChannel } from "@/lib/youtube/channel-manager";
 
 interface NewProjectModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ interface NewProjectModalProps {
     targetDuration: number;
   }) => void;
   initialTopic?: string;
+  activeChannel?: DarkChannel | null;
 }
 
 const TEMPLATE_SUGGESTIONS = [
@@ -46,6 +48,7 @@ export default function NewProjectModal({
   onClose,
   onSubmit,
   initialTopic = "",
+  activeChannel,
 }: NewProjectModalProps) {
   const [topic, setTopic] = useState(initialTopic);
   const [format, setFormat] = useState<VideoFormat>("DOCUMENTARY");
@@ -63,7 +66,9 @@ export default function NewProjectModal({
 
   useEffect(() => {
     if (isOpen) {
-      if (initialTopic) setTopic(initialTopic);
+      setTopic(initialTopic || "");
+      setCustomScript("");
+      setHasCustomScript(false);
     }
   }, [isOpen, initialTopic]);
 
@@ -114,9 +119,15 @@ export default function NewProjectModal({
                 Pipeline 8 Etapas
               </span>
             </div>
-            <p className="text-xs text-slate-400">
-              Configure os parâmetros do próximo vídeo dark para geração autônoma.
-            </p>
+            {activeChannel ? (
+              <p className="text-xs text-brand-300 flex items-center gap-1.5 mt-0.5">
+                <span>Canal: <strong>{activeChannel.name}</strong> ({activeChannel.handle || `${activeChannel.subscribers.toLocaleString("pt-BR")} inscritos`})</span>
+              </p>
+            ) : (
+              <p className="text-xs text-slate-400">
+                Configure os parâmetros do próximo vídeo dark para geração autônoma.
+              </p>
+            )}
           </div>
         </div>
 

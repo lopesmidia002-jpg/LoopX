@@ -284,4 +284,11 @@
   - [x] Adição do botão "Sincronizar" no cabeçalho do `AnalyticsDashboard` com indicador de carregamento giratório (`RefreshCw`).
   - [x] Fallback com tela de erro e botão "Tentar Novamente", eliminando o travamento do spinner infinito em caso de falha de conexão.
   - [x] Exibição do `ChannelSelector` em telas médias e tablets (`hidden sm:flex`) e expansão do rótulo da aba para `Métricas do Canal` sem quebra de linha.
-  - [x] Reconstrução completa no Docker com `npm run build`, validação de 18/18 testes E2E aprovados, TypeScript (0 erros) e ESLint (0 erros).
+  - [x] Sincronização Unificada de Canais, Otimização de Estado Reativo & Build Docker dos 3 Fluxos Críticos:
+  - [x] Diagnóstico da causa raiz: ausência de volume mount para a aplicação no `docker-compose.yml` fazia com que alterações na interface necessitassem de recompilação do build Next.js de produção para surtirem efeito no navegador, enquanto estados de canal estavam desacoplados entre Desktop e Mobile Drawer.
+  - [x] Unificação e sincronização bidirecional do canal ativo (`selectedChannel`) entre `StudioPage`, `StudioHeader` (Desktop e Mobile Drawer) e `ChannelSelector`, eliminando loops de re-render via `useRef` estável para `onChannelChanged`.
+  - [x] Inclusão de indicador visual em destaque do Canal Vinculado com foto e badge no formulário principal de configuração (`ProjectConfig.tsx`) e na modal de criação (`NewProjectModal.tsx`), confirmando explicitamente o canal destino ao criador.
+  - [x] Limpeza e reinicialização automática de campos (`topic`, `customScript`) ao abrir o modal de "Novo Projeto".
+  - [x] Preservação do canal ativo original na suíte de testes E2E (`scripts/test-e2e.mjs`), garantindo que testes automatizados não alterem o canal do usuário para mocks de teste.
+  - [x] Inclusão de `.loopx-channels.json` e `.admin-security.json` no `.gitignore` para proteção absoluta contra vazamento de credenciais e integridade com o GitHub.
+  - [x] Reconstrução integral da imagem Docker (`docker compose build app` e `docker compose up -d app`), compilação Next.js (0 erros), verificação de tipos TypeScript (0 erros), validação de linting (0 erros) e aprovação unânime de 18/18 testes E2E no container.

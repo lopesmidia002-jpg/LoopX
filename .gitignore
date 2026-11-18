@@ -46,3 +46,7 @@ Thumbs.db
 
 # Tipagem do Next.js
 next-env.d.ts
+
+# Arquivos de persistência de credenciais e canais locais
+.loopx-channels.json
+.admin-security.json

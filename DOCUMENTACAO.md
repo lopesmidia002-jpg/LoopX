@@ -638,6 +638,12 @@ O componente [AnalyticsDashboard.tsx](file:///c:/Users/Nilto/OneDrive/Documentos
 - **Prevenção de Travamento por Spinner Infinito:** Caso a API falhe, o componente renderiza um card informativo de erro com botão de recuperação rápida "Tentar Novamente".
 - **Tabs Protegidas no Cabeçalho:** O botão do estúdio foi fixado com o rótulo "Métricas do Canal" e classe `whitespace-nowrap shrink-0`, eliminando quebras de linha indesejadas.
 
+### 23.7. Sincronização de Canais Ativos e Exibição Unificada no Estúdio
+- **Sincronização Bidirecional:** O `ChannelSelector` agora recebe `selectedChannel` e utiliza `useRef` para `onChannelChanged`, eliminando renderizações em loop e mantendo o seletor desktop e o seletor da gaveta mobile perfeitamente sincronizados.
+- **Canal Destino no Estúdio:** O formulário de configuração [ProjectConfig.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/ProjectConfig.tsx) e a modal de criação rápida [NewProjectModal.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/NewProjectModal.tsx) exibem explicitamente o canal vinculado selecionado com avatar, nome e inscritos ("Canal Vinculado: O Observador • 95 inscritos").
+- **Proteção da Suíte E2E:** O teste de canais restaura o canal ativo original após a validação de alternância, prevenindo substituição indesejada dos dados do criador.
+- **Segurança de Credenciais:** `.loopx-channels.json` e `.admin-security.json` incluídos em `.gitignore` para proteção contra push de segredos.
+
 ---
 
 ## 24. Como Executar via Docker

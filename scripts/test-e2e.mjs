@@ -242,6 +242,7 @@ async function runTestSuite() {
     if (!data.success || !Array.isArray(data.channels) || data.channels.length === 0) {
       throw new Error("Rede de canais dark não retornada");
     }
+    const originalActiveId = data.activeChannel?.id || data.channels[0].id;
 
     // 12.2 Alternância de canal ativo
     const switchRes = await fetch(`${BASE_URL}/api/youtube/channels`, {
@@ -262,6 +263,13 @@ async function runTestSuite() {
     if (!keyRes.ok) throw new Error(`Status salvar chave: ${keyRes.status}`);
     const keyData = await keyRes.json();
     if (!keyData.success) throw new Error("Falha ao salvar chave BYOK");
+
+    // 12.4 Restauração do canal ativo original
+    await fetch(`${BASE_URL}/api/youtube/channels`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "SWITCH", channelId: originalActiveId }),
+    });
   });
 
   // 13. Agendamento Automático de Vídeos & Grade Semanal (/api/youtube/schedule)

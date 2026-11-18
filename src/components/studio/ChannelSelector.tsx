@@ -18,11 +18,12 @@ import { DarkChannel } from "@/lib/youtube/channel-manager";
 
 interface ChannelSelectorProps {
   onChannelChanged?: (channel: DarkChannel) => void;
+  selectedChannel?: DarkChannel | null;
 }
 
-export default function ChannelSelector({ onChannelChanged }: ChannelSelectorProps) {
+export default function ChannelSelector({ onChannelChanged, selectedChannel }: ChannelSelectorProps) {
   const [channels, setChannels] = useState<DarkChannel[]>([]);
-  const [activeChannel, setActiveChannel] = useState<DarkChannel | null>(null);
+  const [activeChannel, setActiveChannel] = useState<DarkChannel | null>(selectedChannel || null);
   const [isOpen, setIsOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -35,6 +36,17 @@ export default function ChannelSelector({ onChannelChanged }: ChannelSelectorPro
   const [newHandle, setNewHandle] = useState("");
   const [newNiche, setNewNiche] = useState("Histórias de Crimes Reais & Mistérios");
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const onChannelChangedRef = useRef(onChannelChanged);
+
+  useEffect(() => {
+    onChannelChangedRef.current = onChannelChanged;
+  }, [onChannelChanged]);
+
+  useEffect(() => {
+    if (selectedChannel) {
+      setActiveChannel(selectedChannel);
+    }
+  }, [selectedChannel]);
 
   const fetchChannels = useCallback(async () => {
     try {
@@ -43,15 +55,15 @@ export default function ChannelSelector({ onChannelChanged }: ChannelSelectorPro
       if (data.success && data.channels) {
         setChannels(data.channels);
         const active = data.activeChannel || data.channels[0];
-        setActiveChannel(active);
-        if (onChannelChanged && active) {
-          onChannelChanged(active);
+        setActiveChannel((prev) => selectedChannel || prev || active);
+        if (onChannelChangedRef.current && active) {
+          onChannelChangedRef.current(active);
         }
       }
     } catch (e) {
       console.error("Erro ao carregar canais:", e);
     }
-  }, [onChannelChanged]);
+  }, [selectedChannel]);
 
   const handleRefreshChannel = async (channelId: string) => {
     try {
@@ -67,7 +79,7 @@ export default function ChannelSelector({ onChannelChanged }: ChannelSelectorPro
         setChannels((prev) =>
           prev.map((c) => (c.id === data.channel.id ? data.channel : c))
         );
-        if (onChannelChanged) onChannelChanged(data.channel);
+        if (onChannelChangedRef.current) onChannelChangedRef.current(data.channel);
       }
     } catch (e) {
       console.error("Erro ao atualizar dados do canal:", e);
@@ -100,7 +112,7 @@ export default function ChannelSelector({ onChannelChanged }: ChannelSelectorPro
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "SWITCH", channelId: channel.id }),
       });
-      if (onChannelChanged) onChannelChanged(channel);
+      if (onChannelChangedRef.current) onChannelChangedRef.current(channel);
     } catch (e) {
       console.error("Erro ao trocar canal:", e);
     }
@@ -149,7 +161,7 @@ export default function ChannelSelector({ onChannelChanged }: ChannelSelectorPro
         setNewName("");
         setNewHandle("");
         setErrorMessage(null);
-        if (onChannelChanged) onChannelChanged(data.channel);
+        if (onChannelChangedRef.current) onChannelChangedRef.current(data.channel);
       }
     } catch (e: any) {
       console.error("Erro ao criar canal:", e);
@@ -204,11 +216,10 @@ export default function ChannelSelector({ onChannelChanged }: ChannelSelectorPro
                 <button
                   key={ch.id}
                   onClick={() => handleSelectChannel(ch)}
-                  className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-all ${
-                    isSelected
-                      ? "bg-brand-600/20 border border-brand-500/30 text-white"
-                      : "hover:bg-white/[0.04] text-slate-300 hover:text-white"
-                  }`}
+                  className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-all ${isSelected
+                    ? "bg-brand-600/20 border border-brand-500/30 text-white"
+                    : "hover:bg-white/[0.04] text-slate-300 hover:text-white"
+                    }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <img
