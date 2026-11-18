@@ -128,7 +128,20 @@
 
 ---
 
+### [x] Passo 11: Sistema de Agendamento Automático de Vídeos e Grade Semanal
+- [x] Motor de Agendamento (`src/lib/youtube/scheduler.ts`):
+  - [x] Mapeamento dos slots de pico de retenção semanais (Segunda a Domingo) para canais Dark (Terça 18h com 98% e Domingo 19h com 99%).
+  - [x] Gerenciador de publicações agendadas (`schedulePost`, `cancelScheduledPost`, `getWeeklyCalendarSlots`).
+- [x] Rota de API dedicada (`/api/youtube/schedule` com GET para slots/posts e POST para agendar e cancelar).
+- [x] Componentes no Estúdio de Criação:
+  - [x] Modal de Grade Semanal & Calendário (`ScheduleCalendarModal.tsx`) com seleção de data/hora, canal e visibilidade (Público/Não-Listado/Privado).
+  - [x] Integração no modal de prévia de vídeo (`VideoPreviewModal.tsx`) permitindo agendar lançamentos em 1 clique.
+  - [x] Botão de atalho para a grade semanal integrado no cabeçalho (`StudioHeader.tsx`).
+- [x] Atualização da suíte de testes E2E com validação do módulo de agendamento (`13/13 testes aprovados no Docker`).
+
+---
+
 ### [ ] Próximos Passos Opcionais (Pós-Lançamento)
 > *Aguardando solicitação explícita do usuário para início de qualquer item adicional.*
 - [ ] Inserção de chaves reais de produção de terceiros no `.env` (`CLERK_SECRET_KEY`, `YOUTUBE_CLIENT_ID`, `OPENAI_API_KEY`, `ELEVENLABS_API_KEY`).
-- [ ] Sistema de agendamento automático de publicações com calendário de postagens semanais.
+- [ ] Sistema de testes A/B automatizados para miniaturas (thumbnails) e títulos de canais Dark.

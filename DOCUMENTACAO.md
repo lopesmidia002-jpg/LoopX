@@ -224,6 +224,7 @@ loopx/
   10. Publicação Direta no YouTube (`/api/youtube/publish`)
   11. Métricas do Canal Dark & Analytics (`/api/youtube/analytics`)
   12. Múltiplos Canais Dark & Chaves BYOK (`/api/youtube/channels`)
+  13. Agendamento Automático de Vídeos & Grade Semanal (`/api/youtube/schedule`)
 
 ---
 
@@ -281,7 +282,20 @@ loopx/
 
 ---
 
-## 10. Como Executar via Docker
+## 10. Sistema de Agendamento Automático de Vídeos & Grade Semanal (Passo 11)
+
+### 10.1. Motor de Agendamento (`scheduler.ts` & `/api/youtube/schedule`)
+- Mapeamento analítico de slots da semana com score de retenção algorítmica para canais Dark (Terça 18:00 com 98% e Domingo 19:00 com 99%).
+- Operações completas de agendamento de projetos, cancelamento e consulta de fila de postagens.
+
+### 10.2. Modal Interativo de Calendário (`ScheduleCalendarModal.tsx`)
+- Visualização dos 7 dias da semana com destaque nos dias de pico.
+- Formulário de agendamento integrado com definição de visibilidade (Público, Não-Listado, Privado).
+- Botões de acesso rápido integrados no [StudioHeader.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/StudioHeader.tsx) e no [VideoPreviewModal.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/VideoPreviewModal.tsx).
+
+---
+
+## 11. Como Executar via Docker
 
 ### Subir todos os serviços (App, PostgreSQL e Redis)
 ```bash
@@ -313,3 +327,4 @@ Acesse o Estúdio de Criação em: `http://localhost:3000/studio`
 Acesse o endpoint de saúde em: `http://localhost:3000/api/health`
 Acesse as métricas do canal em: `http://localhost:3000/api/youtube/analytics`
 Acesse os canais conectados em: `http://localhost:3000/api/youtube/channels`
+Acesse as publicações agendadas em: `http://localhost:3000/api/youtube/schedule`

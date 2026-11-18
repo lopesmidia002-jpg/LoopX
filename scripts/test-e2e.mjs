@@ -264,6 +264,44 @@ async function runTestSuite() {
     if (!keyData.success) throw new Error("Falha ao salvar chave BYOK");
   });
 
+  // 13. Agendamento Automático de Vídeos & Grade Semanal (/api/youtube/schedule)
+  await test("13. Agendamento Automático de Vídeos & Grade Semanal (/api/youtube/schedule)", async () => {
+    // 13.1 Consulta de agendamentos e slots
+    const getRes = await fetch(`${BASE_URL}/api/youtube/schedule`);
+    if (!getRes.ok) throw new Error(`Status: ${getRes.status}`);
+    const getData = await getRes.json();
+    if (!getData.success || !Array.isArray(getData.calendarSlots) || getData.calendarSlots.length === 0) {
+      throw new Error("Slots do calendário semanal não retornados");
+    }
+
+    // 13.2 Criação de novo agendamento
+    const postRes = await fetch(`${BASE_URL}/api/youtube/schedule`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        projectId: generatedProjectId || "test-project-1",
+        title: "Mistérios da Antártida - Lançamento Programado",
+        scheduledFor: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+        privacyStatus: "public",
+      }),
+    });
+    if (!postRes.ok) throw new Error(`Status do agendamento: ${postRes.status}`);
+    const postData = await postRes.json();
+    if (!postData.success || !postData.scheduledPost) {
+      throw new Error("Falha ao criar publicação agendada");
+    }
+
+    // 13.3 Cancelamento do agendamento de teste
+    const cancelRes = await fetch(`${BASE_URL}/api/youtube/schedule`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "CANCEL", id: postData.scheduledPost.id }),
+    });
+    if (!cancelRes.ok) throw new Error(`Status cancelamento: ${cancelRes.status}`);
+    const cancelData = await cancelRes.json();
+    if (!cancelData.success) throw new Error("Falha ao cancelar publicação agendada");
+  });
+
   console.log("\n=======================================================");
   console.log(`   RESULTADO: ${passed} PASSARAM | ${failed} FALHARAM`);
   console.log("=======================================================\n");

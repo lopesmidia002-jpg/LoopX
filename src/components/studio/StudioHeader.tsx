@@ -14,10 +14,12 @@ import {
   Check,
   Zap,
   BarChart3,
-  Key
+  Key,
+  Calendar
 } from "lucide-react";
 import ChannelSelector from "./ChannelSelector";
 import ApiSettingsModal from "./ApiSettingsModal";
+import ScheduleCalendarModal from "./ScheduleCalendarModal";
 import { DarkChannel } from "@/lib/youtube/channel-manager";
 
 interface StudioHeaderProps {
@@ -45,6 +47,7 @@ export default function StudioHeader({
 }: StudioHeaderProps) {
   const [isRechargeModalOpen, setIsRechargeModalOpen] = useState(false);
   const [isApiModalOpen, setIsApiModalOpen] = useState(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [rechargeLoading, setRechargeLoading] = useState(false);
   const [rechargeSuccess, setRechargeSuccess] = useState(false);
   const percentage = Math.round((availableMinutes / maxMinutes) * 100);
@@ -134,6 +137,15 @@ export default function StudioHeader({
             title="Configurações de APIs e Chaves de Produção (BYOK)"
           >
             <Key className="w-4 h-4 text-brand-300" />
+          </button>
+
+          {/* Schedule Calendar Modal Button */}
+          <button
+            onClick={() => setIsScheduleModalOpen(true)}
+            className="p-2 rounded-xl bg-surface hover:bg-surface-hover border border-surface-border text-slate-300 hover:text-white transition-all"
+            title="Grade Semanal & Agendamento de Postagens"
+          >
+            <Calendar className="w-4 h-4 text-emerald-400" />
           </button>
           
           {/* Minutes Balance Indicator */}
@@ -240,6 +252,12 @@ export default function StudioHeader({
       <ApiSettingsModal
         isOpen={isApiModalOpen}
         onClose={() => setIsApiModalOpen(false)}
+      />
+
+      {/* Weekly Schedule & Calendar Modal */}
+      <ScheduleCalendarModal
+        isOpen={isScheduleModalOpen}
+        onClose={() => setIsScheduleModalOpen(false)}
       />
     </header>
   );

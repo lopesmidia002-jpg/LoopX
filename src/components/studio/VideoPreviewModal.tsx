@@ -13,9 +13,11 @@ import {
   Clock, 
   Layers,
   Copy,
-  CheckCircle2
+  CheckCircle2,
+  Calendar
 } from "lucide-react";
 import { SceneItem } from "@/lib/types";
+import ScheduleCalendarModal from "./ScheduleCalendarModal";
 
 interface VideoPreviewModalProps {
   isOpen: boolean;
@@ -38,6 +40,7 @@ export default function VideoPreviewModal({
   const [publishedSuccess, setPublishedSuccess] = useState(false);
   const [publishedData, setPublishedData] = useState<{ watchUrl: string; videoId: string } | null>(null);
   const [isSubmittingYouTube, setIsSubmittingYouTube] = useState(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
   if (!isOpen) return null;
 
@@ -334,19 +337,35 @@ export default function VideoPreviewModal({
                     </div>
                   </div>
 
-                  <button
-                    onClick={handlePublishYouTube}
-                    className="w-full py-3.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-red-600/30 transition-all hover:scale-[1.01]"
-                  >
-                    <Youtube className="w-4 h-4" />
-                    <span>Confirmar Envio em 1 Clique para o YouTube</span>
-                  </button>
+                  <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                    <button
+                      onClick={handlePublishYouTube}
+                      className="flex-1 py-3.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-red-600/30 transition-all hover:scale-[1.01]"
+                    >
+                      <Youtube className="w-4 h-4" />
+                      <span>Confirmar Envio em 1 Clique</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsScheduleModalOpen(true)}
+                      className="px-5 py-3.5 rounded-xl bg-surface hover:bg-surface-hover text-brand-300 hover:text-white border border-brand-500/30 font-bold text-xs flex items-center justify-center gap-2 transition-all"
+                    >
+                      <Calendar className="w-4 h-4" />
+                      <span>Agendar Lançamento</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
           )}
         </div>
 
+        {/* Schedule Calendar Modal */}
+        <ScheduleCalendarModal
+          isOpen={isScheduleModalOpen}
+          onClose={() => setIsScheduleModalOpen(false)}
+          defaultTitle={topicTitle}
+        />
       </div>
     </div>
   );
