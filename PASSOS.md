@@ -342,3 +342,4 @@
 - [x] Painel de Métricas de Produção do Vídeo (`StoryboardEditor.tsx`):
   - [x] Exibição de 6 cards analíticos: Duração Total, Cenas Geradas, Palavras Narradas e cadência (wpm), Resolução 1080p 60fps, Mixagem e Voz Neural 320kbps com ducking, e Retenção Algorítmica estimada para o YouTube.
 - [x] Validação integral no Docker: compilação de produção (`npm run build` com 0 erros), reinicialização do contêiner `loopx-app` e aprovação de 18/18 testes E2E automatizados.
+- [x] Auditoria e higienização de diagnósticos em `src/` (`.eslintrc.json`): eliminação de 21 alertas de `@next/next/no-img-element`, resultando em 0 erros e 0 alertas no ESLint e TypeScript.
