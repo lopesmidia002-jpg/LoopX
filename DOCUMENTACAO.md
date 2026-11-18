@@ -642,7 +642,11 @@ O componente [AnalyticsDashboard.tsx](file:///c:/Users/Nilto/OneDrive/Documentos
 - **Sincronização Bidirecional:** O `ChannelSelector` agora recebe `selectedChannel` e utiliza `useRef` para `onChannelChanged`, eliminando renderizações em loop e mantendo o seletor desktop e o seletor da gaveta mobile perfeitamente sincronizados.
 - **Canal Destino no Estúdio:** O formulário de configuração [ProjectConfig.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/ProjectConfig.tsx) e a modal de criação rápida [NewProjectModal.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/NewProjectModal.tsx) exibem explicitamente o canal vinculado selecionado com avatar, nome e inscritos ("Canal Vinculado: O Observador • 95 inscritos").
 - **Proteção da Suíte E2E:** O teste de canais restaura o canal ativo original após a validação de alternância, prevenindo substituição indesejada dos dados do criador.
-- **Segurança de Credenciais:** `.loopx-channels.json` e `.admin-security.json` incluídos em `.gitignore` para proteção contra push de segredos.
+
+### 23.8. Resolução dos Arquivos de Versionamento Git
+- **Tipagens Next.js (`next-env.d.ts`):** Desbloqueado do `.gitignore` para versionamento padrão e garantia de compilação TypeScript limpa em qualquer clone.
+- **Configuração de Canais (`.loopx-channels.json`):** Higienizado de chaves de terceiros e habilitado para versionamento da rede de canais. O canal `@Oobservador-rw2gq` ("O Observador") foi também gravado como canal primário definitivo nos `DEFAULT_CHANNELS` do TypeScript.
+- **Proteção do `.env`:** Mantido em `.gitignore` para conformidade estrita com o GitHub Push Protection (Regra GH013), com o espelho público homologado em `.env.example`.
 
 ---
 

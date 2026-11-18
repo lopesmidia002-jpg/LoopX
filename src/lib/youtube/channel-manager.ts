@@ -55,7 +55,7 @@ const DEFAULT_CHANNELS: DarkChannel[] = [
     defaultLanguage: "PT_BR",
     autoPublish: false,
     avatarUrl: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=120&q=80",
-    isPrimary: true,
+    isPrimary: false,
   },
   {
     id: "channel-2",
@@ -85,6 +85,21 @@ const DEFAULT_CHANNELS: DarkChannel[] = [
     avatarUrl: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=120&q=80",
     isPrimary: false,
   },
+  {
+    id: "channel-4",
+    name: "O Observador",
+    handle: "@Oobservador-rw2gq",
+    niche: "Mistérios & Casos Reais",
+    subscribers: 95,
+    totalViews: 1330,
+    defaultVoiceId: "pt-br-marcos-deep",
+    defaultFormat: "DOCUMENTARY",
+    defaultLanguage: "PT_BR",
+    autoPublish: false,
+    avatarUrl: "https://yt3.googleusercontent.com/IxMnPAW6CR3sN_FHoc9gVNymv_u9LZmTYMJP1vuBtfYdEXoamus5ry6wZKRNY7GyrH6IlP2JMQ=s900-c-k-c0x00ffffff-no-rj",
+    description: "O Observador - Sabedoria antiga para o caos moderno.",
+    isPrimary: true,
+  },
 ];
 
 function loadStore(): ChannelsStoreData {
@@ -107,7 +122,7 @@ function loadStore(): ChannelsStoreData {
   }
   return {
     channels: [...DEFAULT_CHANNELS],
-    activeChannelId: "channel-1",
+    activeChannelId: "channel-4",
     customApiKeys: {},
   };
 }

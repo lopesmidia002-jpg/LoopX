@@ -1,0 +1,63 @@
+{
+  "channels": [
+    {
+      "id": "channel-1",
+      "name": "Arquivos do Oculto",
+      "handle": "@arquivosdooculto",
+      "niche": "Mistérios & História Proibida",
+      "subscribers": 148500,
+      "totalViews": 1965800,
+      "defaultVoiceId": "pt-br-marcos-deep",
+      "defaultFormat": "DOCUMENTARY",
+      "defaultLanguage": "PT_BR",
+      "autoPublish": false,
+      "avatarUrl": "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=120&q=80",
+      "isPrimary": true
+    },
+    {
+      "id": "channel-2",
+      "name": "Abismo Submarino",
+      "handle": "@abismosubmarino",
+      "niche": "Natureza Profunda & Criaturas Abissais",
+      "subscribers": 84200,
+      "totalViews": 940000,
+      "defaultVoiceId": "pt-br-thiago-narrador",
+      "defaultFormat": "TOP_10",
+      "defaultLanguage": "PT_BR",
+      "autoPublish": true,
+      "avatarUrl": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=120&q=80",
+      "isPrimary": false
+    },
+    {
+      "id": "channel-3",
+      "name": "Cosmos Infinito",
+      "handle": "@cosmosinfinitobr",
+      "niche": "Astronomia & Mistérios Espaciais",
+      "subscribers": 42100,
+      "totalViews": 512000,
+      "defaultVoiceId": "pt-br-marcos-deep",
+      "defaultFormat": "DOCUMENTARY",
+      "defaultLanguage": "PT_BR",
+      "autoPublish": false,
+      "avatarUrl": "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=120&q=80",
+      "isPrimary": false
+    },
+    {
+      "name": "O Observador",
+      "handle": "@Oobservador-rw2gq",
+      "niche": "Mistérios & Casos Reais",
+      "subscribers": 95,
+      "defaultVoiceId": "pt-br-marcos-deep",
+      "defaultFormat": "DOCUMENTARY",
+      "defaultLanguage": "PT_BR",
+      "autoPublish": false,
+      "avatarUrl": "https://yt3.googleusercontent.com/IxMnPAW6CR3sN_FHoc9gVNymv_u9LZmTYMJP1vuBtfYdEXoamus5ry6wZKRNY7GyrH6IlP2JMQ=s900-c-k-c0x00ffffff-no-rj",
+      "id": "channel-1795001720247",
+      "totalViews": 1330,
+      "description": "O Observador\nSabedoria antiga para o caos moderno.\nVocê já sentiu que está correndo sem sair do lugar, gastando sua vida para impressionar pessoas que nem se importam?\nEste não é mais um canal de autoajuda rápida ou positividade barata. Este é um espaço de resgate.\nAqui, nós desaceleramos para observar. Investigamos a mente e os alertas dos maiores pensadores da história — de Sêneca a Dostoiévski, de Nietzsche a Tolstói — para traduzir a sabedoria das eras em respostas práticas para as suas crises diárias:\nComo parar de viver para a aprovação dos outros.\nO que fazer quando a busca por status e dinheiro te deixa vazio.\nComo recuperar o controle do seu tempo e da sua mente.\nA sociedade quer você ocupado, distraído e anestesiado. Nós propomos o oposto: a lucidez, o estoicismo e a coragem de encarar a realidade.\nSe você cansou de apenas existir e quer viver com profundidade, este é o seu refúgio.\nToda semana, um novo ensaio visual.\nInscreva-se e pare de apenas assistir à vida. \n",
+      "isPrimary": true
+    }
+  ],
+  "activeChannelId": "channel-1795001720247",
+  "customApiKeys": {}
+}

@@ -44,9 +44,7 @@ Thumbs.db
 .idea/
 .gemini/
 
-# Tipagem do Next.js
-next-env.d.ts
+# Tipagem do Next.js (removido do ignore para ser versionado)
 
-# Arquivos de persistência de credenciais e canais locais
-.loopx-channels.json
+# Arquivos de persistência de credenciais sensíveis (senhas e chaves)
 .admin-security.json

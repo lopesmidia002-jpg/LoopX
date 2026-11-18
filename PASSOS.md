@@ -290,5 +290,11 @@
   - [x] Inclusão de indicador visual em destaque do Canal Vinculado com foto e badge no formulário principal de configuração (`ProjectConfig.tsx`) e na modal de criação (`NewProjectModal.tsx`), confirmando explicitamente o canal destino ao criador.
   - [x] Limpeza e reinicialização automática de campos (`topic`, `customScript`) ao abrir o modal de "Novo Projeto".
   - [x] Preservação do canal ativo original na suíte de testes E2E (`scripts/test-e2e.mjs`), garantindo que testes automatizados não alterem o canal do usuário para mocks de teste.
-  - [x] Inclusão de `.loopx-channels.json` e `.admin-security.json` no `.gitignore` para proteção absoluta contra vazamento de credenciais e integridade com o GitHub.
   - [x] Reconstrução integral da imagem Docker (`docker compose build app` e `docker compose up -d app`), compilação Next.js (0 erros), verificação de tipos TypeScript (0 erros), validação de linting (0 erros) e aprovação unânime de 18/18 testes E2E no container.
+- [x] Resolução e Liberação dos Arquivos de Versionamento Git (next-env.d.ts, .loopx-channels.json e Proteção do .env):
+  - [x] Diagnóstico dos 3 arquivos não versionados: `next-env.d.ts` e `.loopx-channels.json` estavam retidos no `.gitignore`, enquanto `.env` contém credenciais reais estritamente bloqueadas pelo GitHub Push Protection (Regra GH013).
+  - [x] Liberação de `next-env.d.ts` do `.gitignore` para versionamento padrão das tipagens do Next.js.
+  - [x] Incorporação definitiva do canal `@Oobservador-rw2gq` ("O Observador") nos `DEFAULT_CHANNELS` do código-fonte em `src/lib/youtube/channel-manager.ts` como canal primário.
+  - [x] Limpeza de chaves de teste em `.loopx-channels.json` e liberação do arquivo no `.gitignore` para versionamento da configuração de canais.
+  - [x] Manutenção da blindagem do `.env` no `.gitignore` com espelhamento público seguro via `.env.example`, prevenindo rejeição de `git push` no GitHub.
+  - [x] Validação integral no Docker com 18/18 testes E2E aprovados, 0 erros no TypeScript e 0 erros no ESLint.
