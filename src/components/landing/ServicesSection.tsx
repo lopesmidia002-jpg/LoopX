@@ -13,18 +13,18 @@ interface ServiceItem {
 
 const services: ServiceItem[] = [
   {
-    tag: "Strategy",
-    title: "Research & Insight",
+    tag: "Estratégia",
+    title: "Pesquisa & Roteirização",
     description:
-      "We dig deep into data, culture, and human behavior to surface the insights that drive meaningful, lasting change.",
+      "Mergulhamos a fundo em fatos históricos e curiosidades humanas para estruturar roteiros com arcos dramáticos hipnóticos.",
     videoUrl:
       "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260314_131748_f2ca2a28-fed7-44c8-b9a9-bd9acdd5ec31.mp4",
   },
   {
-    tag: "Craft",
-    title: "Design & Execution",
+    tag: "Produção",
+    title: "Edição & Renderização",
     description:
-      "From concept to launch, we obsess over every detail to deliver experiences that feel effortless and look extraordinary.",
+      "Do conceito à exportação final em 1080p 60fps com auto-ducking e Ken Burns, cuidamos de cada detalhe para entregar vídeos impecáveis.",
     videoUrl:
       "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260324_151826_c7218672-6e92-402c-9e45-f1e0f454bdc4.mp4",
   },
@@ -52,10 +52,10 @@ export default function ServicesSection() {
           className="flex items-center justify-between mb-12 md:mb-16"
         >
           <h2 className="text-3xl md:text-5xl text-white tracking-tight font-sans">
-            What we do
+            O que fazemos
           </h2>
           <span className="text-white/40 text-sm hidden md:inline uppercase tracking-widest font-medium">
-            Our services
+            Nossos recursos
           </span>
         </motion.div>
 

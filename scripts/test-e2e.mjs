@@ -302,14 +302,49 @@ async function runTestSuite() {
     if (!cancelData.success) throw new Error("Falha ao cancelar publicação agendada");
   });
 
-  // 14. Validação da Nova Landing Page Cinematográfica (Liquid Glass & Video Loop)
-  await test("14. Landing Page Cinematográfica Liquid Glass (GET /)", async () => {
+  // 14. Validação da Nova Landing Page Cinematográfica (Liquid Glass & Video Loop em Português)
+  await test("14. Landing Page Cinematográfica Liquid Glass em Português (GET /)", async () => {
     const res = await fetch(`${BASE_URL}/`);
     if (!res.ok) throw new Error(`Status da página inicial: ${res.status}`);
     const html = await res.text();
-    if (!html.includes("Know it then") || !html.includes("Asme")) {
-      throw new Error("Elementos visuais do design Liquid Glass não encontrados no HTML");
+    if (!html.includes("viralizam") || !html.includes("LoopX") || !html.includes("Estúdio")) {
+      throw new Error("Elementos visuais do design e navegação em português não encontrados no HTML");
     }
+  });
+
+  // 15. Autenticação com E-mail e Senha (/api/auth/login e /api/auth/logout)
+  await test("15. Autenticação com E-mail e Senha (/api/auth/login e /api/auth/logout)", async () => {
+    // 15.1 Tentativa com senha curta (< 6 caracteres)
+    const failRes = await fetch(`${BASE_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "teste@loopx.com", password: "123" }),
+    });
+    if (failRes.status !== 400) {
+      throw new Error(`Esperava status 400 para senha curta, recebeu: ${failRes.status}`);
+    }
+
+    // 15.2 Login com credenciais válidas
+    const loginRes = await fetch(`${BASE_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: "criador@loopx.com",
+        password: "loopx123",
+        action: "LOGIN",
+      }),
+    });
+    if (!loginRes.ok) throw new Error(`Status de login: ${loginRes.status}`);
+    const loginData = await loginRes.json();
+    if (!loginData.success || !loginData.user || !loginData.user.id) {
+      throw new Error("Falha na resposta do login de criador");
+    }
+
+    // 15.3 Logout
+    const logoutRes = await fetch(`${BASE_URL}/api/auth/logout`, {
+      method: "POST",
+    });
+    if (!logoutRes.ok) throw new Error(`Status do logout: ${logoutRes.status}`);
   });
 
   console.log("\n=======================================================");

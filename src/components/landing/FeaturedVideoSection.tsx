@@ -38,10 +38,10 @@ export default function FeaturedVideoSection() {
             {/* Left Liquid Glass Approach Card */}
             <div className="liquid-glass rounded-2xl p-6 md:p-8 max-w-md backdrop-blur-md">
               <p className="text-white/50 text-xs tracking-widest uppercase mb-3 font-semibold">
-                Our Approach
+                Nossa Abordagem
               </p>
               <p className="text-white text-sm md:text-base leading-relaxed">
-                We believe in the power of curiosity-driven exploration. Every project starts with a question, and every answer opens a new door to innovation.
+                Acreditamos no poder da narrativa guiada por dados. Cada roteiro nasce de uma pergunta e cada corte é orquestrado para reter a atenção e multiplicar o tempo de exibição no YouTube.
               </p>
             </div>
 
@@ -52,7 +52,7 @@ export default function FeaturedVideoSection() {
               whileTap={{ scale: 0.95 }}
               className="liquid-glass rounded-full px-8 py-3 text-white text-sm font-medium self-start md:self-auto hover:bg-white/10 transition-colors inline-flex items-center justify-center cursor-pointer shadow-lg"
             >
-              Explore more
+              Explorar Recursos
             </motion.a>
           </div>
         </motion.div>

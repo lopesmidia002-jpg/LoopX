@@ -14,16 +14,16 @@ export default function PhilosophySection() {
       className="bg-black py-28 md:py-40 px-6 overflow-hidden relative"
     >
       <div className="max-w-6xl mx-auto">
-        {/* Heading: Innovation x Vision */}
+        {/* Heading: Inovação x Visão */}
         <motion.h2
           initial={{ opacity: 0, y: 40 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="text-5xl md:text-7xl lg:text-8xl text-white tracking-tight mb-16 md:mb-24 font-sans"
         >
-          Innovation{" "}
+          Inovação{" "}
           <span className="font-serif italic text-white/40">x</span>{" "}
-          Vision
+          Visão
         </motion.h2>
 
         {/* Two-Column Grid */}
@@ -57,10 +57,10 @@ export default function PhilosophySection() {
             {/* Block 1 */}
             <div>
               <p className="text-white/40 text-xs tracking-widest uppercase mb-4 font-semibold">
-                Choose your space
+                Escolha seu nicho
               </p>
               <p className="text-white/70 text-base md:text-lg leading-relaxed">
-                Every meaningful breakthrough begins at the intersection of disciplined strategy and remarkable creative vision. We operate at that crossroads, turning bold thinking into tangible outcomes that move people and reshape industries.
+                Todo grande canal dark nasce da interseção entre disciplina de dados e visão criativa arrojada. Operamos nessa encruzilhada, transformando ideias ousadas em narrativas magnéticas que geram receita em dólar.
               </p>
             </div>
 
@@ -70,10 +70,10 @@ export default function PhilosophySection() {
             {/* Block 2 */}
             <div>
               <p className="text-white/40 text-xs tracking-widest uppercase mb-4 font-semibold">
-                Shape the future
+                Molde a sua audiência
               </p>
               <p className="text-white/70 text-base md:text-lg leading-relaxed">
-                We believe that the best work emerges when curiosity meets conviction. Our process is designed to uncover hidden opportunities and translate them into experiences that resonate long after the first impression.
+                Acreditamos que os vídeos mais lucrativos surgem quando a curiosidade humana se alia à automação inteligente. Nosso pipeline foi desenhado para revelar histórias fascinantes e transformá-las em retenção ininterrupta.
               </p>
             </div>
           </motion.div>

@@ -141,22 +141,30 @@
 
 ---
 
-### [x] Passo 12: Redesign da Landing Page com Estilo Liquid Glass, Instrument Serif e Vídeos Cinematográficos
+### [x] Passo 12: Redesign da Landing Page com Estilo Liquid Glass, Instrument Serif, Textos em Português e Login/Senha
 - [x] Estilização visual em `src/app/globals.css` com fonte Google `Instrument Serif` e classes utilitárias `.liquid-glass` / `.liquid-glass::before` com efeito de luminosidade, blur e borda gradiente.
 - [x] Configuração de `fontFamily.serif` em `tailwind.config.ts`.
-- [x] Hero Section cinematográfico (`LiquidHero.tsx`):
+- [x] Hero Section cinematográfico traduzido e alinhado ao LoopX (`LiquidHero.tsx`):
   - [x] Fundo com vídeo em tela cheia e controle de fade loop via vanilla JS refs (`requestAnimationFrame` no canplay, timeupdate <= 0.55s e ended).
-  - [x] Navbar flutuante em Liquid Glass com branding Asme / Globe e links de navegação.
-  - [x] Tipografia monumental em Instrument Serif: `Know it then all.`.
-  - [x] Input de newsletter em Liquid Glass com botão circular branco e seta.
-  - [x] Botão de Manifesto e rodapé com botões sociais (Instagram, Twitter, Globe) em Liquid Glass.
-- [x] Seção Sobre (`AboutSection.tsx`) com animações Framer Motion via `useInView`, gradiente radial e tipografia itálica.
-- [x] Seção de Vídeo em Destaque (`FeaturedVideoSection.tsx`) com proporção 16:9, card de abordagem Liquid Glass e botão interativo "Explore more".
-- [x] Seção de Filosofia / Visão (`PhilosophySection.tsx`) com layout em duas colunas, vídeo `aspect-[4/3]` e blocos de narrativa reflexiva.
-- [x] Seção de Serviços (`ServicesSection.tsx`) com grade de 2 cards Liquid Glass com vídeos interativos em hover-zoom e tags "Strategy" e "Craft".
+  - [x] Barra superior com branding LoopX e páginas do projeto em português (**Sobre**, **Recursos**, **Visão**, **Planos**, **Estúdio**).
+  - [x] Botões de autenticação no topo: **Cadastrar** e **Entrar**.
+  - [x] Título monumental em Instrument Serif: *"Crie vídeos dark que viralizam."*.
+  - [x] Subtítulo focado na proposta de valor do pipeline de 8 etapas para canais dark do YouTube.
+  - [x] Input de newsletter em português com botão de envio circular e feedback visual.
+  - [x] Botões de ação direta: "Conhecer o Pipeline" e "Acessar Estúdio" (com modal de autenticação).
+  - [x] Rodapé da Hero com ícones sociais (Instagram, Twitter, Comunidade Global).
+- [x] Sistema de Autenticação com Login e Senha:
+  - [x] Componente modal em Liquid Glass (`AuthModal.tsx`) com alternância entre "Entrar" e "Cadastrar", validação de campos e preenchimento de acesso demo em 1-clique (`criador@loopx.com` / `loopx123`).
+  - [x] Página dedicada de autenticação (`/login`).
+  - [x] Rotas de API `/api/auth/login`, `/api/auth/logout` e `/api/auth/me` com persistência de cookies de sessão.
+- [x] Tradução e alinhamento de todas as seções conceituais:
+  - [x] `AboutSection.tsx`: *"Roteiros hipnóticos para canais que criam, escalam e dominam a audiência."*.
+  - [x] `FeaturedVideoSection.tsx`: "Nossa Abordagem" e botão "Explorar Recursos".
+  - [x] `PhilosophySection.tsx`: "Inovação x Visão" com "Escolha seu nicho" e "Molde a sua audiência".
+  - [x] `ServicesSection.tsx`: "O que fazemos" com tags "Estratégia" e "Produção".
 - [x] Integração harmônica com os planos de precificação (`Pricing.tsx` em fundo `bg-black`), checkout Pix/Stripe e rodapé (`Footer.tsx`).
 - [x] Otimização do `Dockerfile` com `--chown=nextjs:nodejs` em todas as cópias da camada runner.
-- [x] Atualização da suíte E2E com validação da nova Landing Page (`14/14 testes aprovados no Docker`).
+- [x] Atualização da suíte E2E com validação completa da Landing Page em português e do fluxo de autenticação (`15/15 testes aprovados no Docker`).
 
 ---
 

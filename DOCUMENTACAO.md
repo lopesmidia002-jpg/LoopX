@@ -306,22 +306,28 @@ loopx/
 1. **Hero Section (`LiquidHero.tsx`)**:
    - Container `min-h-screen relative overflow-hidden flex flex-col`.
    - Vídeo de fundo em tela cheia com transição suave via vanilla JavaScript (`requestAnimationFrame`) entre eventos `canplay`, `timeupdate <= 0.55s` e `ended` com crossfade limpo para preto.
-   - Navbar com pílula flutuante em Liquid Glass, branding Asme/Globe e links de navegação.
-   - Tipografia de destaque: `Know it then all.` em Instrument Serif (`text-7xl md:text-9xl`).
+   - Navbar com pílula flutuante em Liquid Glass, branding LoopX e links de navegação em português: **Sobre**, **Recursos**, **Visão**, **Planos** e atalho para o **Estúdio**.
+   - Botões de autenticação no cabeçalho: **Cadastrar** e **Entrar** (com abertura de modal interativo).
+   - Tipografia de destaque: `Crie vídeos dark que viralizam.` em Instrument Serif (`text-6xl a text-9xl`).
    - Formulário de newsletter em Liquid Glass com botão circular branco e seta direcional.
-   - Botão de Manifesto e rodapé com 3 ícones sociais (Instagram, Twitter, Globe) em Liquid Glass.
+   - Botão de acesso ao pipeline e botão primário "Acessar Estúdio" com modal de login.
+   - Rodapé da Hero com 3 ícones sociais (Instagram, Twitter, Comunidade Global) em Liquid Glass.
 2. **About Section (`AboutSection.tsx`)**:
    - Detecção de visibilidade no viewport via `useInView` do Framer Motion.
-   - Gradiente radial sutil e tipografia em Instrument Serif itálico com `text-white/60`.
+   - Gradiente radial sutil e tipografia em Instrument Serif itálico com `text-white/60`: *"Roteiros hipnóticos para canais que criam, escalam e dominam a audiência."*
 3. **Featured Video Section (`FeaturedVideoSection.tsx`)**:
    - Container `rounded-3xl` em proporção `aspect-video` com vídeo de alta resolução em streaming CloudFront.
-   - Card flutuante Liquid Glass de "Our Approach" com botão interativo "Explore more" com microinterações no hover/tap.
+   - Card flutuante Liquid Glass de "Nossa Abordagem" com botão interativo "Explorar Recursos".
 4. **Philosophy / Innovation x Vision (`PhilosophySection.tsx`)**:
-   - Título de impacto `Innovation x Vision` com divisor e grade assimétrica em duas colunas.
-   - Coluna esquerda com vídeo `aspect-[4/3]` e coluna direita com blocos narrativos "Choose your space" e "Shape the future".
+   - Título de impacto `Inovação x Visão` com divisor e grade assimétrica em duas colunas.
+   - Coluna esquerda com vídeo `aspect-[4/3]` e coluna direita com blocos narrativos "Escolha seu nicho" e "Molde a sua audiência".
 5. **Services / What We Do (`ServicesSection.tsx`)**:
-   - Grade com dois cards Liquid Glass com vídeos interativos em hover-zoom (`group-hover:scale-105`), tags contextuais ("Strategy", "Craft"), ícones `ArrowUpRight` e descrição conceitual.
-6. **Planos & Checkout Integrado (`Pricing.tsx` & `Footer.tsx`)**:
+   - Grade com dois cards Liquid Glass com vídeos interativos em hover-zoom (`group-hover:scale-105`), tags contextuais ("Estratégia" e "Produção"), ícones `ArrowUpRight` e descrição conceitual de pesquisa e renderização cinematográfica.
+6. **Sistema de Autenticação com Login e Senha (`/api/auth/login` e `AuthModal.tsx`)**:
+   - Modal em Liquid Glass com abas de "Entrar" e "Cadastrar", suporte a e-mail e senha, botão de preenchimento rápido de acesso demo (1-clique) e redirecionamento direto para `/studio`.
+   - Página dedicada `/login` para acesso direto via URL.
+   - Endpoints `/api/auth/login`, `/api/auth/logout` e persistência de sessão via cookies.
+7. **Planos & Checkout Integrado (`Pricing.tsx` & `Footer.tsx`)**:
    - Seção de precificação com integração nativa ao ecossistema de checkout Pix instantâneo e Stripe, harmonizada com o tema escuro.
 
 ---

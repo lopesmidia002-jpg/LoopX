@@ -2,7 +2,8 @@
 
 import React, { useRef, useEffect, useState } from "react";
 import Link from "next/link";
-import { Globe, ArrowRight, Instagram, Twitter } from "lucide-react";
+import { Globe, ArrowRight, Instagram, Twitter, Sparkles } from "lucide-react";
+import AuthModal from "@/components/auth/AuthModal";
 
 export default function LiquidHero() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -10,6 +11,8 @@ export default function LiquidHero() {
   const isFadingOutRef = useRef<boolean>(false);
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<"LOGIN" | "REGISTER">("LOGIN");
 
   const animateOpacity = (target: number, duration: number, onComplete?: () => void) => {
     if (!videoRef.current) return;
@@ -79,9 +82,14 @@ export default function LiquidHero() {
     e.preventDefault();
     if (email.trim()) {
       setSubscribed(true);
-      setTimeout(() => setSubscribed(false), 3500);
+      setTimeout(() => setSubscribed(false), 4000);
       setEmail("");
     }
+  };
+
+  const handleOpenAuth = (mode: "LOGIN" | "REGISTER") => {
+    setAuthMode(mode);
+    setIsAuthModalOpen(true);
   };
 
   return (
@@ -107,55 +115,63 @@ export default function LiquidHero() {
       {/* Navbar (relative z-20, px-6 py-6) */}
       <nav className="relative z-20 px-6 py-6 w-full">
         <div className="liquid-glass rounded-full max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
-          {/* Left Brand + Nav Links */}
+          {/* Left Brand + Nav Links in Portuguese */}
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center gap-2 text-white">
-              <Globe className="w-6 h-6 text-white" />
-              <span className="font-semibold text-lg tracking-tight">Asme</span>
+              <Globe className="w-6 h-6 text-purple-400" />
+              <span className="font-semibold text-lg tracking-tight font-sans">
+                Loop<span className="text-purple-400">X</span>
+              </span>
             </Link>
 
             <div className="hidden md:flex items-center gap-8 ml-8">
               <a href="#about" className="text-white/80 hover:text-white text-sm font-medium transition-colors">
-                About
+                Sobre
               </a>
               <a href="#services" className="text-white/80 hover:text-white text-sm font-medium transition-colors">
-                Features
+                Recursos
               </a>
               <a href="#philosophy" className="text-white/80 hover:text-white text-sm font-medium transition-colors">
-                Vision
+                Visão
               </a>
               <a href="#pricing" className="text-white/80 hover:text-white text-sm font-medium transition-colors">
-                Pricing
+                Planos
               </a>
+              <Link href="/studio" className="text-purple-300 hover:text-white text-sm font-semibold transition-colors flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Estúdio</span>
+              </Link>
             </div>
           </div>
 
           {/* Right Action Buttons */}
           <div className="flex items-center gap-3 sm:gap-4">
-            <Link
-              href="/studio"
-              className="text-white text-sm font-medium hover:text-white/80 transition-colors px-2 py-1"
+            <button
+              type="button"
+              onClick={() => handleOpenAuth("REGISTER")}
+              className="text-white text-sm font-medium hover:text-white/80 transition-colors px-2 py-1 cursor-pointer"
             >
-              Sign Up
-            </Link>
-            <Link
-              href="/studio"
-              className="liquid-glass rounded-full px-6 py-2 text-white text-sm font-medium hover:bg-white/10 transition-colors"
+              Cadastrar
+            </button>
+            <button
+              type="button"
+              onClick={() => handleOpenAuth("LOGIN")}
+              className="liquid-glass rounded-full px-6 py-2 text-white text-sm font-medium hover:bg-white/10 transition-colors cursor-pointer shadow-lg"
             >
-              Login
-            </Link>
+              Entrar
+            </button>
           </div>
         </div>
       </nav>
 
       {/* Hero content (relative z-10, flex-1 flex flex-col items-center justify-center, px-6 py-12 text-center, -translate-y-[20%]) */}
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-12 text-center max-w-5xl mx-auto md:-translate-y-[10%]">
-        {/* Main Heading */}
+        {/* Main Heading translated and aligned with LoopX */}
         <h1 className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl text-white tracking-tight font-serif select-none">
-          Know it then <em className="italic font-serif">all</em>.
+          Crie vídeos dark que <em className="italic font-serif text-purple-200">viralizam</em>.
         </h1>
 
-        {/* Email Input Form */}
+        {/* Email Input Form in Portuguese */}
         <div className="w-full max-w-xl mt-8 sm:mt-10">
           <form
             onSubmit={handleSubscribe}
@@ -165,38 +181,45 @@ export default function LiquidHero() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
+              placeholder="Digite seu e-mail para acesso antecipado"
               required
               className="bg-transparent flex-1 text-white placeholder:text-white/40 text-sm sm:text-base outline-none border-none focus:ring-0"
             />
             <button
               type="submit"
               className="bg-white rounded-full p-3 text-black hover:scale-105 active:scale-95 transition-transform flex-shrink-0 cursor-pointer shadow-md"
-              title="Subscribe"
+              title="Inscrever-se"
             >
               <ArrowRight className="w-5 h-5 text-black" />
             </button>
           </form>
           {subscribed && (
             <p className="text-xs text-emerald-400 mt-2 font-medium tracking-wide animate-fade-in">
-              Thank you! You are now subscribed to our exclusive updates.
+              Obrigado! Você agora tem acesso antecipado às novidades do LoopX.
             </p>
           )}
         </div>
 
-        {/* Subtitle */}
-        <p className="text-white/90 text-xs sm:text-sm leading-relaxed max-w-lg mt-6 px-4">
-          Stay updated with the latest news and insights. Subscribe to our newsletter today and never miss out on exciting updates.
+        {/* Subtitle in Portuguese */}
+        <p className="text-white/90 text-xs sm:text-sm leading-relaxed max-w-xl mt-6 px-4">
+          Pesquisa de fatos, roteiro hipnótico, narração hiper-realista e edição cinematográfica em um pipeline 100% autônomo com IA.
         </p>
 
-        {/* Manifesto button */}
-        <div className="mt-8">
+        {/* Action button */}
+        <div className="mt-8 flex items-center gap-4">
           <a
-            href="#about"
+            href="#services"
             className="liquid-glass rounded-full px-8 py-3 text-white text-sm font-medium hover:bg-white/5 transition-colors inline-block"
           >
-            Manifesto
+            Conhecer o Pipeline
           </a>
+          <button
+            type="button"
+            onClick={() => handleOpenAuth("LOGIN")}
+            className="rounded-full px-8 py-3 bg-white text-black text-sm font-bold hover:bg-slate-200 transition-all shadow-xl hover:scale-105 active:scale-95 cursor-pointer"
+          >
+            Acessar Estúdio
+          </button>
         </div>
       </div>
 
@@ -206,7 +229,7 @@ export default function LiquidHero() {
           href="https://instagram.com"
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="Instagram"
+          aria-label="Instagram LoopX"
           className="liquid-glass rounded-full p-4 text-white/80 hover:text-white hover:bg-white/5 transition-all hover:scale-105"
         >
           <Instagram className="w-5 h-5" />
@@ -215,19 +238,26 @@ export default function LiquidHero() {
           href="https://twitter.com"
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="Twitter"
+          aria-label="Twitter X LoopX"
           className="liquid-glass rounded-full p-4 text-white/80 hover:text-white hover:bg-white/5 transition-all hover:scale-105"
         >
           <Twitter className="w-5 h-5" />
         </a>
         <a
           href="#about"
-          aria-label="Global Network"
+          aria-label="Comunidade Global LoopX"
           className="liquid-glass rounded-full p-4 text-white/80 hover:text-white hover:bg-white/5 transition-all hover:scale-105"
         >
           <Globe className="w-5 h-5" />
         </a>
       </div>
+
+      {/* Login & Register Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        initialMode={authMode}
+      />
     </div>
   );
 }

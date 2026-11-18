@@ -1,9 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { getAuthenticatedUser } from "@/lib/auth/clerk-config";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const user = await getAuthenticatedUser();
+    const userEmailCookie = req.cookies.get("loopx_user_email")?.value;
+    const user = await getAuthenticatedUser(userEmailCookie || "criador@loopx.com");
+
     return NextResponse.json({
       success: true,
       user,

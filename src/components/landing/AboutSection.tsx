@@ -17,14 +17,14 @@ export default function AboutSection() {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(255,255,255,0.03)_0%,_transparent_70%)] pointer-events-none" />
 
       <div className="relative z-10 max-w-6xl mx-auto text-center md:text-left">
-        {/* Label: About Us */}
+        {/* Label: Sobre o LoopX */}
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="text-white/40 text-sm tracking-widest uppercase mb-6"
         >
-          About Us
+          Sobre o LoopX
         </motion.p>
 
         {/* Heading */}
@@ -34,12 +34,12 @@ export default function AboutSection() {
           transition={{ duration: 0.8, delay: 0.1, ease: "easeOut" }}
           className="text-4xl md:text-6xl lg:text-7xl text-white leading-[1.1] tracking-tight font-sans"
         >
-          Pioneering{" "}
-          <span className="font-serif italic text-white/60">ideas</span> for
+          Roteiros{" "}
+          <span className="font-serif italic text-white/60">hipnóticos</span> para canais que
           <br className="hidden md:inline" />{" "}
-          minds that{" "}
+          criam,{" "}
           <span className="font-serif italic text-white/60">
-            create, build, and inspire.
+            escalam e dominam a audiência.
           </span>
         </motion.h2>
       </div>
