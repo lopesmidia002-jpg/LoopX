@@ -312,19 +312,55 @@ async function runTestSuite() {
     }
   });
 
-  // 15. Autenticação com E-mail e Senha (/api/auth/login e /api/auth/logout)
-  await test("15. Autenticação com E-mail e Senha (/api/auth/login e /api/auth/logout)", async () => {
+  // 15. Autenticação Restrita ao Administrador (/api/auth/login e /api/auth/logout)
+  await test("15. Autenticação Restrita ao Administrador (/api/auth/login e /api/auth/logout)", async () => {
     // 15.1 Tentativa com senha curta (< 6 caracteres)
     const failRes = await fetch(`${BASE_URL}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: "teste@loopx.com", password: "123" }),
+      body: JSON.stringify({ email: "admin@loopx.com", password: "123" }),
     });
     if (failRes.status !== 400) {
       throw new Error(`Esperava status 400 para senha curta, recebeu: ${failRes.status}`);
     }
 
-    // 15.2 Login com credenciais válidas
+    // 15.2 Tentativa de login por e-mail não autorizado (não ADM) deve retornar 403
+    const unauthorizedRes = await fetch(`${BASE_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "intruso@externo.com", password: "senhaqualquer123" }),
+    });
+    if (unauthorizedRes.status !== 403) {
+      throw new Error(`Esperava status 403 para usuário não-ADM, recebeu: ${unauthorizedRes.status}`);
+    }
+
+    // 15.3 Tentativa de cadastro público desabilitado deve retornar 403
+    const registerBlockedRes = await fetch(`${BASE_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "admin@loopx.com", password: "admin123", action: "REGISTER" }),
+    });
+    if (registerBlockedRes.status !== 403) {
+      throw new Error(`Esperava status 403 para cadastro público bloqueado, recebeu: ${registerBlockedRes.status}`);
+    }
+
+    // 15.4 Login com credenciais válidas de Administrador (admin@loopx.com)
+    const adminLoginRes = await fetch(`${BASE_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: "admin@loopx.com",
+        password: "admin123",
+        action: "LOGIN",
+      }),
+    });
+    if (!adminLoginRes.ok) throw new Error(`Status de login ADM: ${adminLoginRes.status}`);
+    const adminLoginData = await adminLoginRes.json();
+    if (!adminLoginData.success || !adminLoginData.user?.isAdmin || adminLoginData.user?.role !== "ADMIN") {
+      throw new Error("Falha na resposta do login de Administrador (role/isAdmin incorretos)");
+    }
+
+    // 15.5 Login com credenciais do criador mestre autorizado (criador@loopx.com)
     const loginRes = await fetch(`${BASE_URL}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -334,13 +370,13 @@ async function runTestSuite() {
         action: "LOGIN",
       }),
     });
-    if (!loginRes.ok) throw new Error(`Status de login: ${loginRes.status}`);
+    if (!loginRes.ok) throw new Error(`Status de login criador: ${loginRes.status}`);
     const loginData = await loginRes.json();
     if (!loginData.success || !loginData.user || !loginData.user.id) {
       throw new Error("Falha na resposta do login de criador");
     }
 
-    // 15.3 Logout
+    // 15.6 Logout
     const logoutRes = await fetch(`${BASE_URL}/api/auth/logout`, {
       method: "POST",
     });

@@ -210,3 +210,10 @@
   - [x] Execução do setup de contexto via `impeccable.cmd context` para plataforma `web`.
   - [x] Entrevista estruturada de alinhamento de público-alvo, posicionamento e formatos estratégicos.
   - [x] Criação de `PRODUCT.md` com a verdade durável do produto (usuários, propósito, posicionamento, contexto operacional, capacidades, compromissos de marca e princípios estratégicos).
+- [x] Sistema de Autenticação Restrito Exclusivamente ao Administrador (ADM):
+  - [x] Criação do módulo de configuração e validação de administradores (`src/lib/auth/admin-auth.ts`) com credenciais autorizadas (`admin@loopx.com`, `criador@loopx.com`, `lopes.midia002@gmail.com` e variáveis de ambiente).
+  - [x] Bloqueio estrito no backend (`/api/auth/login`) com resposta 403 Forbidden para tentativas de auto-cadastro público e para qualquer e-mail que não seja de administrador.
+  - [x] Configuração de cookies de sessão administrativa (`loopx_is_admin=true`, `loopx_role=ADMIN`, `loopx_session`, `loopx_user_email`) e suporte a logout seguro (`/api/auth/logout`).
+  - [x] Redesign do modal de autenticação (`AuthModal.tsx`) e da página (`/login`) com identidade de Área Restrita / Portal do Administrador, badges de segurança âmbar e botões de preenchimento rápido em 1 clique.
+  - [x] Inclusão de badge `ADM` e botão de `Sair` (Logout) no cabeçalho do Estúdio (`StudioHeader.tsx`).
+  - [x] Atualização dos testes automatizados E2E (`scripts/test-e2e.mjs`) com validação do bloqueio 403, aprovação de login ADM e revogação de sessão (17/17 testes aprovados no Docker).

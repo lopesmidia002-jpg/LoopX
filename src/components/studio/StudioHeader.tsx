@@ -17,7 +17,9 @@ import {
   BarChart3,
   Key,
   Calendar,
-  Split
+  Split,
+  ShieldCheck,
+  LogOut
 } from "lucide-react";
 import ChannelSelector from "./ChannelSelector";
 import ApiSettingsModal from "./ApiSettingsModal";
@@ -129,9 +131,13 @@ export default function StudioHeader({
             </button>
           </div>
 
-          {/* Dark Channel Selector Dropdown */}
-          <div className="hidden lg:block">
+          {/* Dark Channel Selector Dropdown & ADM Badge */}
+          <div className="hidden lg:flex items-center gap-2">
             <ChannelSelector onChannelChanged={onChannelChanged} />
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[10px] font-mono font-bold text-amber-300 shadow-sm" title="Acesso Administrador LoopX Ativo">
+              <ShieldCheck className="w-3 h-3 text-amber-400" />
+              <span>ADM</span>
+            </span>
           </div>
         </div>
 
@@ -206,6 +212,22 @@ export default function StudioHeader({
           >
             <PlusCircle className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Novo Projeto</span>
+          </button>
+
+          {/* Logout Button */}
+          <button
+            onClick={async () => {
+              try {
+                await fetch("/api/auth/logout", { method: "POST" });
+              } catch (e) {
+                console.error(e);
+              }
+              window.location.href = "/login";
+            }}
+            className="p-2 rounded-xl bg-surface hover:bg-surface-hover border border-surface-border text-slate-400 hover:text-red-400 transition-colors"
+            title="Encerrar Sessão de Administrador"
+          >
+            <LogOut className="w-4 h-4" />
           </button>
         </div>
 

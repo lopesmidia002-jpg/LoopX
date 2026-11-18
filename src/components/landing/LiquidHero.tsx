@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect, useState } from "react";
 import Link from "next/link";
-import { Globe, ArrowRight, Instagram, Twitter, Sparkles } from "lucide-react";
+import { Globe, ArrowRight, Instagram, Twitter, Sparkles, ShieldCheck } from "lucide-react";
 import AuthModal from "@/components/auth/AuthModal";
 
 export default function LiquidHero() {
@@ -146,19 +146,19 @@ export default function LiquidHero() {
 
           {/* Right Action Buttons */}
           <div className="flex items-center gap-3 sm:gap-4">
-            <button
-              type="button"
-              onClick={() => handleOpenAuth("REGISTER")}
-              className="text-white text-sm font-medium hover:text-white/80 transition-colors px-2 py-1 cursor-pointer"
+            <Link
+              href="/login"
+              className="text-white/80 text-sm font-medium hover:text-white transition-colors px-2 py-1"
             >
-              Cadastrar
-            </button>
+              Portal
+            </Link>
             <button
               type="button"
               onClick={() => handleOpenAuth("LOGIN")}
-              className="liquid-glass rounded-full px-6 py-2 text-white text-sm font-medium hover:bg-white/10 transition-colors cursor-pointer shadow-lg"
+              className="liquid-glass rounded-full px-5 py-2 text-amber-300 border border-amber-500/30 text-xs sm:text-sm font-bold hover:bg-amber-500/10 transition-all cursor-pointer shadow-lg flex items-center gap-1.5"
             >
-              Entrar
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+              <span>Acesso ADM</span>
             </button>
           </div>
         </div>

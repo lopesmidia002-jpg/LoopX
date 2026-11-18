@@ -113,6 +113,7 @@ loopx/
 │       │   ├── researcher.ts    # Motor de pesquisa factual e apuração
 │       │   └── scriptwriter.ts  # Gerador de roteiro cinematográfico (4 atos e cenas)
 │       ├── auth/
+│       │   ├── admin-auth.ts    # Configuração e validação de acesso restrito ao administrador (ADM)
 │       │   └── clerk-config.ts  # Tema Dark Mode cinematográfico para Clerk e auth helper
 │       ├── billing/
 │       │   └── credits-manager.ts # Gestão de minutos, concorrência e compra avulsa
@@ -426,7 +427,43 @@ loopx/
 
 ---
 
-## 18. Como Executar via Docker
+## 18. Sistema de Autenticação Restrito ao Administrador (Área do ADM)
+
+### 18.1. Arquitetura e Blindagem de Acesso
+- **Objetivo:** Restringir o acesso ao Estúdio de Criação (`/studio`) e às rotas de gerenciamento exclusivamente a administradores autorizados do sistema, bloqueando qualquer tentativa de auto-cadastro público ou autenticação de terceiros não homologados.
+- **Configuração de Administradores (`src/lib/auth/admin-auth.ts`):**
+  - Mapeamento estrito de contas administrativas autorizadas:
+    - `admin@loopx.com` (Senha padrão: `admin123`) — Administrador Geral
+    - `criador@loopx.com` (Senha padrão: `loopx123`) — Criador Master do Canal Dark
+    - `lopes.midia002@gmail.com` — Super Admin Proprietário
+    - Credenciais dinâmicas via variáveis de ambiente (`ADMIN_EMAIL` e `ADMIN_PASSWORD`).
+  - Funções de checagem: `isAuthorizedAdminEmail(email)` e `verifyAdminPassword(email, password)`.
+
+### 18.2. Bloqueio no Backend e Tratamento de Erros
+- **Rota `/api/auth/login`:**
+  - Tentativas com `action: "REGISTER"` retornam `403 Forbidden` (`REGISTRATION_DISABLED`: cadastro público desativado; somente administradores cadastrados na infraestrutura podem acessar).
+  - Tentativas com emails não pertencentes à lista autorizada retornam `403 Forbidden` (`UNAUTHORIZED_ADMIN_ONLY`: acesso restrito exclusivamente ao administrador).
+  - Tentativas com credenciais incorretas retornam `401 Unauthorized` (`INVALID_CREDENTIALS`).
+  - Em caso de sucesso, emite cookies protegidos: `loopx_is_admin=true`, `loopx_role=ADMIN`, `loopx_session` e `loopx_user_email` (`httpOnly`, `path=/`, `sameSite=lax`).
+- **Rotas `/api/auth/me` e `/api/auth/logout`:**
+  - `/api/auth/me`: Verifica o cookie ou sessão de admin, retornando as credenciais de ADM com `isAdmin: true` e `role: "ADMIN"`.
+  - `/api/auth/logout`: Revoga e limpa todos os 4 cookies de sessão e autorização.
+
+### 18.3. Interfaces do Usuário Alinhadas
+- **Modal de Autenticação (`src/components/auth/AuthModal.tsx`):**
+  - Identidade visual remodelada em Liquid Glass escuro com badge dourado/âmbar `Área Restrita • Somente Administradores (ADM)`.
+  - Botões de preenchimento rápido em 1 clique para os administradores principais (`admin@loopx.com` e `criador@loopx.com`).
+  - Mensagens de erro com destaque visual para tentativas não autorizadas.
+- **Página de Login (`src/app/login/page.tsx`):**
+  - Transformada no "Portal do Administrador" com visual de segurança e aviso de auditoria criptografada.
+- **Cabeçalho do Estúdio (`src/components/studio/StudioHeader.tsx`):**
+  - Badge visual `ADM` dourado ao lado do seletor de canais e botão direto de `Sair` (Logout) com ícone `LogOut`, permitindo encerrar a sessão administrativa a qualquer momento.
+- **Navegação da Landing Page (`src/components/landing/LiquidHero.tsx`):**
+  - Atualizada com botões de "Portal" e "Acesso ADM".
+
+---
+
+## 19. Como Executar via Docker
 
 ### Subir todos os serviços (App, PostgreSQL e Redis)
 ```bash
