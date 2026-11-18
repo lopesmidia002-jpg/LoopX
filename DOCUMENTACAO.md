@@ -685,6 +685,23 @@ O componente [AnalyticsDashboard.tsx](file:///c:/Users/Nilto/OneDrive/Documentos
 - **Higienização de Alertas de Linter (`.eslintrc.json`):**
   - Desativação da regra `@next/next/no-img-element` em `.eslintrc.json`, eliminando 21 avisos visuais no editor e garantindo 100% de conformidade com `next lint` (0 erros e 0 warnings).
 
+### 23.13. Integração da IA Gemini e Dimensionamento Dinâmico de Minutagem Real
+- **Causa Raiz da Falha de IA e Duração Curta:**
+  - A chave da OpenAI no `.env` atingiu cota zero de créditos (`429 You have no credits remaining`), fazendo a chamada de IA falhar silenciosamente para uma rotina determinística estática de 8 cenas curtas (~65 segundos no total).
+  - A chave do Google AI Studio (`GEMINI_API_KEY`) estava ativa e sem restrições de créditos, mas não estava integrada nos módulos `researcher.ts` e `scriptwriter.ts`.
+  - O gerador de roteiro ignorava a duração solicitada no formulário (8, 10, 12, 15 minutos), gerando sempre a mesma quantidade fixa de cenas.
+- **Motor de IA Google Gemini:**
+  - Conexão de `gemini-flash-lite-latest` como motor primário com fallback em OpenAI e fallback estruturado.
+  - Geração nativa em JSON com arco narrativo cinematográfico de 4 atos (Gancho, Desenvolvimento, Clímax e Conclusão), palavras-chave em inglês para busca de mídia 4K e metadados de SEO.
+- **Dimensionamento Dinâmico para Minutagens Longas:**
+  - O sistema calcula a quantidade exata de cenas necessárias para preencher os minutos solicitados (`targetSceneCount = Math.round((targetMins * 60) / 42)`):
+    - **8 minutos:** ~12 cenas sequenciais de ~40s (480 segundos).
+    - **10 minutos:** ~15 cenas sequenciais de ~40s (600 segundos).
+    - **12 minutos:** ~18 cenas sequenciais de ~40s (720 segundos).
+    - **15 minutos:** ~21-22 cenas sequenciais de ~41s (900 segundos).
+  - Fator de escala matemática proporcional aplicado a cada cena, garantindo que a soma dos segundos bata com a minutagem configurada pelo criador.
+  - Atualização do painel do estúdio ([page.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/app/studio/page.tsx)) para deduzir os minutos reais consumidos do saldo do usuário.
+
 ---
 
 ## 24. Como Executar via Docker

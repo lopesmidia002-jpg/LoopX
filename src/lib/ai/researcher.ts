@@ -25,7 +25,55 @@ export async function conductResearch(params: {
 }): Promise<ResearchResult> {
   const { topic, format, language } = params;
 
-  // Se houver chave OpenAI configurada, consulta via API LLM
+  // 1. Tenta Google Gemini (Google AI Studio) - Ativo e de alta performance
+  const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_STUDIO_API_KEY;
+  if (geminiKey) {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${geminiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: `${SYSTEM_RESEARCHER_PROMPT}\n\nRealize uma pesquisa factual profunda em idioma ${language} sobre o tema: "${topic}". Formato: ${format}. Retorne estritamente um JSON com: summary, mainHook, facts (array de title, description, sourceType, year), timeline (array de timecode, event), visualKeywords (array de termos visuais em inglês para mídias 4K) e atmosphericTone.`,
+                  },
+                ],
+              },
+            ],
+            generationConfig: {
+              response_mime_type: "application/json",
+              temperature: 0.7,
+            },
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (content) {
+          const parsed = JSON.parse(content);
+          return {
+            topic,
+            summary: parsed.summary || `Apuração documental sobre ${topic}`,
+            mainHook: parsed.mainHook || `O que realmente aconteceu durante o caso de ${topic}?`,
+            facts: parsed.facts || [],
+            timeline: parsed.timeline || [],
+            visualKeywords: parsed.visualKeywords || ["dark mystery", "cinematic footage", "historical archive"],
+            atmosphericTone: parsed.atmosphericTone || "Sombrio, investigativo e cinematográfico",
+          };
+        }
+      }
+    } catch (e) {
+      console.warn("Falha na chamada Gemini para pesquisa, tentando OpenAI:", e);
+    }
+  }
+
+  // 2. Se houver chave OpenAI configurada, consulta via API LLM
   if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.startsWith("sk-")) {
     try {
       const response = await fetch("https://api.openai.com/v1/chat/completions", {

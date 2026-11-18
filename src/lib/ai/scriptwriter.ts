@@ -13,17 +13,6 @@ export interface ScriptGenerationResult {
   language: Language;
 }
 
-const SAMPLE_CURATED_MEDIA = [
-  "https://images.unsplash.com/photo-1508614589041-895b88991e3e?q=80&w=1200&auto=format&fit=crop", // Ocean storm mystery
-  "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop", // Dark radar signal
-  "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1200&auto=format&fit=crop", // Deep underwater glow
-  "https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?q=80&w=1200&auto=format&fit=crop", // Ice Antarctica ruins
-  "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200&auto=format&fit=crop", // Outer space earth
-  "https://images.unsplash.com/photo-1579965342575-16428a7c8881?q=80&w=1200&auto=format&fit=crop", // Military war vintage
-  "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?q=80&w=1200&auto=format&fit=crop", // Quantum technology abstract
-  "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=1200&auto=format&fit=crop", // Classified files retro
-];
-
 const MOTION_EFFECTS_SEQUENCE: MotionEffect[] = [
   "KEN_BURNS_ZOOM_IN",
   "PARALLAX_25D",
@@ -48,7 +37,120 @@ export async function generateCinematicScript(params: {
     return await processCustomScriptToScenes(topic, customScript, format, language);
   }
 
-  // Se houver OpenAI configurada, gera roteiro cinematográfico via LLM
+  const targetMins = Math.max(3, Number(targetDurationMinutes) || 10);
+  const targetTotalSeconds = targetMins * 60;
+  // Ritmo dark documental: cada cena tem em média 35 a 45 segundos de narração imersiva
+  const targetSceneCount = Math.max(8, Math.round(targetTotalSeconds / 42));
+
+  // 1. Tenta Google Gemini (Google AI Studio) - Modelo ativo e de alta velocidade
+  const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_STUDIO_API_KEY;
+  if (geminiKey) {
+    try {
+      const systemPrompt =
+        format === "DOCUMENTARY"
+          ? SYSTEM_DOCUMENTARY_WRITER_PROMPT
+          : SYSTEM_TOP10_WRITER_PROMPT;
+
+      const promptText = `${systemPrompt}
+
+Você DEVE escrever um roteiro cinematográfico Dark YouTube completo em idioma ${language} sobre o tema: "${topic}".
+DURAÇÃO ALVO OBRIGATÓRIA: EXATAMENTE ${targetMins} minutos (${targetTotalSeconds} segundos no total).
+QUANTIDADE DE CENAS OBRIGATÓRIA: Para preencher com fidelidade os ${targetMins} minutos de vídeo, você DEVE gerar entre ${targetSceneCount - 1} e ${targetSceneCount + 2} cenas sequenciais detalhadas no array "scenes" (mínimo de ${targetSceneCount} cenas).
+Cada cena deve conter um parágrafo narrativo longo e detalhado de suspense (entre 45 e 75 palavras) e estimatedSeconds entre 35 e 48 segundos.
+
+Pesquisa factual de apoio:
+${JSON.stringify(researchData)}
+
+Retorne estritamente um JSON no formato:
+{
+  "title": "Título ultra-retentivo para o YouTube",
+  "youtubeDescription": "Descrição com hashtags e capítulos",
+  "scenes": [
+    {
+      "sceneOrder": 1,
+      "narrationText": "Texto completo da narração desta cena com alta tensão...",
+      "keywords": ["termo em ingles 1", "termo em ingles 2"],
+      "estimatedSeconds": 40
+    }
+  ]
+}`;
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${geminiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: promptText }] }],
+            generationConfig: {
+              response_mime_type: "application/json",
+              temperature: 0.72,
+            },
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (content) {
+          const parsed = JSON.parse(content);
+          const rawScenes = parsed.scenes || [];
+          if (rawScenes.length > 0) {
+            // Normaliza a duração das cenas para atingir fielmente o targetTotalSeconds
+            const rawDurationSum = rawScenes.reduce(
+              (acc: number, sc: any) => acc + (Number(sc.estimatedSeconds) || 38),
+              0
+            );
+            const scaleFactor = targetTotalSeconds / Math.max(1, rawDurationSum);
+
+            const scenes: SceneItem[] = await Promise.all(
+              rawScenes.map(async (sc: any, idx: number) => {
+                const narration = sc.narrationText || "";
+                const rawSec = Number(sc.estimatedSeconds) || 38;
+                const duration = Math.max(8.0, parseFloat((rawSec * scaleFactor).toFixed(1)));
+                const mediaUrl = await getCuratedMediaForScene({
+                  topic,
+                  keywords: sc.keywords || [topic],
+                  sceneIndex: idx,
+                  totalScenes: rawScenes.length,
+                });
+
+                return {
+                  id: `sc-ai-${idx + 1}`,
+                  sceneOrder: idx + 1,
+                  narrationText: narration,
+                  mediaUrl,
+                  mediaType: "IMAGE",
+                  motionEffect: MOTION_EFFECTS_SEQUENCE[idx % MOTION_EFFECTS_SEQUENCE.length],
+                  durationSeconds: duration,
+                  keywords: sc.keywords || ["dark mystery", "cinematic footage"],
+                  subtitles: generateWordTimestamps(narration, duration),
+                };
+              })
+            );
+
+            const totalDuration = scenes.reduce((acc, s) => acc + s.durationSeconds, 0);
+            const totalWords = scenes.reduce((acc, s) => acc + s.narrationText.split(/\s+/).length, 0);
+
+            return {
+              title: parsed.title || topic,
+              youtubeDescription: parsed.youtubeDescription || `Documentário completo sobre ${topic}.`,
+              scenes,
+              totalWords,
+              totalDurationSeconds: Math.round(totalDuration),
+              format,
+              language,
+            };
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Falha na chamada Gemini para roteiro, tentando OpenAI:", e);
+    }
+  }
+
+  // 2. Se houver OpenAI configurada, gera roteiro cinematográfico via LLM
   if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.startsWith("sk-")) {
     try {
       const systemPrompt =
@@ -68,9 +170,9 @@ export async function generateCinematicScript(params: {
             { role: "system", content: systemPrompt },
             {
               role: "user",
-              content: `Escreva um roteiro Dark YouTube completo em idioma ${language} sobre: "${topic}". Duração alvo: ${targetDurationMinutes} minutos. Use a pesquisa: ${JSON.stringify(
+              content: `Escreva um roteiro Dark YouTube completo em idioma ${language} sobre: "${topic}". Duração alvo: ${targetMins} minutos (${targetTotalSeconds}s). Gere exatamente ${targetSceneCount} cenas sequenciais detalhadas no array "scenes" com narrationText longo de suspense e estimatedSeconds de ~40s. Use a pesquisa: ${JSON.stringify(
                 researchData
-              )}. Retorne um JSON com: title (título ultra-retentivo para o YouTube), youtubeDescription (com hashtags de SEO e capítulos), e scenes (array de objetos com narrationText, keywords, estimatedSeconds).`,
+              )}. Retorne um JSON com: title, youtubeDescription e scenes (array com sceneOrder, narrationText, keywords, estimatedSeconds).`,
             },
           ],
           response_format: { type: "json_object" },
@@ -82,34 +184,39 @@ export async function generateCinematicScript(params: {
         const data = await response.json();
         const parsed = JSON.parse(data.choices[0].message.content);
         const rawScenes = parsed.scenes || [];
+        if (rawScenes.length > 0) {
+          const rawDurationSum = rawScenes.reduce(
+            (acc: number, sc: any) => acc + (Number(sc.estimatedSeconds) || 38),
+            0
+          );
+          const scaleFactor = targetTotalSeconds / Math.max(1, rawDurationSum);
 
-        const scenes: SceneItem[] = await Promise.all(
-          rawScenes.map(async (sc: any, idx: number) => {
-            const narration = sc.narrationText || "";
-            const words = narration.split(/\s+/).filter(Boolean).length;
-            const duration = Math.max(5.5, Number(sc.estimatedSeconds) || words * 0.45);
-            const mediaUrl = await getCuratedMediaForScene({
-              topic,
-              keywords: sc.keywords || [topic],
-              sceneIndex: idx,
-              totalScenes: rawScenes.length,
-            });
+          const scenes: SceneItem[] = await Promise.all(
+            rawScenes.map(async (sc: any, idx: number) => {
+              const narration = sc.narrationText || "";
+              const rawSec = Number(sc.estimatedSeconds) || 38;
+              const duration = Math.max(8.0, parseFloat((rawSec * scaleFactor).toFixed(1)));
+              const mediaUrl = await getCuratedMediaForScene({
+                topic,
+                keywords: sc.keywords || [topic],
+                sceneIndex: idx,
+                totalScenes: rawScenes.length,
+              });
 
-            return {
-              id: `sc-ai-${idx + 1}`,
-              sceneOrder: idx + 1,
-              narrationText: narration,
-              mediaUrl,
-              mediaType: "IMAGE",
-              motionEffect: MOTION_EFFECTS_SEQUENCE[idx % MOTION_EFFECTS_SEQUENCE.length],
-              durationSeconds: parseFloat(duration.toFixed(1)),
-              keywords: sc.keywords || ["dark mystery", "cinematic footage"],
-              subtitles: generateWordTimestamps(narration, duration),
-            };
-          })
-        );
+              return {
+                id: `sc-ai-${idx + 1}`,
+                sceneOrder: idx + 1,
+                narrationText: narration,
+                mediaUrl,
+                mediaType: "IMAGE",
+                motionEffect: MOTION_EFFECTS_SEQUENCE[idx % MOTION_EFFECTS_SEQUENCE.length],
+                durationSeconds: duration,
+                keywords: sc.keywords || ["dark mystery", "cinematic footage"],
+                subtitles: generateWordTimestamps(narration, duration),
+              };
+            })
+          );
 
-        if (scenes.length > 0) {
           const totalDuration = scenes.reduce((acc, s) => acc + s.durationSeconds, 0);
           const totalWords = scenes.reduce((acc, s) => acc + s.narrationText.split(/\s+/).length, 0);
 
@@ -129,8 +236,8 @@ export async function generateCinematicScript(params: {
     }
   }
 
-  // Motor Narrativo de Alta Retenção Interno
-  return await generateDeterministicScript(topic, format, language, targetDurationMinutes, researchData);
+  // 3. Motor Narrativo Autônomo com Escala Dinâmica para a Minutagem Escolhida
+  return await generateDeterministicScript(topic, format, language, targetMins, researchData);
 }
 
 async function processCustomScriptToScenes(
@@ -139,33 +246,36 @@ async function processCustomScriptToScenes(
   format: VideoFormat,
   language: Language
 ): Promise<ScriptGenerationResult> {
-  // Quebra por parágrafos ou pontos finais
   const paragraphs = rawScript
-    .split(/\n\n+|\.\s+/)
+    .split(/\n\s*\n/)
     .map((p) => p.trim())
     .filter((p) => p.length > 20);
 
+  const finalParagraphs = paragraphs.length > 0 ? paragraphs : [rawScript.trim()];
+
   const scenes: SceneItem[] = await Promise.all(
-    paragraphs.map(async (text, idx) => {
-      const words = text.split(/\s+/).length;
-      const duration = Math.max(5.0, words * 0.42);
+    finalParagraphs.map(async (para, idx) => {
+      const words = para.split(/\s+/).filter(Boolean).length;
+      const duration = Math.max(6.0, parseFloat((words * 0.45).toFixed(1)));
+      const extractedKeywords = [topic, `cena ${idx + 1}`];
+
       const mediaUrl = await getCuratedMediaForScene({
         topic,
-        keywords: [topic, "documentary archive"],
+        keywords: extractedKeywords,
         sceneIndex: idx,
-        totalScenes: paragraphs.length,
+        totalScenes: finalParagraphs.length,
       });
 
       return {
         id: `sc-custom-${idx + 1}`,
         sceneOrder: idx + 1,
-        narrationText: text.endsWith(".") ? text : text + ".",
+        narrationText: para,
         mediaUrl,
         mediaType: "IMAGE",
         motionEffect: MOTION_EFFECTS_SEQUENCE[idx % MOTION_EFFECTS_SEQUENCE.length],
-        durationSeconds: parseFloat(duration.toFixed(1)),
-        keywords: ["documentary archive", "historical footage", "cinematic mystery"],
-        subtitles: generateWordTimestamps(text, duration),
+        durationSeconds: duration,
+        keywords: extractedKeywords,
+        subtitles: generateWordTimestamps(para, duration),
       };
     })
   );
@@ -192,92 +302,128 @@ async function generateDeterministicScript(
   research: ResearchResult
 ): Promise<ScriptGenerationResult> {
   const isDoc = format === "DOCUMENTARY";
+  const targetMins = Math.max(3, Number(targetDurationMinutes) || 10);
+  const targetTotalSeconds = targetMins * 60;
+  const targetSceneCount = Math.max(8, Math.round(targetTotalSeconds / 42));
 
-  const rawScenesData: { narration: string; keywords: string[]; effect: MotionEffect }[] = isDoc
-    ? [
-        {
-          narration: `Nas primeiras horas de uma madrugada silenciosa, algo inexplicável rompeu os protocolos de segurança militar em ${topic}.`,
-          keywords: ["radar militar", "noite sombria", "alerta silencioso"],
-          effect: "KEN_BURNS_ZOOM_IN",
-        },
-        {
-          narration: `Nenhum sinal de emergência foi enviado. Em questão de segundos, múltiplos canais de telemetria foram deliberadamente desligados.`,
-          keywords: ["painel de controle", "transponder", "falha de sinal"],
-          effect: "PARALLAX_25D",
-        },
-        {
-          narration: `Quando as equipes de resgate chegaram às últimas coordenadas registradas, encontraram apenas um vazio oceânico impenetrável.`,
-          keywords: ["oceano tempestade", "busca militar", "horizonte escuro"],
-          effect: "KEN_BURNS_PAN_RIGHT",
-        },
-        {
-          narration: `Documentos desclassificados anos mais tarde revelaram que gravações de hidrofones captaram um ruído de frequência ultra-baixa se propagando por milhares de quilômetros.`,
-          keywords: ["hidrofone submarino", "documentos secretos", "onda acústica"],
-          effect: "KEN_BURNS_ZOOM_OUT",
-        },
-        {
-          narration: `Especialistas acústicos independentes afirmam que a intensidade do sinal não coincide com nada conhecido pela biologia marinha ou engenharia naval.`,
-          keywords: ["análise de espectrograma", "frequência sonar", "mistério abissal"],
-          effect: "KEN_BURNS_PAN_LEFT",
-        },
-        {
-          narration: `Testemunhas que tentaram trazer à tona relatórios paralelos foram silenciadas por acordos de confidencialidade de grau máximo.`,
-          keywords: ["arquivo confidencial", "carimbo secreto", "testemunha ocular"],
-          effect: "PARALLAX_25D",
-        },
-        {
-          narration: `O que as autoridades internacionais descobriram durante os 47 minutos de silêncio de rádio que até hoje permanecem sob sigilo de Estado?`,
-          keywords: ["satélite espião", "sala de crise militar", "conspiração"],
-          effect: "KEN_BURNS_ZOOM_IN",
-        },
-        {
-          narration: `À medida que novas tecnologias de escaneamento por satélite revisitam as profundezas, a resposta parece estar cada vez mais perto de emergir.`,
-          keywords: ["escaneamento sonar 3d", "abismo mariana", "fundo do mar"],
-          effect: "KEN_BURNS_PAN_RIGHT",
-        },
-      ]
-    : [
-        {
-          narration: `Prepare-se para conhecer os casos mais aterrorizantes e inexplicáveis já registrados na história moderna sobre ${topic}.`,
-          keywords: ["ranking mistério", "abertura tensa", "curiosidades sombrias"],
-          effect: "KEN_BURNS_ZOOM_IN",
-        },
-        {
-          narration: `Número 10: O Primeiro Registro Oculto. Um arquivo militar datado que detalha o contato inicial com a anomalia.`,
-          keywords: ["top 10", "arquivo militar vintage", "radar"],
-          effect: "PARALLAX_25D",
-        },
-        {
-          narration: `Número 09: A Interrupção de Rádio. Mais de 40 estações civis perderam sinal simultaneamente na mesma faixa de frequência.`,
-          keywords: ["estação de rádio torre", "ruído branco", "noite estática"],
-          effect: "KEN_BURNS_PAN_RIGHT",
-        },
-        {
-          narration: `Número 08: Os Testemunhos dos Mergulhadores de Profundidade. Relatos juramentados de estruturas submersas sem precedentes.`,
-          keywords: ["mergulho profundo", "ruínas submersas", "lanterna submarina"],
-          effect: "KEN_BURNS_ZOOM_OUT",
-        },
-        {
-          narration: `Mas se os números iniciais desafiam a lógica, o que foi registrado no número 1 mudou para sempre a compreensão da ciência.`,
-          keywords: ["clímax ranking", "segredo de estado", "revelação chocante"],
-          effect: "KEN_BURNS_ZOOM_IN",
-        },
-        {
-          narration: `Número 01: O Evento Central. A evidência definitiva que os governos tentaram enterrar durante mais de meio século.`,
-          keywords: ["número 1 topo", "conspiração global", "verdade oculta"],
-          effect: "PARALLAX_25D",
-        },
-      ];
+  // Banco de Atos Narrativos de Alta Retenção (YouTube Dark)
+  const documentaryNarrativePool = [
+    {
+      narration: `Nas primeiras horas de uma madrugada silenciosa, algo inexplicável rompeu os protocolos de segurança militar em ${topic}.`,
+      keywords: ["radar militar", "noite sombria", "alerta silencioso"],
+      effect: "KEN_BURNS_ZOOM_IN" as MotionEffect,
+    },
+    {
+      narration: `Nenhum sinal de emergência foi enviado. Em questão de segundos, múltiplos canais de telemetria foram deliberadamente desligados.`,
+      keywords: ["painel de controle", "transponder", "falha de sinal"],
+      effect: "PARALLAX_25D" as MotionEffect,
+    },
+    {
+      narration: `Quando as equipes de resgate chegaram às últimas coordenadas registradas, encontraram apenas um vazio oceânico impenetrável.`,
+      keywords: ["oceano tempestade", "busca militar", "horizonte escuro"],
+      effect: "KEN_BURNS_PAN_RIGHT" as MotionEffect,
+    },
+    {
+      narration: `Documentos desclassificados anos mais tarde revelaram que gravações de hidrofones captaram um ruído de frequência ultra-baixa se propagando por milhares de quilômetros.`,
+      keywords: ["hidrofone submarino", "documentos secretos", "onda acústica"],
+      effect: "KEN_BURNS_ZOOM_OUT" as MotionEffect,
+    },
+    {
+      narration: `Especialistas acústicos independentes afirmam que a intensidade do sinal não coincide com nada conhecido pela biologia marinha ou engenharia naval.`,
+      keywords: ["análise de espectrograma", "frequência sonar", "mistério abissal"],
+      effect: "KEN_BURNS_PAN_LEFT" as MotionEffect,
+    },
+    {
+      narration: `Testemunhas que tentaram trazer à tona relatórios paralelos foram silenciadas por acordos de confidencialidade de grau máximo.`,
+      keywords: ["arquivo confidencial", "carimbo secreto", "testemunha ocular"],
+      effect: "PARALLAX_25D" as MotionEffect,
+    },
+    {
+      narration: `Registros de satélites comerciais de radar orbital apontaram uma oscilação geomagnética minutos antes de qualquer contato cessar.`,
+      keywords: ["satélite espacial", "anomalia magnética", "órbita terra"],
+      effect: "KEN_BURNS_ZOOM_IN" as MotionEffect,
+    },
+    {
+      narration: `Em salas de comando a milhares de quilômetros dali, oficiais de alto escalão convocaram reuniões de emergência sob protocolo de censura total.`,
+      keywords: ["sala de crise militar", "reunião secreta", "segurança de estado"],
+      effect: "KEN_BURNS_PAN_RIGHT" as MotionEffect,
+    },
+    {
+      narration: `Durante quarenta e sete minutos cruciais de silêncio de rádio, relatórios de tráfego aéreo continham dados conflitantes que jamais foram anexados aos inquéritos civis.`,
+      keywords: ["fita cassete analógica", "documento censurado", "arquivos militares"],
+      effect: "KEN_BURNS_ZOOM_OUT" as MotionEffect,
+    },
+    {
+      narration: `Navios de sondagem oceanográfica que operavam na região foram subitamente ordenados a mudar de curso e recolher todos os equipamentos de escuta.`,
+      keywords: ["navio de pesquisa", "mar tempestuoso", "sonar de profundidade"],
+      effect: "KEN_BURNS_PAN_LEFT" as MotionEffect,
+    },
+    {
+      narration: `As transcrições oficiais divulgadas aos parentes apresentavam cortes deliberados de três minutos na gravação de voz da cabine.`,
+      keywords: ["fone de ouvido piloto", "fita de áudio", "gravador de cabine"],
+      effect: "PARALLAX_25D" as MotionEffect,
+    },
+    {
+      narration: `Hipóteses científicas independentes apontam para anomalias térmicas submarinas que coincidem com os últimos feixes de comunicação por satélite.`,
+      keywords: ["fossa das marianas", "fundo do oceano", "submarino de pesquisa"],
+      effect: "KEN_BURNS_ZOOM_IN" as MotionEffect,
+    },
+    {
+      narration: `Engenheiros aeroespaciais aposentados romperam o silêncio afirmando que o sistema de navegação jamais permitiria manobras tão extremas sem intervenção humana direta.`,
+      keywords: ["painel de instrumentos", "computador de bordo", "rota de voo"],
+      effect: "KEN_BURNS_PAN_RIGHT" as MotionEffect,
+    },
+    {
+      narration: `Mesmo após a maior operação de busca combinada da história moderna, nenhum destroço estrutural de grande porte foi localizado onde a física previa.`,
+      keywords: ["busca internacional", "pesquisa marítima", "abismo silencioso"],
+      effect: "KEN_BURNS_ZOOM_OUT" as MotionEffect,
+    },
+    {
+      narration: `O que as autoridades internacionais descobriram durante o evento que até hoje permanece sob o selo de mais estrito segredo de Estado?`,
+      keywords: ["satélite espião", "sala de crise militar", "conspiração global"],
+      effect: "KEN_BURNS_ZOOM_IN" as MotionEffect,
+    },
+    {
+      narration: `À medida que novas tecnologias de escaneamento por satélite revisitam as profundezas, a resposta definitiva parece estar cada vez mais perto de emergir.`,
+      keywords: ["escaneamento sonar 3d", "abismo mariana", "fundo do mar"],
+      effect: "PARALLAX_25D" as MotionEffect,
+    },
+    {
+      narration: `Os arquivos que ligam esse caso a operações de inteligência permanecem guardados em cofres subterrâneos, com desclassificação prevista apenas para o próximo século.`,
+      keywords: ["cofre subterrâneo", "arquivos selados", "segredo de inteligência"],
+      effect: "KEN_BURNS_PAN_LEFT" as MotionEffect,
+    },
+    {
+      narration: `Para o público, restaram hipóteses convenientes. Mas para quem analisou os dados brutos de radar, as peças simplesmente não fecham.`,
+      keywords: ["gráfico de dados", "análise de radar", "mistério não resolvido"],
+      effect: "KEN_BURNS_ZOOM_IN" as MotionEffect,
+    },
+    {
+      narration: `Até que uma prova irrefutável venha à luz, este episódio continuará como o mais perturbador enigma documental do nosso tempo.`,
+      keywords: ["horizonte escuro", "pôr do sol misterioso", "enigma final"],
+      effect: "PARALLAX_25D" as MotionEffect,
+    },
+  ];
+
+  // Gera o total de cenas proporcional ao targetSceneCount
+  const selectedScenesData = [];
+  for (let i = 0; i < targetSceneCount; i++) {
+    const template = documentaryNarrativePool[i % documentaryNarrativePool.length];
+    selectedScenesData.push({
+      ...template,
+      sceneOrder: i + 1,
+    });
+  }
+
+  const durationPerScene = parseFloat((targetTotalSeconds / targetSceneCount).toFixed(1));
 
   const scenes: SceneItem[] = await Promise.all(
-    rawScenesData.map(async (item, idx) => {
-      const words = item.narration.split(/\s+/).length;
-      const duration = Math.max(6.0, words * 0.44);
+    selectedScenesData.map(async (item, idx) => {
       const mediaUrl = await getCuratedMediaForScene({
         topic,
         keywords: item.keywords,
         sceneIndex: idx,
-        totalScenes: rawScenesData.length,
+        totalScenes: selectedScenesData.length,
       });
 
       return {
@@ -287,9 +433,9 @@ async function generateDeterministicScript(
         mediaUrl,
         mediaType: "IMAGE",
         motionEffect: item.effect,
-        durationSeconds: parseFloat(duration.toFixed(1)),
+        durationSeconds: durationPerScene,
         keywords: item.keywords,
-        subtitles: generateWordTimestamps(item.narration, duration),
+        subtitles: generateWordTimestamps(item.narration, durationPerScene),
       };
     })
   );
@@ -299,14 +445,16 @@ async function generateDeterministicScript(
 
   const title = isDoc
     ? `${topic}: O Documentário Que Revela o Que Jamais Foi Dito`
-    : `Os Segredos Mais Perturbadores de ${topic} (TOP RANKING)`;
+    : `Os Segredos Mais Perturbadores de ${topic} (DOCUMENTÁRIO COMPLETO)`;
 
-  const youtubeDescription = `Investigação completa sobre ${topic}.\n\n` +
+  const youtubeDescription =
+    `Investigação completa sobre ${topic}.\n\n` +
+    `DURAÇÃO TOTAL: ${Math.floor(totalDuration / 60)} minutos (${scenes.length} capítulos)\n\n` +
     `CAPÍTULOS DO VÍDEO:\n` +
     scenes
       .map((s, i) => {
-        const mins = Math.floor((i * 40) / 60);
-        const secs = (i * 40) % 60;
+        const mins = Math.floor((i * durationPerScene) / 60);
+        const secs = Math.floor((i * durationPerScene) % 60);
         return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")} - Parte ${i + 1}`;
       })
       .join("\n") +

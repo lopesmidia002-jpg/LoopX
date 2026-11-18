@@ -25,6 +25,7 @@ export default function StudioPage() {
   const [activeChannel, setActiveChannel] = useState<DarkChannel | null>(null);
   const [projectResetKey, setProjectResetKey] = useState(0);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [configuredDuration, setConfiguredDuration] = useState(10);
 
   // Minutes and concurrent renders state
   const [availableMinutes, setAvailableMinutes] = useState(184.5);
@@ -42,7 +43,7 @@ export default function StudioPage() {
           clearInterval(interval);
           setStudioStep("STORYBOARD");
           setConcurrentRenders(0);
-          setAvailableMinutes((m) => Math.max(0, m - 10.5));
+          setAvailableMinutes((m) => Math.max(0, m - configuredDuration));
           return 100;
         }
 
@@ -54,7 +55,7 @@ export default function StudioPage() {
     }, 600);
 
     return () => clearInterval(interval);
-  }, [studioStep]);
+  }, [studioStep, configuredDuration]);
 
   const handleStartPipeline = async (config: {
     topic: string;
@@ -64,6 +65,7 @@ export default function StudioPage() {
     customScript?: string;
     targetDuration: number;
   }) => {
+    setConfiguredDuration(config.targetDuration || 10);
     setTopicTitle(config.topic);
     setPipelineProgress(5);
     setCurrentPipelineStage(1);

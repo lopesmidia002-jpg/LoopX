@@ -343,3 +343,20 @@
   - [x] Exibição de 6 cards analíticos: Duração Total, Cenas Geradas, Palavras Narradas e cadência (wpm), Resolução 1080p 60fps, Mixagem e Voz Neural 320kbps com ducking, e Retenção Algorítmica estimada para o YouTube.
 - [x] Validação integral no Docker: compilação de produção (`npm run build` com 0 erros), reinicialização do contêiner `loopx-app` e aprovação de 18/18 testes E2E automatizados.
 - [x] Auditoria e higienização de diagnósticos em `src/` (`.eslintrc.json`): eliminação de 21 alertas de `@next/next/no-img-element`, resultando em 0 erros e 0 alertas no ESLint e TypeScript.
+
+---
+
+### [x] Passo 16: Integração da IA Gemini (Google AI Studio) e Dimensionamento Dinâmico de Minutagem Real (8, 10, 12 e 15 minutos)
+- [x] Diagnóstico da inoperância de vídeos longos e ausência de IA:
+  - [x] A chave da OpenAI no `.env` estava com saldo de créditos esgotado (`You have no credits remaining`), fazendo a chamada de IA falhar silenciosamente para um fallback estático de 8 cenas curtas (~1 minuto).
+  - [x] A chave oficial do Google AI Studio / Gemini (`GEMINI_API_KEY`) estava configurada no ambiente com cotas ativas e modelo `gemini-flash-lite-latest`, porém não estava conectada aos módulos de pesquisa (`researcher.ts`) e roteirização (`scriptwriter.ts`).
+  - [x] O gerador de roteiro ignorava o parâmetro `targetDurationMinutes` (8, 10, 12, 15 min), gerando sempre 8 cenas fixas de 7 segundos (~65s no total).
+- [x] Conexão da IA Google Gemini como Motor Principal em `researcher.ts` e `scriptwriter.ts`:
+  - [x] Integração direta com `gemini-flash-lite-latest` via Google Generative Language API com geração estruturada em JSON (`response_mime_type: "application/json"`).
+  - [x] Roteirização cinematográfica gerando arcos narrativos completos, títulos otimizados para CTR e descrições com SEO.
+- [x] Dimensionamento Dinâmico de Cenas e Duração Real:
+  - [x] Cálculo proporcional de quantidade de cenas (`targetSceneCount = Math.round(targetTotalSeconds / 42)`), gerando 11-12 cenas para 8 min, 14-15 cenas para 10 min, 17-18 cenas para 12 min e 21-22 cenas para 15 min.
+  - [x] Normalização e escala matemática do tempo de cada cena para preencher fielmente os minutos selecionados pelo usuário.
+  - [x] Atualização de `generateDeterministicScript` com 24 atos narrativos e escala dinâmica para minutagens longas.
+  - [x] Atualização de `studio/page.tsx` para deduzir o saldo exato de minutos configurado (`configuredDuration`).
+- [x] Validação integral no Docker: compilação Next.js (0 erros), 18/18 testes E2E aprovados e testes práticos gerando 10m01s (14 cenas) e 15m01s (21 cenas) reais.
