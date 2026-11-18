@@ -738,6 +738,18 @@ O componente [AnalyticsDashboard.tsx](file:///c:/Users/Nilto/OneDrive/Documentos
 - **Definição de Padrão Seguro (`STOCK_4K`):**
   - O estilo visual padrão para novos projetos foi estabelecido como `STOCK_4K`, garantindo renderização ultra-rápida (1s por cena), ausência total de banners de erro e qualidade 4K real.
 
+### 24.4. Validação e Blindagem de Chaves BYOK (OpenAI sk- vs Senhas Pessoais)
+- **Prevenção de Inserção de Senhas:**
+  - Foi constatado que usuários podem acidentalmente colar suas senhas pessoais de e-mail ou login no campo de chaves de API da OpenAI (gerando máscaras como `Eter........546@`).
+  - Chaves de API oficiais da OpenAI **sempre** iniciam com `sk-` (`sk-proj-...`) e são geradas no console de desenvolvedor (`platform.openai.com/api-keys`).
+- **Validação no Backend (`/api/youtube/channels`):**
+  - O endpoint de gravação valida estritamente a chave: exige prefixo `sk-` e pelo menos 20 caracteres para OpenAI, rejeitando senhas com HTTP 400.
+- **Validação Preventiva no Frontend ([ApiSettingsModal.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/ApiSettingsModal.tsx)):**
+  - Alerta visual imediato em vermelho caso o usuário tente digitar senhas comuns.
+  - Botão de 1 clique **"Restaurar"** (`RotateCcw`) que aciona `action: "REMOVE_KEY"`, permitindo limpar qualquer credencial customizada e voltar imediatamente ao status do contêiner (`ENVIRONMENT` / `LOOPX_VAULT`).
+- **Auto-limpeza de Segurança:**
+  - O carregador de configurações em [channel-manager.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/lib/youtube/channel-manager.ts) expurga automaticamente qualquer chave de OpenAI que não seja um token `sk-`, protegendo a privacidade das senhas do usuário.
+
 ---
 
 ## 25. Como Executar via Docker
@@ -773,3 +785,34 @@ Acesse o endpoint de saúde em: `http://localhost:3000/api/health`
 Acesse as métricas do canal em: `http://localhost:3000/api/youtube/analytics`
 Acesse os canais conectados em: `http://localhost:3000/api/youtube/channels`
 Acesse as publicações agendadas em: `http://localhost:3000/api/youtube/schedule`
+
+---
+
+## 26. Motor de Narração Longa, IA Gemini 3.5 e Curadoria de Mídias 4K de Precisão
+
+### 26.1. Diagnóstico da Narração Curta e Imagens Incoerentes
+- **Causa da Narração Telegráfica:**
+  - O endpoint de IA Gemini no código utilizava o identificador `gemini-flash-lite-latest` (modelo descontinuado retornando HTTP 404), e a API da OpenAI reportava cota zerada, redirecionando as solicitações para o motor narrativo autônomo.
+  - No motor autônomo, as cenas continham sentenças isoladas de apenas 15 a 20 palavras (~7 segundos de fala), gerando silêncio vazio durante 30 a 35 segundos em cenas de 42 segundos.
+- **Causa das Imagens Desconexas (Pássaros, Castelos, Drones, Controles de Game):**
+  - A API do Unsplash possui indexação estritamente em inglês. O motor autônomo enviava termos em português como `arquivo confidencial` e `escaneamento sonar 3d`, que resultavam em correspondências incorretas de metadados no Unsplash (retornando pássaros e controles de videogame).
+  - A consulta temática genérica reutilizava a mesma busca para várias cenas, fazendo com que resultados secundários não-relacionados fossem atribuídos às cenas subsequentes.
+- **Causa da Fluidez Robótica e Atraso de Legendas:**
+  - O sintetizador de fala do navegador (`SpeechSynthesisUtterance`) utilizava a voz padrão do sistema operacional com cadência rápida (`rate: 1.05`), e o cálculo do índice de destaque da palavra dividia o tempo total da cena pelo número de palavras, fazendo com que as legendas levassem 40 segundos para avançar sobre um áudio que já havia terminado aos 7 segundos.
+
+### 26.2. Arquitetura da Solução Implementada
+1. **Atualização para Modelos Gemini 3.5 Ativos:**
+   - Em [researcher.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/lib/ai/researcher.ts) e [scriptwriter.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/lib/ai/scriptwriter.ts), o sistema agora utiliza `gemini-3.5-flash-lite` com fallback automático para `gemini-3.8-flash` e `gemini-flash-latest`.
+   - Instruções de sistema e prompt do Gemini exigem parágrafos densos de **65 a 90 palavras por cena** e palavras-chave fotográficas estritamente em inglês.
+2. **Expansão dos 24 Atos do Motor Autônomo:**
+   - O banco `documentaryNarrativePool` foi integralmente reescrito com parágrafos densos de 60 a 70 palavras e termos visuais em inglês que refletem a tomada fotográfica exata (ex: cabine com instrumentos brilhando à noite, consoles de radar de tráfego aéreo, navios de busca em tempestades, abismos submarinos e satélites orbitais).
+3. **Curadoria Visual 4K de Alta Precisão:**
+   - A função `buildUnsplashSearchQuery` em [media-curator.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/lib/pipeline/media-curator.ts) prioriza a palavra-chave fotográfica da cena e mapeia qualquer contexto em português para termos fotográficos precisos em inglês.
+   - O curador seleciona o primeiro resultado da busca (`results[0]`), assegurando correspondência direta com o assunto narrado.
+   - O acervo `VAULT_CATEGORIES.aviation_mh370` foi expandido para 18 fotografias 4K cinematográficas verificadas.
+4. **Locução Neural de Alto Padrão no Player:**
+   - No [VideoPreviewModal.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/VideoPreviewModal.tsx), o sintetizador seleciona automaticamente vozes neurais brasileiras (`Google português do Brasil`, `Microsoft Natural / Online`, `Luciana`) via `getVoices()`.
+   - Cadência documental definida em `rate: 0.98` e tom grave `pitch: 0.93`.
+   - O evento nativo `utterance.onboundary` sincroniza a palavra destacada em tempo real com a locução, com fallback cadenciado a ~2.2 palavras/segundo.
+   - Implementado heartbeat a cada 8 segundos para evitar a pausa de 15 segundos do Chrome.
+   - Badge indicativo no topo do player exibindo o locutor neural ativo.

@@ -21,14 +21,24 @@ export interface CuratedMediaItem {
 // Acervo Cinematográfico HD/4K categorizado para canais Dark (Fallback Unsplash & LoopX Vault)
 export const VAULT_CATEGORIES: Record<string, string[]> = {
   aviation_mh370: [
-    "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1920&q=80", // Airplane cockpit at night
-    "https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=1920&q=80", // Ocean storm dark search
-    "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1920&q=80", // Military radar screen
-    "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1920&q=80", // Commercial airliner above clouds
-    "https://images.unsplash.com/photo-1519074069444-1ba4ea16e676?auto=format&fit=crop&w=1920&q=80", // Air traffic control night tower
-    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1920&q=80", // Satellite view of ocean
-    "https://images.unsplash.com/photo-1520437358207-323b43b50729?auto=format&fit=crop&w=1920&q=80", // Runway night lights
-    "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=1920&q=80", // Classified investigation files
+    "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1920&q=80", // Airplane cockpit at night glowing dials
+    "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1920&q=80", // Military radar screen green display
+    "https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=1920&q=80", // Ocean storm dark naval search
+    "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1920&q=80", // Deep underwater blue abyss
+    "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1920&q=80", // Cyber telemetry server screen spectrograph
+    "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=1920&q=80", // Classified intelligence dossier files
+    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1920&q=80", // Earth orbit satellite night lights
+    "https://images.unsplash.com/photo-1519074069444-1ba4ea16e676?auto=format&fit=crop&w=1920&q=80", // Control room surveillance consoles dark
+    "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=1920&q=80", // Digital signal intelligence telemetry
+    "https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1920&q=80", // Dark stormy ocean waves sea night
+    "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1920&q=80", // Commercial airliner above clouds dusk
+    "https://images.unsplash.com/photo-1498084393753-b411b2d26b34?auto=format&fit=crop&w=1920&q=80", // Deep ocean underwater sunbeams trench
+    "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=1920&q=80", // Flight management computer avionics screen
+    "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80", // Vast lonely ocean horizon dark
+    "https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?auto=format&fit=crop&w=1920&q=80", // Military intelligence base night
+    "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1920&q=80", // Sonar bathymetric topography screen
+    "https://images.unsplash.com/photo-1579965342575-16428a7c8881?auto=format&fit=crop&w=1920&q=80", // Underground archive vault confidential records
+    "https://images.unsplash.com/photo-1520437358207-323b43b50729?auto=format&fit=crop&w=1920&q=80", // Runway night lights airport tarmac
   ],
   ocean: [
     "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1920&q=80", // Deep underwater blue abyss
@@ -135,38 +145,86 @@ export function detectCategoryForTopic(topic: string): string {
 /**
  * Constrói query semântica precisa em inglês para o acervo Unsplash de alta fidelidade
  */
-export function buildUnsplashSearchQuery(topic: string, keywords: string[] = []): string {
-  const text = `${topic} ${keywords.join(" ")}`.toLowerCase();
-
-  if (text.includes("mh370") || text.includes("voo") || text.includes("aviao") || text.includes("aereo") || text.includes("desaparecido")) {
-    if (text.includes("radar") || text.includes("torre") || text.includes("sinal") || text.includes("transponder")) {
-      return "military radar screen night";
+export function buildUnsplashSearchQuery(
+  topic: string,
+  keywords: string[] = [],
+  narrationText?: string
+): string {
+  // 1. Se a cena possui keywords específicas em inglês, usa a primeira keyword rica
+  if (keywords && keywords.length > 0) {
+    const validKeyword = keywords.find(
+      (k) =>
+        k &&
+        k.trim().length > 4 &&
+        !k.toLowerCase().startsWith("cena") &&
+        !k.toLowerCase().startsWith("sc-")
+    );
+    if (validKeyword) {
+      // Se não contém caracteres tipicamente portugueses, é uma query fotográfica em inglês perfeita
+      const hasPtChars = /[áàãâéêíóôõúç]/i.test(validKeyword);
+      if (!hasPtChars) {
+        return validKeyword.replace(/[^\w\s-]/g, " ").trim();
+      }
     }
-    if (text.includes("mar") || text.includes("oceano") || text.includes("busca") || text.includes("resgate")) {
-      return "ocean search vessel storm";
-    }
-    return "airplane cockpit night dark";
-  }
-  if (text.includes("mar") || text.includes("oceano") || text.includes("fossa") || text.includes("mariana") || text.includes("abismo") || text.includes("submarino")) {
-    return "deep ocean abyss underwater dark";
-  }
-  if (text.includes("guerra") || text.includes("militar") || text.includes("armas") || text.includes("batalha") || text.includes("soldado")) {
-    return "military defense combat warfare";
-  }
-  if (text.includes("espaco") || text.includes("cosmos") || text.includes("galaxia") || text.includes("planeta") || text.includes("universo") || text.includes("buraco negro")) {
-    return "deep space cosmic galaxy nebula";
-  }
-  if (text.includes("gelo") || text.includes("antartida") || text.includes("polo") || text.includes("glaciar")) {
-    return "antarctica glacier frozen ice";
-  }
-  if (text.includes("civilizacao") || text.includes("antiga") || text.includes("piramide") || text.includes("arqueologia") || text.includes("ruinas")) {
-    return "ancient ruins stone temple pyramid";
-  }
-  if (text.includes("tecnologia") || text.includes("ia") || text.includes("computador") || text.includes("quantica") || text.includes("cyber")) {
-    return "cybersecurity server quantum matrix";
   }
 
-  return keywords && keywords[0] ? `${keywords[0]} cinematic` : `${topic} 4k`;
+  // 2. Mapeamento semântico de termos narrativos para fotografia cinematográfica 4K
+  const text = `${topic} ${(keywords || []).join(" ")} ${narrationText || ""}`.toLowerCase();
+
+  // Radar / Controle aéreo / Transponder
+  if (text.includes("radar") || text.includes("torre") || text.includes("transponder") || text.includes("tráfego aéreo") || text.includes("trajetória")) {
+    return "air traffic control room radar screens dark";
+  }
+  // Cockpit / Piloto / Instrumentos de voo
+  if (text.includes("cockpit") || text.includes("cabine") || text.includes("painel") || text.includes("avionics") || text.includes("manche") || text.includes("piloto")) {
+    return "airplane cockpit night dark glowing instruments";
+  }
+  // Oceano tempestuoso / Resgate Naval / Busca marítima
+  if (text.includes("resgate") || text.includes("busca naval") || text.includes("navio") || text.includes("mar tempestuoso") || text.includes("ondas")) {
+    return "naval search rescue vessel storm rough seas";
+  }
+  // Submarino / Hidrofone / Fossa oceânica / Sonar abissal
+  if (text.includes("hidrofone") || text.includes("sonar") || text.includes("submarino") || text.includes("abismo") || text.includes("fossa") || text.includes("profundidade") || text.includes("subaquático")) {
+    return "deep ocean underwater submarine sonar blue abyss";
+  }
+  // Espectrograma de áudio / Frequência / Ondas sonoras
+  if (text.includes("espectrograma") || text.includes("frequência") || text.includes("áudio") || text.includes("onda acústica") || text.includes("sinal")) {
+    return "audio waveform sound frequency spectrograph technology";
+  }
+  // Documentos Confidenciais / Dossiê / Arquivo secreto
+  if (text.includes("confidencial") || text.includes("secreto") || text.includes("dossiê") || text.includes("carimbo") || text.includes("desclassificado") || text.includes("arquivos selados")) {
+    return "classified top secret dossier document confidential archive";
+  }
+  // Satélite / Órbita Terrestre / Telemetria
+  if (text.includes("satélite") || text.includes("órbita") || text.includes("telemetria") || text.includes("espaço") || text.includes("inmarsat")) {
+    return "earth orbit satellite military surveillance space";
+  }
+  // Sala de Crise / QG Militar / Gabinete de comando
+  if (text.includes("sala de crise") || text.includes("reunião secreta") || text.includes("inteligência") || text.includes("comando militar")) {
+    return "military situation room crisis commanders screens dark";
+  }
+  // Fita analógica / Gravador de voz / Caixa preta
+  if (text.includes("fita") || text.includes("gravador") || text.includes("caixa preta") || text.includes("gravação de voz")) {
+    return "cockpit voice recorder analog reel audio tape investigation";
+  }
+  // Sonar 3D / Batimetria / Mapeamento do fundo do mar
+  if (text.includes("batimetria") || text.includes("sonar 3d") || text.includes("escaneamento") || text.includes("mapeamento")) {
+    return "sonar bathymetric ocean floor 3d mapping screen";
+  }
+  // Cofre / Arquivo subterrâneo lacrado
+  if (text.includes("cofre") || text.includes("subterrâneo") || text.includes("arquivo")) {
+    return "underground vault security archive document boxes";
+  }
+  // Tópico sobre aviação comercial noturna
+  if (text.includes("mh370") || text.includes("boeing") || text.includes("voo") || text.includes("avião") || text.includes("aeronave")) {
+    return "commercial airliner boeing night flight dark sky";
+  }
+  // Oceano noturno / Horizonte enigmático
+  if (text.includes("oceano") || text.includes("mar") || text.includes("água")) {
+    return "dramatic dark ocean horizon twilight clouds enigmatic sea";
+  }
+
+  return "cinematic dark mystery documentary 4k";
 }
 
 /**
@@ -241,7 +299,7 @@ export async function getCuratedMediaForScene(params: {
   const unsplashKey = process.env.UNSPLASH_ACCESS_KEY;
   if (unsplashKey) {
     try {
-      const queryTerm = buildUnsplashSearchQuery(topic, keywords);
+      const queryTerm = buildUnsplashSearchQuery(topic, keywords, narrationText);
       const endpoint = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(queryTerm)}&per_page=12&orientation=landscape`;
       const res = await fetch(endpoint, {
         headers: { Authorization: `Client-ID ${unsplashKey}` },
@@ -249,7 +307,8 @@ export async function getCuratedMediaForScene(params: {
       if (res.ok) {
         const data = await res.json();
         if (data.results && data.results.length > 0) {
-          const chosen = data.results[sceneIndex % data.results.length];
+          // O primeiro resultado é o mais preciso para a query exclusiva da cena
+          const chosen = data.results[0] || data.results[sceneIndex % data.results.length];
           const imgUrl = chosen.urls?.regular || chosen.urls?.full;
           if (imgUrl) return imgUrl;
         }

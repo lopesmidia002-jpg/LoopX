@@ -67,10 +67,31 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
-      await ChannelManager.setCustomApiKey(service, key);
+      const result = await ChannelManager.setCustomApiKey(service, key);
+      if (!result.success) {
+        return NextResponse.json(
+          { success: false, error: result.error || "Formato de chave inválido" },
+          { status: 400 }
+        );
+      }
       return NextResponse.json({
         success: true,
-        message: `Chave de API do serviço ${service} salva com sucesso`,
+        message: `Chave de API do serviço ${service} validada e salva com sucesso`,
+      });
+    }
+
+    if (body.action === "REMOVE_KEY") {
+      const { service } = body;
+      if (!service) {
+        return NextResponse.json(
+          { success: false, error: "Serviço é obrigatório" },
+          { status: 400 }
+        );
+      }
+      await ChannelManager.removeCustomApiKey(service);
+      return NextResponse.json({
+        success: true,
+        message: `Chave personalizada do serviço ${service} removida com sucesso. Padrão restaurado.`,
       });
     }
 

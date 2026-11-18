@@ -13,6 +13,8 @@ import {
   Loader2,
   Sparkles,
   Info,
+  RotateCcw,
+  AlertCircle,
 } from "lucide-react";
 import { ApiServiceStatus } from "@/lib/youtube/channel-manager";
 
@@ -27,6 +29,7 @@ export default function ApiSettingsModal({ isOpen, onClose }: ApiSettingsModalPr
   const [activeInput, setActiveInput] = useState<{ [key: string]: string }>({});
   const [savingService, setSavingService] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState<string | null>(null);
+  const [errorMessages, setErrorMessages] = useState<{ [service: string]: string }>({});
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -55,11 +58,23 @@ export default function ApiSettingsModal({ isOpen, onClose }: ApiSettingsModalPr
   }, [isOpen]);
 
   const handleSaveKey = async (service: string) => {
-    const key = activeInput[service];
+    const key = activeInput[service]?.trim();
     if (!key) return;
+
+    // Validação preventiva no cliente para OpenAI
+    if (service === "openai" && (!key.startsWith("sk-") || key.length < 20)) {
+      setErrorMessages((prev) => ({
+        ...prev,
+        openai:
+          "Chave inválida. Uma API Key da OpenAI sempre começa com 'sk-'. Não insira sua senha de login.",
+      }));
+      return;
+    }
 
     try {
       setSavingService(service);
+      setErrorMessages((prev) => ({ ...prev, [service]: "" }));
+
       const res = await fetch("/api/youtube/channels", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -76,9 +91,43 @@ export default function ApiSettingsModal({ isOpen, onClose }: ApiSettingsModalPr
           setIntegrations(refreshData.integrations);
         }
         setActiveInput((prev) => ({ ...prev, [service]: "" }));
+      } else {
+        setErrorMessages((prev) => ({
+          ...prev,
+          [service]: data.error || "Erro ao validar chave de API.",
+        }));
       }
     } catch (e) {
       console.error("Erro ao salvar chave:", e);
+      setErrorMessages((prev) => ({
+        ...prev,
+        [service]: "Falha de conexão ao salvar chave.",
+      }));
+    } finally {
+      setSavingService(null);
+    }
+  };
+
+  const handleRemoveKey = async (service: string) => {
+    try {
+      setSavingService(service);
+      setErrorMessages((prev) => ({ ...prev, [service]: "" }));
+
+      const res = await fetch("/api/youtube/channels", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "REMOVE_KEY", service }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        const refresh = await fetch("/api/youtube/channels");
+        const refreshData = await refresh.json();
+        if (refreshData.success && refreshData.integrations) {
+          setIntegrations(refreshData.integrations);
+        }
+      }
+    } catch (e) {
+      console.error("Erro ao remover chave:", e);
     } finally {
       setSavingService(null);
     }
@@ -146,40 +195,75 @@ export default function ApiSettingsModal({ isOpen, onClose }: ApiSettingsModalPr
                     </span>
                   </div>
 
-                  <span className="text-[11px] font-mono text-slate-400 flex items-center gap-1">
-                    <Lock className="w-3 h-3 text-slate-500" />
-                    {item.maskedKey}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-mono text-slate-400 flex items-center gap-1">
+                      <Lock className="w-3 h-3 text-slate-500" />
+                      {item.maskedKey}
+                    </span>
+                    {item.source === "CUSTOM_BYOK" && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveKey(item.service)}
+                        disabled={savingService === item.service}
+                        className="text-[10px] font-semibold text-rose-400 hover:text-rose-300 flex items-center gap-1 bg-rose-500/10 hover:bg-rose-500/20 px-2 py-0.5 rounded border border-rose-500/30 transition-colors disabled:opacity-50"
+                        title="Remover chave personalizada e restaurar padrão do ambiente/Vault"
+                      >
+                        <RotateCcw className="w-2.5 h-2.5" />
+                        <span>Restaurar</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Input for Custom Key */}
-                <div className="flex items-center gap-2">
-                  <input
-                    type="password"
-                    placeholder={`Inserir chave personalizada para ${item.service}...`}
-                    value={activeInput[item.service] || ""}
-                    onChange={(e) =>
-                      setActiveInput({
-                        ...activeInput,
-                        [item.service]: e.target.value,
-                      })
-                    }
-                    className="w-full text-xs font-mono bg-surface border border-surface-border rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-500"
-                  />
-                  <button
-                    onClick={() => handleSaveKey(item.service)}
-                    disabled={!activeInput[item.service] || savingService === item.service}
-                    className="px-3 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shrink-0 transition-all disabled:opacity-40 disabled:hover:bg-brand-600"
-                  >
-                    {savingService === item.service ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : savedSuccess === item.service ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-300" />
-                    ) : (
-                      <Save className="w-3.5 h-3.5" />
-                    )}
-                    <span>{savedSuccess === item.service ? "Salvo!" : "Aplicar"}</span>
-                  </button>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="password"
+                      placeholder={
+                        item.service === "openai"
+                          ? "sk-proj-... (Cole aqui sua API Key da OpenAI, não use sua senha)"
+                          : item.service === "google_ai_studio"
+                          ? "AIzaSy... (Chave Gemini Google AI Studio)"
+                          : `Inserir chave personalizada para ${item.service}...`
+                      }
+                      value={activeInput[item.service] || ""}
+                      onChange={(e) => {
+                        setActiveInput({
+                          ...activeInput,
+                          [item.service]: e.target.value,
+                        });
+                        if (errorMessages[item.service]) {
+                          setErrorMessages((prev) => ({ ...prev, [item.service]: "" }));
+                        }
+                      }}
+                      className={`w-full text-xs font-mono bg-surface border rounded-lg px-3 py-2 text-white focus:outline-none ${
+                        errorMessages[item.service]
+                          ? "border-rose-500 focus:border-rose-400"
+                          : "border-surface-border focus:border-brand-500"
+                      }`}
+                    />
+                    <button
+                      onClick={() => handleSaveKey(item.service)}
+                      disabled={!activeInput[item.service] || savingService === item.service}
+                      className="px-3 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shrink-0 transition-all disabled:opacity-40 disabled:hover:bg-brand-600"
+                    >
+                      {savingService === item.service ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : savedSuccess === item.service ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-300" />
+                      ) : (
+                        <Save className="w-3.5 h-3.5" />
+                      )}
+                      <span>{savedSuccess === item.service ? "Salvo!" : "Aplicar"}</span>
+                    </button>
+                  </div>
+                  {errorMessages[item.service] && (
+                    <p className="text-[11px] text-rose-400 flex items-center gap-1 mt-1.5 font-sans">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-400" />
+                      <span>{errorMessages[item.service]}</span>
+                    </p>
+                  )}
                 </div>
               </div>
             ))}

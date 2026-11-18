@@ -64,12 +64,44 @@ export default function VideoPreviewModal({
   const [isABModalOpen, setIsABModalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isDownloadingMp4, setIsDownloadingMp4] = useState(false);
+  const [neuralVoice, setNeuralVoice] = useState<SpeechSynthesisVoice | null>(null);
+  const [voiceName, setVoiceName] = useState<string>("Voz Neural (pt-BR)");
+  const [boundaryWordIndex, setBoundaryWordIndex] = useState<number>(0);
 
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const timelineBarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  // Seleção automática da melhor voz neural brasileira
+  useEffect(() => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+
+    const findBestVoice = () => {
+      const voices = window.speechSynthesis.getVoices();
+      if (!voices || voices.length === 0) return;
+
+      const preferred =
+        voices.find((v) => v.lang.includes("pt-BR") && /google/i.test(v.name)) ||
+        voices.find((v) => v.lang.includes("pt-BR") && /natural|neural|online/i.test(v.name)) ||
+        voices.find((v) => v.lang.includes("pt-BR") && /antonio|francisca|luciana|ricardo/i.test(v.name)) ||
+        voices.find((v) => v.lang.startsWith("pt") && /brazil|brasil/i.test(v.name)) ||
+        voices.find((v) => v.lang.includes("pt-BR")) ||
+        voices.find((v) => v.lang.startsWith("pt"));
+
+      if (preferred) {
+        setNeuralVoice(preferred);
+        const cleanName = preferred.name
+          .replace(/Microsoft|Google|Online|\(Natural\)|\(Brazil\)|Portuguese/gi, "")
+          .trim();
+        setVoiceName(cleanName ? `Locutor ${cleanName}` : "Voz Neural pt-BR");
+      }
+    };
+
+    findBestVoice();
+    window.speechSynthesis.onvoiceschanged = findBestVoice;
   }, []);
 
   useEffect(() => {
@@ -83,6 +115,7 @@ export default function VideoPreviewModal({
     if (!isOpen) {
       setIsPlaying(false);
       setCurrentTime(0);
+      setBoundaryWordIndex(0);
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }
@@ -123,6 +156,10 @@ export default function VideoPreviewModal({
 
   const activeScene = timeline[activeSceneIndex] || timeline[0];
 
+  useEffect(() => {
+    setBoundaryWordIndex(0);
+  }, [activeSceneIndex]);
+
   // Playback ticker (updates currentTime every 50ms)
   useEffect(() => {
     if (!isPlaying) return;
@@ -141,7 +178,7 @@ export default function VideoPreviewModal({
     return () => clearInterval(interval);
   }, [isPlaying, totalDuration]);
 
-  // Speech Synthesis for real-time narration audio
+  // Locução neural em tempo real com cadência e tom documental de alto padrão
   useEffect(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
@@ -150,22 +187,44 @@ export default function VideoPreviewModal({
       return;
     }
 
-    // Cancel prior speech and start speaking current scene text
+    // Cancela locução anterior e dispara narração da cena ativa
     window.speechSynthesis.cancel();
     if (activeScene?.narrationText) {
       const utterance = new SpeechSynthesisUtterance(activeScene.narrationText);
+      if (neuralVoice) {
+        utterance.voice = neuralVoice;
+      }
       utterance.lang = "pt-BR";
-      utterance.rate = 1.05;
-      utterance.pitch = 0.95;
+      utterance.rate = 0.98; // Cadência medida de suspense investigativo
+      utterance.pitch = 0.93; // Timbre grave e cinematográfico
+
+      // Sincronização nativa da palavra falada
+      utterance.onboundary = (event) => {
+        if (event.name === "word") {
+          const textBefore = activeScene.narrationText.slice(0, event.charIndex);
+          const wordCount = textBefore.trim().split(/\s+/).filter(Boolean).length;
+          setBoundaryWordIndex(wordCount);
+        }
+      };
+
       window.speechSynthesis.speak(utterance);
     }
 
+    // Heartbeat contra corte inesperado de fala após 15s no Chrome
+    const keepAlive = setInterval(() => {
+      if (typeof window !== "undefined" && "speechSynthesis" in window && window.speechSynthesis.speaking) {
+        window.speechSynthesis.pause();
+        window.speechSynthesis.resume();
+      }
+    }, 8000);
+
     return () => {
+      clearInterval(keepAlive);
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }
     };
-  }, [activeSceneIndex, isPlaying, isMuted, activeScene?.narrationText]);
+  }, [activeSceneIndex, isPlaying, isMuted, activeScene?.narrationText, neuralVoice]);
 
   // Subtitle word-by-word highlight calculation
   const words = useMemo(() => {
@@ -174,11 +233,15 @@ export default function VideoPreviewModal({
 
   const activeWordIndex = useMemo(() => {
     if (words.length === 0) return 0;
+    // Se o evento boundary nativo já sincronizou a palavra falada
+    if (boundaryWordIndex > 0) {
+      return Math.min(words.length - 1, boundaryWordIndex);
+    }
+    // Fallback proporcional baseado em cadência natural de locução (~2.2 palavras/segundo)
     const sceneElapsed = currentTime - (activeScene?.startTime || 0);
-    const duration = activeScene?.duration || 7;
-    const progress = Math.min(1, Math.max(0, sceneElapsed / duration));
-    return Math.min(words.length - 1, Math.floor(progress * words.length));
-  }, [words.length, currentTime, activeScene]);
+    const estimatedWord = Math.floor(sceneElapsed * 2.2);
+    return Math.min(words.length - 1, Math.max(0, estimatedWord));
+  }, [words.length, boundaryWordIndex, currentTime, activeScene]);
 
   // Format seconds to MM:SS
   const formatTimecode = (seconds: number) => {
@@ -377,6 +440,9 @@ export default function VideoPreviewModal({
                     </span>
                     <span className="bg-brand-950/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[11px] font-mono text-brand-300 border border-brand-500/30">
                       {MOTION_EFFECT_LABELS[activeScene?.motionEffect] || "Ken Burns"}
+                    </span>
+                    <span className="bg-purple-950/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[11px] font-mono text-purple-300 border border-purple-500/30 hidden sm:inline-flex items-center gap-1 font-semibold">
+                      🎙️ {voiceName}
                     </span>
                   </div>
 

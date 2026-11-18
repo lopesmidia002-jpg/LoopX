@@ -361,6 +361,12 @@ export class ChannelManager {
     store = loadStore();
     const customKeys = store.customApiKeys || {};
 
+    // Auto-sanitização de segurança: Se a chave da OpenAI não for token sk-, remove automaticamente
+    if (customKeys.openai && !customKeys.openai.startsWith("sk-")) {
+      delete customKeys.openai;
+      saveStore(store);
+    }
+
     const maskKey = (key?: string) => {
       if (!key || key.length < 8) return "••••••••••••";
       return `${key.substring(0, 4)}••••••••${key.substring(key.length - 4)}`;
@@ -424,14 +430,72 @@ export class ChannelManager {
   }
 
   /**
-   * Salva chave de API customizada (Bring Your Own Key)
+   * Salva chave de API customizada (Bring Your Own Key) com validação estrita de formato
    */
-  static async setCustomApiKey(service: string, key: string): Promise<boolean> {
-    if (!service || !key) return false;
+  static async setCustomApiKey(
+    service: string,
+    key: string
+  ): Promise<{ success: boolean; error?: string }> {
+    if (!service || !key) return { success: false, error: "Serviço e chave são obrigatórios" };
+    const cleanKey = key.trim();
+    const s = service.toLowerCase();
+
+    // Validação estrita de formato da OpenAI
+    if (s === "openai") {
+      if (!cleanKey.startsWith("sk-") || cleanKey.length < 20) {
+        return {
+          success: false,
+          error:
+            "Chave da OpenAI inválida. Tokens de API da OpenAI sempre começam com 'sk-'. Não insira senhas pessoais ou de e-mail.",
+        };
+      }
+    }
+
+    // Validação estrita de formato da Google AI Studio
+    if (s === "google_ai_studio" || s === "gemini") {
+      if (!cleanKey.startsWith("AIza") && cleanKey.length < 20) {
+        return {
+          success: false,
+          error:
+            "Chave do Google AI Studio inválida. Chaves da Google Generative AI começam com 'AIza...'.",
+        };
+      }
+    }
+
     store = loadStore();
     if (!store.customApiKeys) store.customApiKeys = {};
-    store.customApiKeys[service.toLowerCase()] = key.trim();
+    store.customApiKeys[s] = cleanKey;
     saveStore(store);
+    return { success: true };
+  }
+
+  /**
+   * Remove uma chave personalizada e restaura o padrão do ambiente/Vault
+   */
+  static async removeCustomApiKey(service: string): Promise<boolean> {
+    if (!service) return false;
+    store = loadStore();
+    if (store.customApiKeys && store.customApiKeys[service.toLowerCase()]) {
+      delete store.customApiKeys[service.toLowerCase()];
+      saveStore(store);
+    }
     return true;
+  }
+
+  /**
+   * Retorna uma chave customizada salva, se existir e for válida
+   */
+  static getCustomApiKey(service: string): string | undefined {
+    store = loadStore();
+    const key = store.customApiKeys?.[service.toLowerCase()];
+    if (service.toLowerCase() === "openai" && key && !key.startsWith("sk-")) {
+      // Auto-limpeza de senhas ou chaves inválidas salvas anteriormente
+      if (store.customApiKeys) {
+        delete store.customApiKeys.openai;
+        saveStore(store);
+      }
+      return undefined;
+    }
+    return key;
   }
 }
