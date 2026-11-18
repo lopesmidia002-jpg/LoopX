@@ -485,6 +485,125 @@ async function runTestSuite() {
     }
   });
 
+  // 18. Menu de Administração: Cadastro de Usuários & Troca de Senha do ADM (/api/admin/users e /api/admin/password)
+  await test("18. Menu de Administração: Cadastro de Usuários & Troca de Senha (/api/admin/*)", async () => {
+    // 18.1 Listagem de usuários
+    const listRes = await fetch(`${BASE_URL}/api/admin/users`);
+    if (!listRes.ok) throw new Error(`Status listar usuários: ${listRes.status}`);
+    const listData = await listRes.json();
+    if (!listData.success || !Array.isArray(listData.users) || listData.users.length === 0) {
+      throw new Error("Falha ao obter lista de usuários cadastrados");
+    }
+
+    // 18.2 Cadastro de novo usuário pelo ADM
+    const newUserEmail = `test.creator.${Date.now()}@loopx.com`;
+    const newUserPwd = "senhaForte123";
+    const createRes = await fetch(`${BASE_URL}/api/admin/users`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Criador Teste E2E",
+        email: newUserEmail,
+        password: newUserPwd,
+        role: "CREATOR",
+        planTier: "CREATOR",
+      }),
+    });
+    if (!createRes.ok) throw new Error(`Status cadastro usuário: ${createRes.status}`);
+    const createData = await createRes.json();
+    if (!createData.success || !createData.user || createData.user.email !== newUserEmail) {
+      throw new Error("Falha ao cadastrar novo usuário");
+    }
+
+    // 18.3 Autenticação com o novo usuário recém-cadastrado
+    const loginUserRes = await fetch(`${BASE_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: newUserEmail,
+        password: newUserPwd,
+        action: "LOGIN",
+      }),
+    });
+    if (!loginUserRes.ok) throw new Error(`Status login novo usuário: ${loginUserRes.status}`);
+    const loginUserData = await loginUserRes.json();
+    if (!loginUserData.success || loginUserData.user?.email !== newUserEmail) {
+      throw new Error("Falha ao logar com o usuário recém-criado");
+    }
+
+    // 18.3.1 Validação de Segurança: Usuário comum bloqueado ao tentar login pelo Portal do ADM
+    const blockedPortalRes = await fetch(`${BASE_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: newUserEmail,
+        password: newUserPwd,
+        action: "LOGIN",
+        portalType: "ADMIN",
+      }),
+    });
+    if (blockedPortalRes.status !== 403) {
+      throw new Error(`Esperava 403 ao tentar logar usuario comum pelo Portal do ADM, recebeu: ${blockedPortalRes.status}`);
+    }
+
+    // 18.4 Alteração de senha do Administrador
+    const changePwdRes = await fetch(`${BASE_URL}/api/admin/password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        currentPassword: "admin123",
+        newPassword: "adminNovaSenha123",
+        confirmPassword: "adminNovaSenha123",
+      }),
+    });
+    if (!changePwdRes.ok) throw new Error(`Status trocar senha: ${changePwdRes.status}`);
+    const changePwdData = await changePwdRes.json();
+    if (!changePwdData.success) throw new Error("Falha ao trocar senha do ADM");
+
+    // 18.5 Validação: senha antiga é rejeitada com 401
+    const oldLoginRes = await fetch(`${BASE_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: "admin@loopx.com",
+        password: "admin123",
+        action: "LOGIN",
+      }),
+    });
+    if (oldLoginRes.status !== 401) {
+      throw new Error(`Esperava 401 com senha antiga, recebeu ${oldLoginRes.status}`);
+    }
+
+    // 18.6 Validação: nova senha é aceita com 200
+    const newLoginRes = await fetch(`${BASE_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: "admin@loopx.com",
+        password: "adminNovaSenha123",
+        action: "LOGIN",
+      }),
+    });
+    if (!newLoginRes.ok) throw new Error(`Status login nova senha: ${newLoginRes.status}`);
+
+    // 18.7 Restauração da senha padrão para manter consistência nos testes
+    await fetch(`${BASE_URL}/api/admin/password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        currentPassword: "adminNovaSenha123",
+        newPassword: "admin123",
+        confirmPassword: "admin123",
+      }),
+    });
+
+    // 18.8 Limpeza do usuário de teste
+    const delRes = await fetch(`${BASE_URL}/api/admin/users?email=${encodeURIComponent(newUserEmail)}`, {
+      method: "DELETE",
+    });
+    if (!delRes.ok) throw new Error(`Status deletar usuário de teste: ${delRes.status}`);
+  });
+
   console.log("\n=======================================================");
   console.log(`   RESULTADO: ${passed} PASSARAM | ${failed} FALHARAM`);
   console.log("=======================================================\n");

@@ -161,3 +161,42 @@ body {
 .ken-burns-active {
   animation: kenburns-pan-zoom 18s ease-in-out infinite alternate;
 }
+
+/* Mobile First Safe Areas & Touch Optimization */
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
+}
+
+.pt-safe {
+  padding-top: max(env(safe-area-inset-top, 0px), 0px);
+}
+
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Smooth Horizontal Touch Scroll without scrollbars */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Mobile Active Touch States */
+@media (hover: none) and (pointer: coarse) {
+  button:active, 
+  a:active, 
+  [role="button"]:active {
+    transform: scale(0.97);
+    transition: transform 0.1s ease-out;
+  }
+}
+

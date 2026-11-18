@@ -463,7 +463,103 @@ loopx/
 
 ---
 
-## 19. Como Executar via Docker
+## 19. Menu de Administração: Gestão de Usuários & Troca de Senha do ADM
+
+### 19.1. Console Administrativo Unificado (`AdminManagementModal.tsx` & `/admin`)
+- **Acesso:**
+  - Botão interativo com badge dourado `ADM` e botão com ícone `ShieldCheck` no cabeçalho do estúdio (`StudioHeader.tsx`).
+  - Rota dedicada de console: `/admin` (`src/app/admin/page.tsx`).
+  - Renderizado via React Portal (`createPortal(..., document.body)`) garantindo sobreposição de `z-[9999]` sem cortes visuais.
+- **Aba 1: Gerenciar Usuários (Cadastro & Listagem):**
+  - **Cadastro de Novo Usuário:**
+    - Formulário retrátil para registro de novos criadores ou administradores.
+    - Campos: Nome Completo, E-mail, Senha Inicial (com gerador de senhas fortes por IA), Perfil (`CREATOR` ou `ADMIN`) e Plano Alocado (`STARTER`, `CREATOR`, `STUDIO`, `SCALE`).
+    - Integração de persistência dupla: grava no PostgreSQL (`prisma.user` e `prisma.subscription`) e no store de autorização (`admin-auth.ts`).
+    - O usuário cadastrado pode logar imediatamente na plataforma com suas credenciais.
+  - **Listagem e Gestão:**
+    - Tabela completa de usuários com busca em tempo real por nome/e-mail e filtro por perfil.
+    - Badges de perfil, plano, minutos disponíveis e botão de exclusão/revogação (com bloqueio para contas raízes de proteção).
+- **Aba 2: Trocar Senha do Administrador:**
+  - Validação estrita de senha atual.
+  - Definição de nova senha mestra com confirmação (mínimo 6 caracteres).
+  - Atualização com efeito imediato em todas as rotas e persistência local segura.
+- **Aba 3: Visão Geral & Auditoria:**
+  - Indicadores em tempo real: Total de Usuários, Administradores, Minutos Totais Provisionados e Status da Blindagem.
+
+### 19.2. Endpoints da API Administrativa
+- `GET /api/admin/users`: Retorna todos os usuários cadastrados e estatísticas de uso.
+- `POST /api/admin/users`: Cadastra um novo usuário no banco e no registro de segurança.
+- `DELETE /api/admin/users`: Remove usuário por e-mail (bloqueia remoção do admin geral).
+- `POST /api/admin/password`: Atualiza a senha mestra do administrador após validação da senha atual.
+- `GET /api/admin/password`: Consulta status de customização da senha do ADM.
+
+### 19.3. Acesso Exclusivo do Administrador na Tela Inicial
+- **Remoção de Captura Pública:** O formulário de inscrição em newsletters/lead capture foi removido da Hero (`LiquidHero.tsx`).
+- **Badge de Ambiente Privado:** Destaque visual `Ambiente Privado • Acesso Restrito ao Administrador` com ícone `ShieldCheck`.
+- **Botão Principal de Ação:** O CTA central foi configurado como `Acessar Painel ADM` em gradiente dourado (`from-amber-500 via-amber-400 to-amber-300`).
+- **Barra de Navegação Superior:** Atalhos genéricos ou de "Portal" foram removidos, mantendo exclusivamente o botão `Acesso ADM`.
+- **Interface de Login Otimizada (`AuthModal.tsx` e `/login`):** Preenchimento automático padrão com `admin@loopx.com` / `admin123`, botão em largura total de preenchimento rápido em 1 clique e eliminação de credenciais secundárias de criador.
+
+### 19.4. Separação de Acessos: Portal do ADM vs. Acesso a Usuários
+- **Portal do Administrador (Restrito Exclusivamente ao ADM):**
+  - O acesso ao painel de administração (`/admin`, `AdminManagementModal` e endpoints `/api/admin/*`) é estritamente condicionado ao login e senha do Administrador (`admin@loopx.com` / senha mestra).
+  - Tentativas de login através da aba do Portal do ADM utilizando contas comuns de criador são bloqueadas no backend com status `403 Forbidden`.
+- **Acesso a Usuários (Para Criadores Cadastrados pelo ADM):**
+  - Interface dedicada de login para usuários homologados pela administração.
+  - Ao cadastrar um novo usuário no Console ADM, uma conta com plano e minutos é provisionada no banco de dados e no registro de segurança. O usuário utiliza a aba "Acesso a Usuários" para entrar diretamente no Estúdio de Criação.
+  - Usuários comuns **não** visualizam os botões `ADM` no cabeçalho ou nas barras de navegação do Estúdio, garantindo isolamento total do console administrativo.
+
+---
+
+## 20. Arquitetura Mobile First & Otimizações Touch
+
+O **LoopX** adota uma arquitetura de design e interação estritamente **Mobile First**, garantindo usabilidade máxima tanto em smartphones e tablets quanto em monitores desktop de alta resolução.
+
+### 20.1. Viewport & Áreas Seguras (Safe Areas)
+- **Viewport Dinâmico:** Configurado nativamente via Next.js 14 `Viewport` em `src/app/layout.tsx`:
+  - `width: "device-width"`
+  - `initialScale: 1`
+  - `maximumScale: 5`
+  - `userScalable: true`
+  - `viewportFit: "cover"` (suporte a telas com notch e Dynamic Island no iOS)
+  - `themeColor: "#141923"`
+- **Apple Web App:** Tags `<meta name="apple-mobile-web-app-capable" content="yes">`, status bar `black-translucent` e título PWA.
+- **Safe Area Insets:** Classes utilitárias `.pb-safe` (`env(safe-area-inset-bottom)`) e `.pt-safe` (`env(safe-area-inset-top)`) aplicadas nos elementos de topo e rodapé.
+- **Touch Manipulation:** Classe `.touch-manipulation` (`touch-action: manipulation`) aplicada no `<body>` e botões, eliminando o atraso de 300ms de toque no mobile.
+
+### 20.2. Bottom Navigation Bar (Zona do Polegar / Fitts's Law)
+Em telas móveis (`sm:hidden`, `< 640px`), o aplicativo ativa uma barra de navegação inferior fixa (`bg-[#141923]/95 backdrop-blur-2xl`):
+- Posicionada diretamente na zona de alcance natural do polegar.
+- 5 itens primários de navegação rápida:
+  1. **Estúdio:** Retorno imediato ao painel de geração de vídeos.
+  2. **Métricas:** Acesso direto ao dashboard analítico do YouTube.
+  3. **Criar Vídeo (+):** Botão central em destaque com gradiente violeta/índigo e halo luminoso.
+  4. **Testes A/B:** Painel de variantes e CTR de miniaturas e títulos.
+  5. **Menu ADM:** Acesso rápido ao console administrativo e cadastro de usuários.
+- O container principal `<main>` recebe espaçamento compensatório (`pb-24 sm:pb-8`), garantindo que nenhum controle fique oculto pela barra inferior.
+
+### 20.3. Mobile Bottom Sheet Drawer
+- O cabeçalho compacto de smartphone (`StudioHeader.tsx`) disponibiliza um acionador de menu que abre uma gaveta inferior (Action Sheet).
+- Reúne as ações secundárias com alvos de toque generosos (mínimo 44px):
+  - Seletor de canais dark conectados.
+  - Console do administrador.
+  - Gerenciador de Chaves de API (BYOK).
+  - Calendário e agendamento automático.
+  - Recarga de saldo de minutos com Pix.
+  - Encerramento de sessão (Logout).
+
+### 20.4. Prevenção de Auto-Zoom no iOS & Alvos de Toque
+- **Tamanho de Fonte em Inputs:** Todos os formulários e campos de texto (`<input>`, `<textarea>`, `<select>`) utilizam a classe `text-base sm:text-sm` (16px base no mobile), impedindo o comportamento nativo indesejado do iOS Safari de aproximar e desestabilizar a página durante a digitação.
+- **Alvos Mínimos de 44px:** Todos os botões, abas e itens clicáveis respeitam a recomendação da Apple Human Interface Guidelines e Google Material Design (`touch-target`, `min-h-[44px] min-w-[44px]`).
+- **Feedback Tátil:** Efeitos sutis de pressão (`active:scale-[0.98]`) configurados em `@media (hover: none) and (pointer: coarse)` para confirmar toques físicos sem cintilação.
+
+### 20.5. Modais Adaptativos (Bottom Sheets no Mobile)
+- Modais críticos (`AdminManagementModal.tsx`, `AuthModal.tsx`) renderizam-se como folhas inferiores deslizantes no mobile (`items-end sm:items-center rounded-t-3xl sm:rounded-2xl max-h-[92vh] sm:max-h-[85vh]`).
+- Abas com suporte a rolagem horizontal touch fluida (`overflow-x-auto no-scrollbar touch-pan-x`).
+
+---
+
+## 21. Como Executar via Docker
 
 ### Subir todos os serviços (App, PostgreSQL e Redis)
 ```bash

@@ -1,17 +1,17 @@
 "use client";
 
 import React, { useState } from "react";
-import { 
-  Sparkles, 
-  Film, 
-  ListOrdered, 
-  Globe, 
-  Mic, 
-  Clock, 
-  Upload, 
-  Play, 
-  Volume2, 
-  Check, 
+import {
+  Sparkles,
+  Film,
+  ListOrdered,
+  Globe,
+  Mic,
+  Clock,
+  Upload,
+  Play,
+  Volume2,
+  Check,
   ArrowRight,
   Lightbulb
 } from "lucide-react";
@@ -69,34 +69,34 @@ export default function ProjectConfig({ onStartPipeline, isProcessing }: Project
   };
 
   return (
-    <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6">
-      
+    <div className="max-w-4xl mx-auto py-4 sm:py-8 px-3 sm:px-6">
+
       {/* Intro Header */}
-      <div className="text-center mb-8">
-        <span className="text-xs font-bold uppercase tracking-wider text-brand-400 bg-brand-500/10 px-3 py-1 rounded-full border border-brand-500/20">
+      <div className="text-center mb-6 sm:mb-8">
+        <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-brand-400 bg-brand-500/10 px-3 py-1 rounded-full border border-brand-500/20">
           Etapa 1 de 3 • Configuração
         </span>
-        <h1 className="mt-3 text-2xl sm:text-3xl font-extrabold text-white">
+        <h1 className="mt-2.5 sm:mt-3 text-xl sm:text-3xl font-extrabold text-white">
           Configure seu Próximo Vídeo
         </h1>
-        <p className="mt-2 text-sm text-slate-400">
+        <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-slate-400">
           Defina o tema, formato e estilo narrativo. O pipeline autônomo cuidará de todo o resto.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-7">
-        
+      <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-7">
+
         {/* Topic or Idea Input */}
-        <div className="glass-surface rounded-2xl p-6 border border-surface-border">
+        <div className="glass-surface rounded-2xl p-4 sm:p-6 border border-surface-border">
           <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-bold text-white flex items-center gap-2">
+            <label className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5 sm:gap-2">
               <Sparkles className="w-4 h-4 text-brand-400" />
               <span>Ideia, Tópico ou Título do Vídeo *</span>
             </label>
             <button
               type="button"
               onClick={() => setHasCustomScript(!hasCustomScript)}
-              className="text-xs font-semibold text-brand-300 hover:text-white transition-colors"
+              className="text-[11px] sm:text-xs font-semibold text-brand-300 hover:text-white transition-colors"
             >
               {hasCustomScript ? "— Esconder roteiro próprio" : "+ Já tenho um roteiro pronto"}
             </button>
@@ -108,22 +108,22 @@ export default function ProjectConfig({ onStartPipeline, isProcessing }: Project
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             placeholder="Ex: O Mistério Inexplicável do Voo MH370 e os radares que desapareceram na calada da noite..."
-            className="w-full bg-[#141923] border border-surface-border rounded-xl p-3.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
+            className="w-full bg-[#141923] border border-surface-border rounded-xl p-3 sm:p-3.5 text-base sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
           />
 
-          {/* Quick Suggestions Chips */}
+          {/* Quick Suggestions Chips (Horizontal Swipe on Mobile) */}
           <div className="mt-3">
             <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1.5 mb-2">
               <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
               Sugestões de alta retenção no YouTube Dark:
             </span>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex overflow-x-auto no-scrollbar gap-1.5 pb-1 sm:flex-wrap">
               {TEMPLATE_SUGGESTIONS.map((sug, idx) => (
                 <button
                   key={idx}
                   type="button"
                   onClick={() => setTopic(sug)}
-                  className="text-[11px] bg-surface hover:bg-surface-hover text-slate-300 hover:text-white px-2.5 py-1 rounded-lg border border-surface-border transition-colors truncate max-w-xs text-left"
+                  className="text-[11px] bg-surface hover:bg-surface-hover text-slate-300 hover:text-white px-3 py-1.5 rounded-lg border border-surface-border transition-colors whitespace-nowrap sm:whitespace-normal shrink-0 max-w-xs text-left min-h-[36px] active:scale-95"
                 >
                   {sug}
                 </button>
@@ -154,16 +154,15 @@ export default function ProjectConfig({ onStartPipeline, isProcessing }: Project
             Formato do Vídeo *
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            
+
             {/* Documentary Card */}
             <button
               type="button"
               onClick={() => setFormat("DOCUMENTARY")}
-              className={`p-4 rounded-xl border text-left flex items-start gap-3.5 transition-all ${
-                format === "DOCUMENTARY"
-                  ? "bg-brand-500/15 border-brand-500 text-white shadow-lg shadow-brand-500/10"
-                  : "bg-surface/50 border-surface-border text-slate-300 hover:bg-surface"
-              }`}
+              className={`p-4 rounded-xl border text-left flex items-start gap-3.5 transition-all ${format === "DOCUMENTARY"
+                ? "bg-brand-500/15 border-brand-500 text-white shadow-lg shadow-brand-500/10"
+                : "bg-surface/50 border-surface-border text-slate-300 hover:bg-surface"
+                }`}
             >
               <div className={`p-2.5 rounded-lg ${format === "DOCUMENTARY" ? "bg-brand-500 text-white" : "bg-[#141923] text-slate-400"}`}>
                 <Film className="w-5 h-5" />
@@ -183,11 +182,10 @@ export default function ProjectConfig({ onStartPipeline, isProcessing }: Project
             <button
               type="button"
               onClick={() => setFormat("TOP_10")}
-              className={`p-4 rounded-xl border text-left flex items-start gap-3.5 transition-all ${
-                format === "TOP_10"
-                  ? "bg-brand-500/15 border-brand-500 text-white shadow-lg shadow-brand-500/10"
-                  : "bg-surface/50 border-surface-border text-slate-300 hover:bg-surface"
-              }`}
+              className={`p-4 rounded-xl border text-left flex items-start gap-3.5 transition-all ${format === "TOP_10"
+                ? "bg-brand-500/15 border-brand-500 text-white shadow-lg shadow-brand-500/10"
+                : "bg-surface/50 border-surface-border text-slate-300 hover:bg-surface"
+                }`}
             >
               <div className={`p-2.5 rounded-lg ${format === "TOP_10" ? "bg-brand-500 text-white" : "bg-[#141923] text-slate-400"}`}>
                 <ListOrdered className="w-5 h-5" />
@@ -225,11 +223,10 @@ export default function ProjectConfig({ onStartPipeline, isProcessing }: Project
                     const matching = VOICE_OPTIONS.find((v) => v.language === lang);
                     if (matching) setSelectedVoice(matching);
                   }}
-                  className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
-                    language === lang
-                      ? "bg-brand-600 text-white"
-                      : "text-slate-400 hover:text-white"
-                  }`}
+                  className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${language === lang
+                    ? "bg-brand-600 text-white"
+                    : "text-slate-400 hover:text-white"
+                    }`}
                 >
                   {lang === "PT_BR" ? "🇧🇷 Português" : lang === "EN" ? "🇺🇸 Inglês" : "🇪🇸 Espanhol"}
                 </button>
@@ -247,11 +244,10 @@ export default function ProjectConfig({ onStartPipeline, isProcessing }: Project
                 <div
                   key={voice.id}
                   onClick={() => setSelectedVoice(voice)}
-                  className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between gap-3 ${
-                    isSelected
-                      ? "bg-brand-500/20 border-brand-500 text-white shadow-md"
-                      : "bg-[#141923] border-surface-border text-slate-300 hover:border-slate-700"
-                  }`}
+                  className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between gap-3 ${isSelected
+                    ? "bg-brand-500/20 border-brand-500 text-white shadow-md"
+                    : "bg-[#141923] border-surface-border text-slate-300 hover:border-slate-700"
+                    }`}
                 >
                   <div className="flex items-center gap-3">
                     <button
@@ -295,35 +291,34 @@ export default function ProjectConfig({ onStartPipeline, isProcessing }: Project
         </div>
 
         {/* Target Duration */}
-        <div className="glass-surface rounded-2xl p-6 border border-surface-border">
+        <div className="glass-surface rounded-2xl p-4 sm:p-6 border border-surface-border">
           <div className="flex items-center justify-between mb-3">
-            <label className="text-sm font-bold text-white flex items-center gap-2">
+            <label className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5 sm:gap-2">
               <Clock className="w-4 h-4 text-brand-400" />
               <span>Duração Alvo do Vídeo *</span>
             </label>
-            <span className="text-xs font-bold text-brand-300 font-mono">
-              {targetDuration} minutos (~{Math.round(targetDuration * 1.1)} min de crédito)
+            <span className="text-[11px] sm:text-xs font-bold text-brand-300 font-mono">
+              {targetDuration} min (~{Math.round(targetDuration * 1.1)}m crédito)
             </span>
           </div>
 
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-4 gap-2 sm:gap-3">
             {[8, 10, 12, 15].map((dur) => (
               <button
                 key={dur}
                 type="button"
                 onClick={() => setTargetDuration(dur)}
-                className={`py-3 rounded-xl border text-center font-bold text-xs transition-all ${
-                  targetDuration === dur
-                    ? "bg-brand-600 text-white border-brand-500 shadow-md"
-                    : "bg-[#141923] border-surface-border text-slate-300 hover:border-slate-700"
-                }`}
+                className={`py-3 rounded-xl border text-center font-bold text-xs transition-all min-h-[44px] active:scale-95 ${targetDuration === dur
+                  ? "bg-brand-600 text-white border-brand-500 shadow-md"
+                  : "bg-[#141923] border-surface-border text-slate-300 hover:border-slate-700"
+                  }`}
               >
                 {dur} min
               </button>
             ))}
           </div>
 
-          <p className="text-[11px] text-slate-400 mt-3">
+          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-2.5 sm:mt-3">
             Vídeos entre 8 e 15 minutos atingem o ponto ideal de monetização máxima no YouTube, habilitando anúncios intermediários (mid-roll ads).
           </p>
         </div>
@@ -332,11 +327,11 @@ export default function ProjectConfig({ onStartPipeline, isProcessing }: Project
         <button
           type="submit"
           disabled={isProcessing || !topic.trim()}
-          className="w-full py-4 rounded-xl text-base font-bold text-white bg-gradient-to-r from-brand-600 via-brand-500 to-brand-accent hover:opacity-95 shadow-xl shadow-brand-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
+          className="w-full py-3.5 sm:py-4 rounded-xl text-sm sm:text-base font-bold text-white bg-gradient-to-r from-brand-600 via-brand-500 to-brand-accent hover:opacity-95 shadow-xl shadow-brand-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all active:scale-98 min-h-[50px]"
         >
-          <Sparkles className="w-5 h-5 text-brand-200" />
-          <span>Iniciar Pipeline de Criação (8 Etapas Autônomas)</span>
-          <ArrowRight className="w-5 h-5 text-brand-200" />
+          <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-brand-200" />
+          <span>Iniciar Pipeline de Criação (8 Etapas)</span>
+          <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-brand-200" />
         </button>
 
       </form>

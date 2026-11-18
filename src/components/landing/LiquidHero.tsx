@@ -2,17 +2,15 @@
 
 import React, { useRef, useEffect, useState } from "react";
 import Link from "next/link";
-import { Globe, ArrowRight, Instagram, Twitter, Sparkles, ShieldCheck } from "lucide-react";
+import { Globe, ArrowRight, Instagram, Twitter, Sparkles, ShieldCheck, Users } from "lucide-react";
 import AuthModal from "@/components/auth/AuthModal";
 
 export default function LiquidHero() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const fadeAnimRef = useRef<number | null>(null);
   const isFadingOutRef = useRef<boolean>(false);
-  const [email, setEmail] = useState("");
-  const [subscribed, setSubscribed] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<"LOGIN" | "REGISTER">("LOGIN");
+  const [authTab, setAuthTab] = useState<"ADMIN" | "USER">("ADMIN");
 
   const animateOpacity = (target: number, duration: number, onComplete?: () => void) => {
     if (!videoRef.current) return;
@@ -78,20 +76,6 @@ export default function LiquidHero() {
     };
   }, []);
 
-  const handleSubscribe = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email.trim()) {
-      setSubscribed(true);
-      setTimeout(() => setSubscribed(false), 4000);
-      setEmail("");
-    }
-  };
-
-  const handleOpenAuth = (mode: "LOGIN" | "REGISTER") => {
-    setAuthMode(mode);
-    setIsAuthModalOpen(true);
-  };
-
   return (
     <div className="min-h-screen overflow-hidden relative flex flex-col bg-black">
       {/* Background Video with Vanilla JS Fade */}
@@ -112,14 +96,14 @@ export default function LiquidHero() {
       {/* Subtle Black Gradient Overlay for readability */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/80 pointer-events-none" />
 
-      {/* Navbar (relative z-20, px-6 py-6) */}
-      <nav className="relative z-20 px-6 py-6 w-full">
-        <div className="liquid-glass rounded-full max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
+      {/* Navbar (relative z-20, px-3 sm:px-6 py-3 sm:py-6) */}
+      <nav className="relative z-20 px-3 sm:px-6 py-3 sm:py-6 w-full pt-safe">
+        <div className="liquid-glass rounded-full max-w-5xl mx-auto px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between">
           {/* Left Brand + Nav Links in Portuguese */}
           <div className="flex items-center gap-2">
-            <Link href="/" className="flex items-center gap-2 text-white">
-              <Globe className="w-6 h-6 text-purple-400" />
-              <span className="font-semibold text-lg tracking-tight font-sans">
+            <Link href="/" className="flex items-center gap-2 text-white min-h-[44px]">
+              <Globe className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400" />
+              <span className="font-semibold text-base sm:text-lg tracking-tight font-sans">
                 Loop<span className="text-purple-400">X</span>
               </span>
             </Link>
@@ -144,82 +128,83 @@ export default function LiquidHero() {
             </div>
           </div>
 
-          {/* Right Action Buttons */}
-          <div className="flex items-center gap-3 sm:gap-4">
-            <Link
-              href="/login"
-              className="text-white/80 text-sm font-medium hover:text-white transition-colors px-2 py-1"
-            >
-              Portal
-            </Link>
+          {/* Right Actions: Acesso ADM e Acesso a Usuários */}
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => handleOpenAuth("LOGIN")}
-              className="liquid-glass rounded-full px-5 py-2 text-amber-300 border border-amber-500/30 text-xs sm:text-sm font-bold hover:bg-amber-500/10 transition-all cursor-pointer shadow-lg flex items-center gap-1.5"
+              onClick={() => {
+                setAuthTab("USER");
+                setIsAuthModalOpen(true);
+              }}
+              className="text-white/80 hover:text-white text-xs sm:text-sm font-medium px-3 py-1.5 rounded-full hover:bg-white/5 transition-colors min-h-[44px] flex items-center gap-1.5 cursor-pointer"
             >
-              <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+              <Users className="w-3.5 h-3.5 text-purple-400" />
+              <span>Acesso Usuário</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAuthTab("ADMIN");
+                setIsAuthModalOpen(true);
+              }}
+              className="liquid-glass rounded-full px-3.5 sm:px-5 py-2 text-amber-300 border border-amber-500/40 text-xs sm:text-sm font-bold hover:bg-amber-500/15 transition-all cursor-pointer shadow-lg shadow-amber-500/10 flex items-center gap-1.5 min-h-[44px] active:scale-95"
+            >
+              <ShieldCheck className="w-4 h-4 text-amber-400" />
               <span>Acesso ADM</span>
             </button>
           </div>
         </div>
       </nav>
 
-      {/* Hero content (relative z-10, flex-1 flex flex-col items-center justify-center, px-6 py-12 text-center, -translate-y-[20%]) */}
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-12 text-center max-w-5xl mx-auto md:-translate-y-[10%]">
+      {/* Hero content */}
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-8 sm:py-12 text-center max-w-5xl mx-auto md:-translate-y-[6%]">
+        {/* Admin Exclusive Badge */}
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass text-xs font-semibold text-amber-300 border border-amber-500/30 mb-5 sm:mb-6 shadow-lg shadow-amber-500/10">
+          <ShieldCheck className="w-4 h-4 text-amber-400" />
+          <span>Portal do ADM & Acesso de Usuários • LoopX Studio</span>
+        </div>
+
         {/* Main Heading translated and aligned with LoopX */}
-        <h1 className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl text-white tracking-tight font-serif select-none">
+        <h1 className="text-4xl sm:text-7xl md:text-8xl lg:text-9xl text-white tracking-tight font-serif select-none leading-[1.1]">
           Crie vídeos dark que <em className="italic font-serif text-purple-200">viralizam</em>.
         </h1>
 
-        {/* Email Input Form in Portuguese */}
-        <div className="w-full max-w-xl mt-8 sm:mt-10">
-          <form
-            onSubmit={handleSubscribe}
-            className="liquid-glass rounded-full pl-6 pr-2 py-2 flex items-center gap-3 w-full shadow-2xl"
-          >
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Digite seu e-mail para acesso antecipado"
-              required
-              className="bg-transparent flex-1 text-white placeholder:text-white/40 text-sm sm:text-base outline-none border-none focus:ring-0"
-            />
-            <button
-              type="submit"
-              className="bg-white rounded-full p-3 text-black hover:scale-105 active:scale-95 transition-transform flex-shrink-0 cursor-pointer shadow-md"
-              title="Inscrever-se"
-            >
-              <ArrowRight className="w-5 h-5 text-black" />
-            </button>
-          </form>
-          {subscribed && (
-            <p className="text-xs text-emerald-400 mt-2 font-medium tracking-wide animate-fade-in">
-              Obrigado! Você agora tem acesso antecipado às novidades do LoopX.
-            </p>
-          )}
-        </div>
-
         {/* Subtitle in Portuguese */}
-        <p className="text-white/90 text-xs sm:text-sm leading-relaxed max-w-xl mt-6 px-4">
+        <p className="text-white/90 text-xs sm:text-base leading-relaxed max-w-xl mt-5 sm:mt-6 px-2 sm:px-4 font-light">
           Pesquisa de fatos, roteiro hipnótico, narração hiper-realista e edição cinematográfica em um pipeline 100% autônomo com IA.
         </p>
 
-        {/* Action button */}
-        <div className="mt-8 flex items-center gap-4">
+        {/* Admin & User Access CTA Buttons */}
+        <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center gap-3 sm:gap-4 w-full sm:w-auto px-4 sm:px-0">
+          <button
+            type="button"
+            onClick={() => {
+              setAuthTab("ADMIN");
+              setIsAuthModalOpen(true);
+            }}
+            className="rounded-full px-7 py-3.5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-300 text-black text-sm sm:text-base font-extrabold hover:opacity-95 transition-all shadow-xl shadow-amber-500/25 hover:scale-105 active:scale-95 cursor-pointer w-full sm:w-auto text-center min-h-[48px] flex items-center justify-center gap-2"
+          >
+            <ShieldCheck className="w-5 h-5 text-black" />
+            <span>Acessar Painel ADM</span>
+            <ArrowRight className="w-4 h-4 text-black" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setAuthTab("USER");
+              setIsAuthModalOpen(true);
+            }}
+            className="liquid-glass rounded-full px-6 py-3.5 text-purple-300 hover:text-white border border-purple-500/30 text-xs sm:text-sm font-bold hover:bg-purple-500/10 transition-colors w-full sm:w-auto text-center min-h-[48px] flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
+          >
+            <Users className="w-4 h-4 text-purple-400" />
+            <span>Acesso a Usuários</span>
+          </button>
           <a
             href="#services"
-            className="liquid-glass rounded-full px-8 py-3 text-white text-sm font-medium hover:bg-white/5 transition-colors inline-block"
+            className="text-white/60 hover:text-white text-xs sm:text-sm font-medium transition-colors text-center px-4 py-2 min-h-[44px] flex items-center justify-center"
           >
             Conhecer o Pipeline
           </a>
-          <button
-            type="button"
-            onClick={() => handleOpenAuth("LOGIN")}
-            className="rounded-full px-8 py-3 bg-white text-black text-sm font-bold hover:bg-slate-200 transition-all shadow-xl hover:scale-105 active:scale-95 cursor-pointer"
-          >
-            Acessar Estúdio
-          </button>
         </div>
       </div>
 
@@ -252,11 +237,11 @@ export default function LiquidHero() {
         </a>
       </div>
 
-      {/* Login & Register Modal */}
+      {/* Modal de Autenticação: Portal do ADM & Acesso a Usuários */}
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
-        initialMode={authMode}
+        initialTab={authTab}
       />
     </div>
   );

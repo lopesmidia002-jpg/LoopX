@@ -27,11 +27,11 @@ export default function Footer() {
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/studio"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-xl font-bold text-white bg-gradient-to-r from-brand-600 to-brand-accent hover:opacity-95 shadow-lg shadow-brand-500/30 transition-all hover:scale-105"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-xl font-bold text-black bg-gradient-to-r from-amber-500 via-amber-400 to-amber-300 hover:opacity-95 shadow-lg shadow-amber-500/20 transition-all hover:scale-105"
               >
-                <Sparkles className="w-4 h-4 text-brand-200" />
-                <span>Abrir Estúdio Grátis</span>
-                <ArrowRight className="w-4 h-4" />
+                <ShieldCheck className="w-4 h-4 text-black" />
+                <span>Acessar Painel ADM</span>
+                <ArrowRight className="w-4 h-4 text-black" />
               </Link>
             </div>
           </div>

@@ -217,3 +217,37 @@
   - [x] Redesign do modal de autenticação (`AuthModal.tsx`) e da página (`/login`) com identidade de Área Restrita / Portal do Administrador, badges de segurança âmbar e botões de preenchimento rápido em 1 clique.
   - [x] Inclusão de badge `ADM` e botão de `Sair` (Logout) no cabeçalho do Estúdio (`StudioHeader.tsx`).
   - [x] Atualização dos testes automatizados E2E (`scripts/test-e2e.mjs`) com validação do bloqueio 403, aprovação de login ADM e revogação de sessão (17/17 testes aprovados no Docker).
+- [x] Menu de Administração (Console do ADM): Cadastro de Novos Usuários & Troca de Senha Mestra:
+  - [x] Criação do modal interativo `AdminManagementModal.tsx` acessível via badge interativo `ADM` e botão `ShieldCheck` no cabeçalho (`StudioHeader.tsx`), montado via `createPortal`.
+  - [x] Criação de rota dedicada para o console do administrador em `/admin` (`src/app/admin/page.tsx`).
+  - [x] Implementação de cadastro de novos usuários com validação, escolha de plano (`STARTER`, `CREATOR`, `STUDIO`, `SCALE`), perfil (`ADMIN` ou `CREATOR`) e gerador de senhas seguras.
+  - [x] Implementação de listagem, busca em tempo real, filtro por perfil e exclusão de contas homologadas.
+  - [x] Implementação de troca de senha mestra do Administrador com validação de senha atual e atualização em tempo de execução.
+  - [x] Criação das rotas de API `/api/admin/users` (GET, POST, DELETE) e `/api/admin/password` (GET, POST).
+  - [x] Atualização da suíte de testes E2E com o Teste 18 cobrindo cadastro de usuário, login com a nova credencial, troca de senha e validação de 401 para senha antiga (18/18 testes aprovados no Docker).
+- [x] Atualização Completa da Interface para o Modelo Mobile First:
+  - [x] Configuração de Viewport Next.js 14 com `viewportFit: "cover"`, suporte a telas com entalhe/Dynamic Island e prevenção de zoom indesejado no iOS Safari (`layout.tsx`).
+  - [x] Implementação de suporte a Safe Area Insets (`.pb-safe`, `.pt-safe`), `.touch-manipulation` e feedback tátil em dispositivos de toque (`globals.css`).
+  - [x] Criação da Barra de Navegação Inferior Móvel fixa (Thumb Zone / Fitts's Law) com 5 ações principais: Estúdio, Métricas, Criar Vídeo (+ central), Testes A/B e Menu ADM (`StudioHeader.tsx`).
+  - [x] Criação da Gaveta Inferior de Ações Secundárias (Mobile Action Sheet) para seleção de canal, chaves BYOK, agenda, recarga e logout em telas menores (`StudioHeader.tsx`).
+  - [x] Ajuste compensatório no container principal do estúdio (`pb-24 sm:pb-8`) evitando sobreposição de conteúdo pela barra inferior (`studio/page.tsx`).
+  - [x] Padronização de campos de formulário e inputs em `text-base sm:text-sm` (16px base no mobile), eliminando o auto-zoom do iOS Safari (`ProjectConfig.tsx`, `AdminManagementModal.tsx`, `AuthModal.tsx`).
+  - [x] Otimização de carrosséis e chips de sugestão para rolagem horizontal suave com touch pan (`no-scrollbar`).
+  - [x] Transformação das modais em folhas deslizantes inferiores (Bottom Sheets) no mobile com `rounded-t-3xl` e alvos de toque mínimos de 44x44px.
+  - [x] Reconstrução e subida da imagem no Docker, validação de tipos TypeScript com 0 erros e aprovação integral de 18/18 testes automatizados E2E.
+- [x] Centralização Exclusiva do Acesso ADM na Tela Inicial & Modais:
+  - [x] Remoção de formulários de captura pública de e-mail e botões secundários na Hero (`LiquidHero.tsx`).
+  - [x] Inclusão de badge de Ambiente Privado e botão primário de destaque "Acessar Painel ADM" com gradiente dourado e ícone `ShieldCheck`.
+  - [x] Limpeza da barra de navegação superior, mantendo exclusivamente o acionador "Acesso ADM".
+  - [x] Remoção de credenciais de criador ou secundárias (`criador@loopx.com`) de `AuthModal.tsx` e `src/app/login/page.tsx`.
+  - [x] Preenchimento automático padrão das credenciais mestras do Administrador (`admin@loopx.com` / `admin123`) e botão em largura total de preenchimento rápido em 1 clique.
+  - [x] Atualização do CTA de rodapé (`Footer.tsx`) apontando para "Acessar Painel ADM".
+  - [x] Reconstrução da imagem no Docker, verificação estática de tipos TypeScript com 0 erros e 18/18 testes E2E aprovados.
+- [x] Separação Estrita de Autenticação: Portal do ADM vs. Acesso a Usuários:
+  - [x] Proteção e restrição estrita do Portal do Administrador (`verifyAdminPassword` em `admin-auth.ts`) permitindo a senha do ADM exclusivamente para contas de administrador.
+  - [x] Bloqueio no backend (`/api/auth/login`) com status 403 Forbidden caso um usuário comum tente efetuar login através da aba do Portal do ADM.
+  - [x] Criação de fluxo dedicado de "Acesso a Usuários" (`AuthModal.tsx` e `/login` com `<Suspense>`) com alternador de abas: Portal do ADM (dourado/âmbar com preenchimento do ADM) e Acesso a Usuários (violeta para usuários cadastrados pelo ADM).
+  - [x] Ocultação condicional do botão ADM no cabeçalho do Estúdio (`StudioHeader.tsx`), da gaveta móvel e da barra inferior de navegação para usuários comuns (`isAdmin === false`), exibindo-os unicamente para o Administrador.
+  - [x] Proteção da rota `/admin` com barreira de autorização e mensagem de acesso restrito ao Administrador.
+  - [x] Inclusão de botões de Acesso ADM e Acesso a Usuários na barra superior e na Hero da tela inicial (`LiquidHero.tsx`).
+  - [x] Atualização dos testes E2E automatizados (Teste 18) validando o bloqueio 403 de usuários comuns no Portal ADM e aprovação integral de 18/18 testes no Docker.

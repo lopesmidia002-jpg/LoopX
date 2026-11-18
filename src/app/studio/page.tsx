@@ -107,7 +107,7 @@ export default function StudioPage() {
       />
 
       {/* Main View Switcher */}
-      <main className="flex-1">
+      <main className="flex-1 pb-24 sm:pb-8">
         {activeTab === "ANALYTICS" ? (
           <AnalyticsDashboard onNewProject={handleNewProject} />
         ) : (

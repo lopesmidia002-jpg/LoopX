@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { isAuthorizedAdminEmail, verifyAdminPassword } from "@/lib/auth/admin-auth";
+import { isAuthorizedAdminEmail, verifyAdminPassword, getUserRole } from "@/lib/auth/admin-auth";
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,19 +23,34 @@ export async function POST(req: NextRequest) {
 
     const normalizedEmail = String(email).toLowerCase().trim();
 
-    // 1. Verificação estrita de autorização ADM
+    // 1. Verificação estrita de autorização (ADM ou Usuário previamente cadastrado pelo ADM)
     if (!isAuthorizedAdminEmail(normalizedEmail)) {
       return NextResponse.json(
         {
           success: false,
-          error: "Acesso restrito: Este portal é restrito exclusivamente ao administrador do LoopX.",
-          code: "UNAUTHORIZED_ADMIN_ONLY",
+          error: "Acesso não autorizado: Esta conta ainda não foi cadastrada. O cadastro de novos usuários é realizado exclusivamente pelo Administrador.",
+          code: "UNAUTHORIZED",
         },
         { status: 403 }
       );
     }
 
-    // 2. Bloqueio de cadastro aberto a terceiros
+    // 2. Validação de Portal ADM vs Acesso a Usuários
+    const userRole = getUserRole(normalizedEmail);
+    const isAdmin = userRole === "ADMIN";
+
+    if (body.portalType === "ADMIN" && !isAdmin) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Acesso negado ao Portal do ADM: Este acesso é restrito exclusivamente ao login e senha do Administrador. Para usuários cadastrados, utilize o Acesso a Usuários.",
+          code: "ADMIN_ONLY",
+        },
+        { status: 403 }
+      );
+    }
+
+    // 3. Bloqueio de cadastro aberto a terceiros
     if (action === "REGISTER") {
       return NextResponse.json(
         {
@@ -47,13 +62,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. Validação de senha de administrador
+    // 4. Validação de senha
     const isPasswordValid = verifyAdminPassword(normalizedEmail, String(password));
     if (!isPasswordValid) {
       return NextResponse.json(
         {
           success: false,
-          error: "Credenciais de administrador inválidas. Verifique seu e-mail e senha.",
+          error: isAdmin
+            ? "Senha de administrador incorreta. Verifique a chave mestra."
+            : "Senha incorreta. Verifique os dados fornecidos pelo administrador.",
           code: "INVALID_CREDENTIALS",
         },
         { status: 401 }
@@ -92,18 +109,20 @@ export async function POST(req: NextRequest) {
 
     const response = NextResponse.json({
       success: true,
-      message: "Acesso de administrador autorizado com sucesso!",
+      message: isAdmin
+        ? "Acesso de administrador autorizado com sucesso!"
+        : "Acesso de criador autorizado com sucesso!",
       user: {
         id: user.id,
         email: user.email,
         name: user.name,
-        role: "ADMIN",
-        isAdmin: true,
+        role: userRole,
+        isAdmin,
         subscription: user.subscription,
       },
     });
 
-    // 5. Gravação de cookies seguros de sessão administrativa
+    // 5. Gravação de cookies seguros de sessão
     response.cookies.set("loopx_session", user.id, {
       path: "/",
       maxAge: 60 * 60 * 24 * 7,
@@ -114,12 +133,12 @@ export async function POST(req: NextRequest) {
       maxAge: 60 * 60 * 24 * 7,
       sameSite: "lax",
     });
-    response.cookies.set("loopx_is_admin", "true", {
+    response.cookies.set("loopx_is_admin", isAdmin ? "true" : "false", {
       path: "/",
       maxAge: 60 * 60 * 24 * 7,
       sameSite: "lax",
     });
-    response.cookies.set("loopx_role", "ADMIN", {
+    response.cookies.set("loopx_role", userRole, {
       path: "/",
       maxAge: 60 * 60 * 24 * 7,
       sameSite: "lax",
