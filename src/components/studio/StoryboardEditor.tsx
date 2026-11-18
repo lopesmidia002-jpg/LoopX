@@ -82,6 +82,11 @@ export default function StoryboardEditor({
     }, 0);
   }, [scenes]);
 
+  const cadenceWpm = React.useMemo(() => {
+    const mins = Math.max(0.5, totalDurationSeconds / 60);
+    return Math.round(totalWords / mins);
+  }, [totalWords, totalDurationSeconds]);
+
   const formatDurationDisplay = (sec: number) => {
     const mm = Math.floor(sec / 60);
     const ss = Math.floor(sec % 60);
@@ -327,13 +332,13 @@ export default function StoryboardEditor({
           </div>
 
           <div className="bg-[#141923] p-3 rounded-xl border border-surface-border/70 flex flex-col">
-            <span className="text-[10px] font-mono text-slate-400 uppercase">Resolução & Taxa</span>
-            <span className="text-base font-black text-white font-mono mt-0.5">
-              1080p 60fps
+            <span className="text-[10px] font-mono text-slate-400 uppercase">Cadência de Fala</span>
+            <span className="text-base font-black text-cyan-300 font-mono mt-0.5">
+              {cadenceWpm} wpm
             </span>
             <span className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
-              <Film className="w-3 h-3 text-blue-400" />
-              <span>16:9 Full HD</span>
+              <Film className="w-3 h-3 text-cyan-400" />
+              <span>{cadenceWpm >= 110 ? "Padrão Documental" : "Ritmo Pausado"}</span>
             </span>
           </div>
 
@@ -421,6 +426,13 @@ export default function StoryboardEditor({
                   src={scene.mediaUrl}
                   alt={`Cena ${scene.sceneOrder}`}
                   className="w-full h-full object-cover ken-burns-active"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    const safeFallback = "https://images.unsplash.com/photo-1506452305024-9d3f02d1c9b5?auto=format&fit=crop&w=1920&q=80";
+                    if (target.src !== safeFallback) {
+                      target.src = safeFallback;
+                    }
+                  }}
                 />
 
                 <div className="absolute top-2 left-2 bg-black/80 backdrop-blur-md px-2 py-0.5 rounded text-[10px] text-white border border-white/10 font-mono">

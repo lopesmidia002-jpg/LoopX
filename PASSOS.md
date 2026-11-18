@@ -440,6 +440,33 @@
 
 ---
 
+### [x] Passo 21: Sincronização Real do Pipeline, Blindagem de Rate-Limit contra Banner Amarelo de IA e Deduplicação 4K no LoopX Vault
+- [x] Diagnóstico da exibição prematura de cenas residuais (247 palavras) e repetição de imagens:
+  - [x] Em `src/app/studio/page.tsx`, o timer simulado avançava +5% a cada 600ms, transicionando para o Storyboard em 12 segundos antes do retorno da Promise de `/api/script/generate` (~16s a 25s), retendo o projeto antigo em tela.
+  - [x] O acervo `VAULT_CATEGORIES.mystery` continha apenas 8 URLs com fotos aleatórias (controle de videogame PS4, castelo, drone e pássaros), que se repetiam ciclicamente a partir da cena 9 quando o Unsplash atingia o limite da chave demo (HTTP 403).
+  - [x] O serviço gratuito de IA generativa (Pollinations) impôs rate-limit de 1 imagem a cada 45 segundos por IP, retornando um banner amarelo com erro no lugar da foto.
+- [x] Sincronização Real do Pipeline no Frontend ([page.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/app/studio/page.tsx)):
+  - [x] Eliminação do timer simulado desacoplado da requisição HTTP.
+  - [x] Limpeza imediata do estado de cenas (`setScenes([])`) ao iniciar o projeto para blindar contra vazamento de dados antigos.
+  - [x] Barra de progresso assíncrona que avança até 92% enquanto aguarda a API, avançando para 100% e acionando o Storyboard exclusivamente após a resolução positiva da Promise.
+- [x] Deduplicação Estrita de Mídias e Expansão para 24 Fotos 4K ([media-curator.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/lib/pipeline/media-curator.ts)):
+  - [x] Implementação do rastreador `usedMediaUrls: Set<string>` para que nenhuma imagem se repita no mesmo documentário.
+  - [x] Integração da API Pixabay (`PIXABAY_API_KEY`) com 5.000 requisições/hora para absorver rate-limits do Unsplash.
+  - [x] Substituição e ampliação completa das 8 categorias do `VAULT_CATEGORIES` para 24 fotografias 4K cinematográficas verificadas e exclusivas por nicho (sem controle PS4, drone ou pássaros).
+- [x] Blindagem Contra Banner Amarelo de IA ([generate-image/route.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/app/api/pipeline/generate-image/route.ts)):
+  - [x] Detecção rigorosa de status 402, 429 ou respostas JSON de limite do provedor com redirecionamento transparente para curadoria 4K do Pixabay/Unsplash/Vault.
+- [x] Garantia de Densidade Narrativa Profissional ([scriptwriter.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/lib/ai/scriptwriter.ts)):
+  - [x] Implementação de `ensureProfessionalNarrationDensity`: enriquece qualquer cena curta para 75 a 95 palavras, garantindo entre 1.100 e 1.550 palavras no total com cadência investigativa de 120-155 wpm.
+- [x] Métrica Dinâmica de Cadência e Proteção no Storyboard ([StoryboardEditor.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/StoryboardEditor.tsx)):
+  - [x] Exibição da métrica em tempo real `Cadência de Fala` em palavras por minuto (`wpm`) com indicador `Padrão Documental`.
+  - [x] Adicionado manipulador `onError` defensivo nas tags `<img>` das cenas.
+- [x] Validação e Testes no Docker:
+  - [x] Compilação do Next.js de produção com 26/26 rotas com 0 erros.
+  - [x] Teste de geração em `/api/script/generate`: 14 cenas, 1.541 palavras, 154 wpm, 14 URLs únicas e 0 duplicadas.
+  - [x] Execução da suite de testes E2E com 18/18 testes aprovados no Docker.
+
+---
+
 ### [x] Passo 19: Validação e Blindagem de Chaves BYOK (OpenAI sk- vs Senhas Pessoais) e Ação de Restauração de Padrão
 - [x] Diagnóstico da credencial exibida no print do usuário (`Eter........546@`):
   - A máscara `Eter........546@` no campo "OpenAI GPT-4o (Roteirização & Pesquisa)" revela que foi inserida uma **senha pessoal** e não uma **API Key** oficial da OpenAI.
@@ -482,4 +509,31 @@
 - [x] Validação e Testes no Docker:
   - [x] Recompilação completa do Next.js de produção (`npm run build`) com 26/26 rotas estáticas e dinâmicas geradas com 0 erros.
   - [x] Teste prático de geração via `/api/script/generate` validando a produção de 14 cenas com 80 a 96 palavras por cena e fotografias 4K condizentes com o roteiro.
+  - [x] Execução da suite de testes E2E com 18/18 testes aprovados no Docker.
+
+---
+
+### [x] Passo 21: Sincronização Real do Pipeline, Blindagem de Rate-Limit contra Banner Amarelo de IA e Deduplicação 4K no LoopX Vault
+- [x] Diagnóstico da exibição prematura de cenas residuais (247 palavras) e repetição de imagens:
+  - [x] Em `src/app/studio/page.tsx`, o timer simulado avançava +5% a cada 600ms, transicionando para o Storyboard em 12 segundos antes do retorno da Promise de `/api/script/generate` (~16s a 25s), retendo o projeto antigo em tela.
+  - [x] O acervo `VAULT_CATEGORIES.mystery` continha apenas 8 URLs com fotos aleatórias (controle de videogame PS4, castelo, drone e pássaros), que se repetiam ciclicamente a partir da cena 9 quando o Unsplash atingia o limite da chave demo (HTTP 403).
+  - [x] O serviço gratuito de IA generativa (Pollinations) impôs rate-limit de 1 imagem a cada 45 segundos por IP, retornando um banner amarelo com erro no lugar da foto.
+- [x] Sincronização Real do Pipeline no Frontend ([page.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/app/studio/page.tsx)):
+  - [x] Eliminação do timer simulado desacoplado da requisição HTTP.
+  - [x] Limpeza imediata do estado de cenas (`setScenes([])`) ao iniciar o projeto para blindar contra vazamento de dados antigos.
+  - [x] Barra de progresso assíncrona que avança até 92% enquanto aguarda a API, avançando para 100% e acionando o Storyboard exclusivamente após a resolução positiva da Promise.
+- [x] Deduplicação Estrita de Mídias e Expansão para 24 Fotos 4K ([media-curator.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/lib/pipeline/media-curator.ts)):
+  - [x] Implementação do rastreador `usedMediaUrls: Set<string>` para que nenhuma imagem se repita no mesmo documentário.
+  - [x] Integração da API Pixabay (`PIXABAY_API_KEY`) com 5.000 requisições/hora para absorver rate-limits do Unsplash.
+  - [x] Substituição e ampliação completa das 8 categorias do `VAULT_CATEGORIES` para 24 fotografias 4K cinematográficas verificadas e exclusivas por nicho (sem controle PS4, drone ou pássaros).
+- [x] Blindagem Contra Banner Amarelo de IA ([generate-image/route.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/app/api/pipeline/generate-image/route.ts)):
+  - [x] Detecção rigorosa de status 402, 429 ou respostas JSON de limite do provedor com redirecionamento transparente para curadoria 4K do Pixabay/Unsplash/Vault.
+- [x] Garantia de Densidade Narrativa Profissional ([scriptwriter.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/lib/ai/scriptwriter.ts)):
+  - [x] Implementação de `ensureProfessionalNarrationDensity`: enriquece qualquer cena curta para 75 a 95 palavras, garantindo entre 1.100 e 1.550 palavras no total com cadência investigativa de 120-155 wpm.
+- [x] Métrica Dinâmica de Cadência e Proteção no Storyboard ([StoryboardEditor.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/StoryboardEditor.tsx)):
+  - [x] Exibição da métrica em tempo real `Cadência de Fala` em palavras por minuto (`wpm`) com indicador `Padrão Documental`.
+  - [x] Adicionado manipulador `onError` defensivo nas tags `<img>` das cenas.
+- [x] Validação e Testes no Docker:
+  - [x] Compilação do Next.js de produção com 26/26 rotas com 0 erros.
+  - [x] Teste de geração em `/api/script/generate`: 14 cenas, 1.541 palavras, 154 wpm, 14 URLs únicas e 0 duplicadas.
   - [x] Execução da suite de testes E2E com 18/18 testes aprovados no Docker.

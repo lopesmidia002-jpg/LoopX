@@ -26,17 +26,23 @@ export async function POST(req: Request) {
     let imageUrl = getAiGeneratedImageUrl(finalPrompt, seed);
     let usedFallback = false;
 
-    // Sonda se a API gratuita de IA está livre ou bloqueada por rate-limit (evita banner amarelo)
+    // Sonda se a API gratuita de IA está livre ou bloqueada por rate-limit (evita banner amarelo de 45s)
     try {
       const probe = await fetch(imageUrl, {
         method: "HEAD",
-        signal: AbortSignal.timeout(3500),
+        signal: AbortSignal.timeout(3000),
       });
       const retryAfter = probe.headers.get("retry-after");
       const paymentReq = probe.headers.get("payment-required");
+      const contentType = probe.headers.get("content-type") || "";
 
-      if (probe.status === 402 || probe.status === 429 || retryAfter || paymentReq) {
-        // Rate-limit do provedor de IA gratuito (1 img/45s): recorre ao acervo 4K de alta fidelidade
+      // Se retornar 402 (Payment/Free Limit), 429 (Too Many Requests), JSON de erro ou headers de bloqueio:
+      if (
+        probe.status !== 200 ||
+        retryAfter ||
+        paymentReq ||
+        contentType.includes("json")
+      ) {
         imageUrl = await getCuratedMediaForScene({
           topic,
           keywords: normalizedKeywords,
@@ -47,7 +53,7 @@ export async function POST(req: Request) {
         usedFallback = true;
       }
     } catch {
-      // Timeout ou erro no gerador: usa acervo 4K
+      // Timeout ou indisponibilidade na IA: recorre com segurança ao acervo 4K de alta fidelidade
       imageUrl = await getCuratedMediaForScene({
         topic,
         keywords: normalizedKeywords,

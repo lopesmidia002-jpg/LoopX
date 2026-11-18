@@ -32,31 +32,6 @@ export default function StudioPage() {
   const maxMinutes = 195.0; // Creator tier
   const [concurrentRenders, setConcurrentRenders] = useState(0);
 
-  // Simulated 8-stage pipeline progression
-  useEffect(() => {
-    if (studioStep !== "PROCESSING") return;
-
-    setConcurrentRenders(1);
-    const interval = setInterval(() => {
-      setPipelineProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setStudioStep("STORYBOARD");
-          setConcurrentRenders(0);
-          setAvailableMinutes((m) => Math.max(0, m - configuredDuration));
-          return 100;
-        }
-
-        const next = prev + 5;
-        const stageIndex = Math.min(8, Math.max(1, Math.ceil((next / 100) * 8)));
-        setCurrentPipelineStage(stageIndex);
-        return next;
-      });
-    }, 600);
-
-    return () => clearInterval(interval);
-  }, [studioStep, configuredDuration]);
-
   const handleStartPipeline = async (config: {
     topic: string;
     format: VideoFormat;
@@ -66,12 +41,26 @@ export default function StudioPage() {
     targetDuration: number;
     visualStyle?: "AI_GENERATED" | "STOCK_4K";
   }) => {
-    setConfiguredDuration(config.targetDuration || 10);
+    const targetMins = config.targetDuration || 10;
+    setConfiguredDuration(targetMins);
     setTopicTitle(config.topic);
     setPipelineProgress(5);
     setCurrentPipelineStage(1);
     setStudioStep("PROCESSING");
     setIsNewProjectModalOpen(false);
+    setConcurrentRenders(1);
+
+    // Limpa cenas residuais para evitar que dados antigos apareçam na tela
+    setScenes([]);
+
+    // Progresso assíncrono suave de 5% a 92% enquanto o backend processa o roteiro real
+    let currentPct = 5;
+    const progressTimer = setInterval(() => {
+      currentPct = Math.min(92, currentPct + 4);
+      setPipelineProgress(currentPct);
+      const stageIndex = Math.min(7, Math.max(1, Math.ceil((currentPct / 100) * 8)));
+      setCurrentPipelineStage(stageIndex);
+    }, 600);
 
     try {
       const res = await fetch("/api/script/generate", {
@@ -79,17 +68,40 @@ export default function StudioPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...config,
-          targetDurationMinutes: config.targetDuration,
+          targetDurationMinutes: targetMins,
           visualStyle: config.visualStyle || "STOCK_4K",
         }),
       });
+
+      clearInterval(progressTimer);
+
+      if (!res.ok) {
+        throw new Error(`Servidor retornou erro ${res.status}`);
+      }
+
       const data = await res.json();
       if (data.success && data.scenes && data.scenes.length > 0) {
+        setPipelineProgress(100);
+        setCurrentPipelineStage(8);
         setScenes(data.scenes);
         if (data.title) setTopicTitle(data.title);
+        setConcurrentRenders(0);
+        setAvailableMinutes((m) => Math.max(0, m - targetMins));
+
+        // Pequena pausa fluida para exibir 100% concluído antes de transicionar
+        setTimeout(() => {
+          setStudioStep("STORYBOARD");
+        }, 500);
+      } else {
+        throw new Error(data.error || "Roteiro não pôde ser gerado");
       }
-    } catch (e) {
+    } catch (e: any) {
+      clearInterval(progressTimer);
       console.error("Erro ao chamar API de roteiro:", e);
+      setToastMessage("❌ Falha na produção: " + (e?.message || "Tente novamente"));
+      setStudioStep("CONFIG");
+      setConcurrentRenders(0);
+      setTimeout(() => setToastMessage(null), 5000);
     }
   };
 

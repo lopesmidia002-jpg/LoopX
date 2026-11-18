@@ -816,3 +816,36 @@ Acesse as publicações agendadas em: `http://localhost:3000/api/youtube/schedul
    - O evento nativo `utterance.onboundary` sincroniza a palavra destacada em tempo real com a locução, com fallback cadenciado a ~2.2 palavras/segundo.
    - Implementado heartbeat a cada 8 segundos para evitar a pausa de 15 segundos do Chrome.
    - Badge indicativo no topo do player exibindo o locutor neural ativo.
+
+---
+
+## 27. Sincronização Assíncrona do Pipeline, Blindagem de Rate-Limit e Deduplicação no LoopX Vault 4K
+
+### 27.1. Diagnóstico do Descompasso Temporal e Repetição de Imagens
+1. **Dessincronização Temporal no Frontend ([page.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/app/studio/page.tsx)):**
+   - Um timer simulado cego (`setInterval` de +5% a cada 600ms) forçava a transição de estado para `STORYBOARD` exatamente aos 12 segundos.
+   - Como a requisição HTTP real para `/api/script/generate` leva ~16 a 25 segundos (Gemini 3.5 + apuração + curadoria de 14 imagens 4K), o estúdio abria antes do retorno da API, mantendo em tela as 14 cenas residuais anteriores de 247 palavras.
+2. **Causa da Repetição Cíclica das 8 Fotos:**
+   - O acervo `VAULT_CATEGORIES.mystery` continha apenas 8 URLs estáticas que possuíam IDs incorretos do Unsplash (incluindo fotos aleatórias como controle de videogame PS4, castelo e pássaros).
+   - Quando a cota de 50 requisições/hora da chave Demo do Unsplash se esgotava (HTTP 403), o fallback executava `fallbackList[sceneIndex % fallbackList.length]`, repetindo o ciclo de 8 fotos a partir da cena 9.
+3. **Causa do Banner Amarelo ("Free limit reached! 1 free image every 45 seconds"):**
+   - O serviço gratuito de IA generativa (Pollinations) impôs rate-limit de 1 imagem a cada 45 segundos por IP. Ao ser acionado na geração ou pelo botão "Gerar IA", retornava imagem amarela com mensagem de cota esgotada.
+
+### 27.2. Implementação da Solução Definitiva
+1. **Sincronização Real da Promise no Frontend ([page.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/app/studio/page.tsx)):**
+   - O timer cego foi eliminado. O progresso avança suavemente de 5% a 92% enquanto aguarda a resposta da API real.
+   - As cenas anteriores são imediatamente limpas (`setScenes([])`) ao iniciar o pipeline para evitar exibição de dados residuais.
+   - Apenas quando a Promise do backend resolve com sucesso (`res.ok`), a barra avança para 100%, define o estágio 8 e transiciona suavemente para o Storyboard.
+2. **Deduplicação Estrita e Expansão para 24 Fotos por Categoria ([media-curator.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/lib/pipeline/media-curator.ts)):**
+   - Implementado conjunto de rastreamento `usedMediaUrls: Set<string>` passado para cada cena, garantindo que **nenhuma imagem se repita no mesmo vídeo**.
+   - Integração prioritária da API do Pixabay (`PIXABAY_API_KEY`) como provedor secundário de alta velocidade (5.000 requisições/hora sem rate-limit) para absorver falhas ou esgotamento do Unsplash.
+   - Todas as 8 categorias do `VAULT_CATEGORIES` (`mystery`, `aviation_mh370`, `ocean`, `military`, `space`, `ancient`, `technology`, `ice`) foram integralmente substituídas e expandidas para conterem 24 fotografias 4K cinematográficas verificadas e exclusivas.
+3. **Blindagem Contra o Banner Amarelo de IA ([generate-image/route.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/app/api/pipeline/generate-image/route.ts)):**
+   - A rota de geração por IA verifica se o provedor retornou HTTP 402, 429 ou corpo JSON com código `FREE_LIMIT`.
+   - Se houver qualquer bloqueio por limite de tempo, o backend recorre instantaneamente e de forma transparente à curadoria fotográfica 4K do Pixabay/Unsplash/Vault, eliminando por completo o banner amarelo.
+4. **Garantia de Densidade Narrativa Profissional ([scriptwriter.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/lib/ai/scriptwriter.ts)):**
+   - Criada a função `ensureProfessionalNarrationDensity`, que inspeciona o parágrafo de cada cena e enriquece automaticamente qualquer texto curto com reconstituição documental, análise pericial e tensão investigativa.
+   - Garante que cada cena contenha entre **75 e 95 palavras** (totalizando entre 1.100 e 1.550 palavras para vídeos de 10 minutos), elevando a cadência para 120-155 wpm (padrão ouro do YouTube investigativo).
+5. **Métrica Dinâmica de Cadência e Proteção no Storyboard ([StoryboardEditor.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/StoryboardEditor.tsx)):**
+   - O Storyboard agora exibe a métrica dinâmica `Cadência de Fala` em palavras por minuto (`wpm`) com status `Padrão Documental`.
+   - O elemento `<img>` possui manipulador `onError` seguro com fallback automático para fotografia 4K do Vault, impedindo imagens quebradas.
