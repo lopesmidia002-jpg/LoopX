@@ -263,7 +263,25 @@ loopx/
 
 ---
 
-## 9. Como Executar via Docker
+## 9. Auditoria de Código, Permissões e Resolução de Erros (Passo 10)
+
+### 9.1. Permissões de Execução no Contêiner
+- Ajuste no `Dockerfile` com `RUN chown -R nextjs:nodejs /app`, garantindo que o processo Node sob usuário restrito consiga operar sem erros de `EACCES: permission denied`.
+- Transferência explícita do contexto de fontes (`src/`, `tsconfig.json`, `next.config.mjs`, `tailwind.config.ts`, `next-env.d.ts`, `.eslintrc.json`) para a imagem de produção `runner`.
+
+### 9.2. Normalização e Resiliência de APIs
+- Rota `/api/pipeline/curate`: suporte universal a payloads com `query` ou `keywords`, e `mediaType` ou `preferredType`.
+- Extensão do tipo `MediaType` em `types.ts` para abranger `"IMAGE" | "VIDEO" | "ALL"`.
+
+### 9.3. Verificação Estática de Tipagem
+- Checagem completa de tipos executada no contêiner com zero erros:
+  ```bash
+  docker compose exec -T app ./node_modules/.bin/tsc --project tsconfig.json --noEmit
+  ```
+
+---
+
+## 10. Como Executar via Docker
 
 ### Subir todos os serviços (App, PostgreSQL e Redis)
 ```bash
@@ -273,6 +291,11 @@ docker compose up -d
 ### Executar a Suite de Testes E2E no Docker
 ```bash
 docker compose exec -T app npm run test:e2e
+```
+
+### Executar a Verificação Estática de Tipos TypeScript
+```bash
+docker compose exec -T app ./node_modules/.bin/tsc --project tsconfig.json --noEmit
 ```
 
 ### Verificar status dos contêineres

@@ -1,6 +1,6 @@
 export type VideoFormat = "DOCUMENTARY" | "TOP_10";
 export type Language = "PT_BR" | "EN" | "ES";
-export type MediaType = "IMAGE" | "VIDEO";
+export type MediaType = "IMAGE" | "VIDEO" | "ALL";
 export type RenderJobStatus = "QUEUED" | "PROCESSING" | "COMPLETED" | "FAILED" | "CANCELED";
 export type PlanTier = "STARTER" | "CREATOR" | "STUDIO" | "SCALE";
 export type BillingCycle = "MONTHLY" | "ANNUAL";

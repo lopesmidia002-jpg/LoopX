@@ -117,6 +117,17 @@
 
 ---
 
+### [x] Passo 10: Auditoria Geral de Código, Correção de Permissões e Resolução de Erros
+- [x] Ajuste no `Dockerfile` para transferência do código-fonte completo (`src/`, `tsconfig.json`, `next.config.mjs`, `tailwind.config.ts`, `next-env.d.ts`, `.eslintrc.json`) para a imagem de produção `runner`.
+- [x] Correção de permissões de sistema de arquivos do usuário não-root `nextjs` (`chown -R nextjs:nodejs /app`).
+- [x] Normalização de parâmetros de curadoria de mídias (`/api/pipeline/curate`) suportando `query`, `keywords`, `mediaType` e `preferredType`.
+- [x] Extensão do enum `MediaType` para aceitar `"ALL"`.
+- [x] Validação estática de tipos do TypeScript com zero erros (`tsc --project tsconfig.json --noEmit` código 0).
+- [x] Verificação de saúde da infraestrutura (`HEALTHY`: PostgreSQL 1ms, FFmpeg 8.0.1, Redis 7 ativo, 25.8MB RAM).
+- [x] Execução da suíte E2E automatizada no Docker com 100% de sucesso (12/12 testes).
+
+---
+
 ### [ ] Próximos Passos Opcionais (Pós-Lançamento)
 > *Aguardando solicitação explícita do usuário para início de qualquer item adicional.*
 - [ ] Inserção de chaves reais de produção de terceiros no `.env` (`CLERK_SECRET_KEY`, `YOUTUBE_CLIENT_ID`, `OPENAI_API_KEY`, `ELEVENLABS_API_KEY`).
