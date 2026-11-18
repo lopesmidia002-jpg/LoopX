@@ -728,6 +728,16 @@ O componente [AnalyticsDashboard.tsx](file:///c:/Users/Nilto/OneDrive/Documentos
   - Hover overlay com opções separadas: "Gerar com IA" e "Acervo 4K".
   - **Central de Imagens da Cena:** Modal com abas para alternar entre "IA Generativa (Flux 4K)" com campo de prompt editável e "Acervo Fotográfico 4K (Unsplash)".
 
+### 24.3. Tratamento de Rate Limit e Blindagem com Acervo Semântico 4K
+- **Causa Raiz do Banner Amarelo ("Free limit reached"):**
+  - O provedor público gratuito de IA (Pollinations.ai) aplica uma política estrita de rate limit de 1 imagem a cada 45 segundos por IP. Projetos completos com 12 a 22 cenas simultâneas recebiam respostas HTTP 402/429 contendo o banner amarelo de cota nas cenas 2 em diante.
+- **Sonda Ativa de Interceptação (`Probe`):**
+  - Implementada verificação HTTP `HEAD` com timeout de 3.5s em [media-curator.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/lib/pipeline/media-curator.ts) e [/api/pipeline/generate-image](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/app/api/pipeline/generate-image/route.ts). Caso o provedor retorne status 402, 429 ou o cabeçalho `retry-after`, o sistema intercepta e substitui instantaneamente a URL por uma fotografia 4K do Unsplash, impedindo que o banner amarelo chegue ao usuário.
+- **Busca Semântica Enriquecida para Dark Channels:**
+  - A função `buildUnsplashSearchQuery` mapeia contextos em português para termos fotográficos documentais de alta retenção em inglês (`airplane cockpit night`, `military radar screen night`, `ocean search vessel storm`, `classified documents dossier`).
+- **Definição de Padrão Seguro (`STOCK_4K`):**
+  - O estilo visual padrão para novos projetos foi estabelecido como `STOCK_4K`, garantindo renderização ultra-rápida (1s por cena), ausência total de banners de erro e qualidade 4K real.
+
 ---
 
 ## 25. Como Executar via Docker

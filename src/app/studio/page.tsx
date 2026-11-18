@@ -80,7 +80,7 @@ export default function StudioPage() {
         body: JSON.stringify({
           ...config,
           targetDurationMinutes: config.targetDuration,
-          visualStyle: config.visualStyle || "AI_GENERATED",
+          visualStyle: config.visualStyle || "STOCK_4K",
         }),
       });
       const data = await res.json();

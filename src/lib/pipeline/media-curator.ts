@@ -133,6 +133,43 @@ export function detectCategoryForTopic(topic: string): string {
 }
 
 /**
+ * Constrói query semântica precisa em inglês para o acervo Unsplash de alta fidelidade
+ */
+export function buildUnsplashSearchQuery(topic: string, keywords: string[] = []): string {
+  const text = `${topic} ${keywords.join(" ")}`.toLowerCase();
+
+  if (text.includes("mh370") || text.includes("voo") || text.includes("aviao") || text.includes("aereo") || text.includes("desaparecido")) {
+    if (text.includes("radar") || text.includes("torre") || text.includes("sinal") || text.includes("transponder")) {
+      return "military radar screen night";
+    }
+    if (text.includes("mar") || text.includes("oceano") || text.includes("busca") || text.includes("resgate")) {
+      return "ocean search vessel storm";
+    }
+    return "airplane cockpit night dark";
+  }
+  if (text.includes("mar") || text.includes("oceano") || text.includes("fossa") || text.includes("mariana") || text.includes("abismo") || text.includes("submarino")) {
+    return "deep ocean abyss underwater dark";
+  }
+  if (text.includes("guerra") || text.includes("militar") || text.includes("armas") || text.includes("batalha") || text.includes("soldado")) {
+    return "military defense combat warfare";
+  }
+  if (text.includes("espaco") || text.includes("cosmos") || text.includes("galaxia") || text.includes("planeta") || text.includes("universo") || text.includes("buraco negro")) {
+    return "deep space cosmic galaxy nebula";
+  }
+  if (text.includes("gelo") || text.includes("antartida") || text.includes("polo") || text.includes("glaciar")) {
+    return "antarctica glacier frozen ice";
+  }
+  if (text.includes("civilizacao") || text.includes("antiga") || text.includes("piramide") || text.includes("arqueologia") || text.includes("ruinas")) {
+    return "ancient ruins stone temple pyramid";
+  }
+  if (text.includes("tecnologia") || text.includes("ia") || text.includes("computador") || text.includes("quantica") || text.includes("cyber")) {
+    return "cybersecurity server quantum matrix";
+  }
+
+  return keywords && keywords[0] ? `${keywords[0]} cinematic` : `${topic} 4k`;
+}
+
+/**
  * Constrói prompt cinematográfico altamente detalhado para a IA Generativa (Flux)
  */
 export function buildCinematicAiImagePrompt(
@@ -174,28 +211,38 @@ export async function getCuratedMediaForScene(params: {
   visualStyle?: VisualStyle;
   narrationText?: string;
 }): Promise<string> {
-  const { topic, keywords, sceneIndex, visualStyle = "AI_GENERATED", narrationText } = params;
+  const { topic, keywords, sceneIndex, visualStyle = "STOCK_4K", narrationText } = params;
 
-  // 1. Se visualStyle for AI_GENERATED (padrão), gera a imagem inédita por IA via Flux
+  // 1. Se visualStyle for AI_GENERATED, tenta a IA mas valida que não esteja em rate-limit (evita banner amarelo)
   if (visualStyle === "AI_GENERATED") {
     try {
       const prompt = buildCinematicAiImagePrompt(topic, keywords, sceneIndex, narrationText);
       const seed = (sceneIndex + 1) * 31337 + 101;
-      return getAiGeneratedImageUrl(prompt, seed);
-    } catch (e) {
-      console.warn("Aviso na geração de imagem IA, recorrendo ao acervo:", e);
+      const candidateAiUrl = getAiGeneratedImageUrl(prompt, seed);
+
+      // Sonda rapidamente se o provedor gratuito está sem rate limit (1 img a cada 45s)
+      const probe = await fetch(candidateAiUrl, {
+        method: "HEAD",
+        signal: AbortSignal.timeout(3000),
+      });
+      const retryAfter = probe.headers.get("retry-after");
+      const paymentReq = probe.headers.get("payment-required");
+
+      if (probe.status === 200 && !retryAfter && !paymentReq) {
+        return candidateAiUrl;
+      }
+      console.warn(`Provedor de IA em rate limit (status ${probe.status}, retry: ${retryAfter}). Usando acervo 4K de alta fidelidade.`);
+    } catch {
+      // Timeout ou falha na IA: prossegue para o acervo 4K sem quebrar a tela
     }
   }
 
-  const categoryKey = detectCategoryForTopic(topic);
-  const fallbackList = VAULT_CATEGORIES[categoryKey] || VAULT_CATEGORIES.mystery;
-
-  // 2. Tenta buscar no Unsplash se houver chave configurada
+  // 2. Acervo Fotográfico Cinematográfico 4K (Unsplash API Oficial)
   const unsplashKey = process.env.UNSPLASH_ACCESS_KEY;
   if (unsplashKey) {
     try {
-      const queryTerm = keywords && keywords[0] ? `${keywords[0]} cinematic` : `${topic} 4k`;
-      const endpoint = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(queryTerm)}&per_page=5&orientation=landscape`;
+      const queryTerm = buildUnsplashSearchQuery(topic, keywords);
+      const endpoint = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(queryTerm)}&per_page=12&orientation=landscape`;
       const res = await fetch(endpoint, {
         headers: { Authorization: `Client-ID ${unsplashKey}` },
       });
@@ -212,7 +259,9 @@ export async function getCuratedMediaForScene(params: {
     }
   }
 
-  // 3. Fallback enriquecido: seleciona a imagem temática precisa da categoria para esta cena
+  // 3. Acervo Local Curado 4K de Alta Fidelidade (LoopX Vault)
+  const categoryKey = detectCategoryForTopic(topic);
+  const fallbackList = VAULT_CATEGORIES[categoryKey] || VAULT_CATEGORIES.mystery;
   return fallbackList[sceneIndex % fallbackList.length];
 }
 

@@ -56,7 +56,7 @@ export default function NewProjectModal({
   const [language, setLanguage] = useState<Language>("PT_BR");
   const [selectedVoice, setSelectedVoice] = useState<VoiceOption>(VOICE_OPTIONS[0]);
   const [targetDuration, setTargetDuration] = useState<number>(10);
-  const [visualStyle, setVisualStyle] = useState<VisualStyle>("AI_GENERATED");
+  const [visualStyle, setVisualStyle] = useState<VisualStyle>("STOCK_4K");
   const [hasCustomScript, setHasCustomScript] = useState(false);
   const [customScript, setCustomScript] = useState("");
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
@@ -235,35 +235,16 @@ export default function NewProjectModal({
             </div>
           </div>
 
-          {/* Visual Style: IA Generativa vs Acervo 4K */}
+          {/* Visual Style: Acervo 4K vs IA Generativa */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-bold text-white flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                <Film className="w-3.5 h-3.5 text-brand-400" />
                 <span>Motor Visual das Imagens *</span>
               </label>
-              <span className="text-[10px] text-purple-400 font-medium">100% Inédito por Cena</span>
+              <span className="text-[10px] text-brand-400 font-medium">Ultra HD 4K</span>
             </div>
             <div className="grid grid-cols-2 gap-2 sm:gap-3">
-              <button
-                type="button"
-                onClick={() => setVisualStyle("AI_GENERATED")}
-                className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all ${
-                  visualStyle === "AI_GENERATED"
-                    ? "bg-purple-950/30 border-purple-500 text-white ring-1 ring-purple-500/50"
-                    : "bg-[#141923] border-surface-border text-slate-300 hover:border-slate-700"
-                }`}
-              >
-                <Sparkles className="w-4 h-4 text-purple-400 shrink-0" />
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <h4 className="text-xs font-bold text-white">IA Generativa (Flux)</h4>
-                    <span className="bg-purple-500/20 text-purple-300 text-[9px] px-1.5 py-0.2 rounded font-bold">RECOMENDADO</span>
-                  </div>
-                  <p className="text-[10px] text-slate-400">Pinta imagens de IA inéditas para cada cena</p>
-                </div>
-              </button>
-
               <button
                 type="button"
                 onClick={() => setVisualStyle("STOCK_4K")}
@@ -275,8 +256,27 @@ export default function NewProjectModal({
               >
                 <Film className="w-4 h-4 text-brand-400 shrink-0" />
                 <div>
-                  <h4 className="text-xs font-bold text-white">Acervo 4K (Unsplash)</h4>
-                  <p className="text-[10px] text-slate-400">Fotografia documental real de arquivo</p>
+                  <div className="flex items-center gap-1.5">
+                    <h4 className="text-xs font-bold text-white">Acervo 4K (Unsplash)</h4>
+                    <span className="bg-brand-500/20 text-brand-300 text-[9px] px-1.5 py-0.2 rounded font-bold">RECOMENDADO</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400">Fotografia documental real 4K sem limites de cota</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setVisualStyle("AI_GENERATED")}
+                className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all ${
+                  visualStyle === "AI_GENERATED"
+                    ? "bg-purple-950/30 border-purple-500 text-white ring-1 ring-purple-500/50"
+                    : "bg-[#141923] border-surface-border text-slate-300 hover:border-slate-700"
+                }`}
+              >
+                <Sparkles className="w-4 h-4 text-purple-400 shrink-0" />
+                <div>
+                  <h4 className="text-xs font-bold text-white">IA Generativa (Flux)</h4>
+                  <p className="text-[10px] text-slate-400">Imagens inéditas (1 foto a cada 45s no tier grátis)</p>
                 </div>
               </button>
             </div>

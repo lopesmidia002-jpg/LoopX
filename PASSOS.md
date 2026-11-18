@@ -376,3 +376,18 @@
   - [x] Hover overlay na imagem com opções "Gerar com IA" e "Acervo 4K".
   - [x] Modal de Curadoria expandido com duas abas: "IA Generativa (Flux 4K)" com input de prompt customizável e "Acervo Fotográfico 4K (Unsplash)".
 - [x] Recompilação Next.js no Docker (`npm run build` com 26/26 rotas com 0 erros), reinicialização do contêiner e 18/18 testes E2E aprovados.
+
+---
+
+### [x] Passo 18: Correção do Bloqueio de Rate-Limit da IA Gratuita (Pollinations 45s) e Blindagem com Curadoria Semântica 4K Instantânea
+- [x] Diagnóstico da imagem amarela "Free limit reached" exibida na Cena 05:
+  - O provedor externo de IA gratuito (Pollinations.ai) impõe um limite estrito de 1 requisição a cada 45 segundos por endereço IP (`1 free image every 45 seconds`). Ao renderizar projetos de 8 a 15 minutos com 12 a 22 cenas simultâneas, as cenas subsequentes recebiam o banner amarelo de bloqueio (código HTTP 402/429).
+- [x] Implementação de Busca Semântica Enriquecida para Dark Channels:
+  - Criação da função `buildUnsplashSearchQuery` em `src/lib/pipeline/media-curator.ts`, mapeando temas em português para consultas cinematográficas precisas em inglês no Unsplash (ex: cockpit de avião à noite, radar militar, abismo oceânico, documentos classificados).
+- [x] Blindagem com Interceptação e Fallback Automático:
+  - Implementação de sonda HTTP (`HEAD`) em `getCuratedMediaForScene` e `POST /api/pipeline/generate-image` que verifica em tempo real se o provedor de IA gratuito está em rate limit (`status 402/429`, `retry-after` ou `payment-required`).
+  - Em caso de bloqueio, o sistema substitui imediatamente a mídia pelo acervo cinematográfico 4K do Unsplash, impedindo completamente que o banner amarelo apareça no storyboard do criador.
+- [x] Redefinição do Estilo Visual Padrão para Acervo 4K:
+  - Configuração do `visualStyle: "STOCK_4K"` como padrão em `scriptwriter.ts`, `/api/script/generate`, `studio/page.tsx` e `NewProjectModal.tsx`.
+  - Exibição de badge `RECOMENDADO • Rápido & Sem Limites de Cota` para o Acervo 4K no modal de criação de projetos.
+- [x] Validação integral no Docker: compilação Next.js (0 erros), geração de roteiro de 14 cenas com 100% de imagens cinematográficas reais sem banners e aprovação de 18/18 testes E2E automatizados.

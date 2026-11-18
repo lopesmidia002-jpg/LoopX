@@ -31,7 +31,7 @@ export async function generateCinematicScript(params: {
   customScript?: string;
   visualStyle?: VisualStyle;
 }): Promise<ScriptGenerationResult> {
-  const { topic, format, language, targetDurationMinutes, researchData, customScript, visualStyle = "AI_GENERATED" } = params;
+  const { topic, format, language, targetDurationMinutes, researchData, customScript, visualStyle = "STOCK_4K" } = params;
 
   // Se o usuário já forneceu um roteiro bruto, faz a segmentação estruturada
   if (customScript && customScript.trim().length > 50) {
@@ -250,7 +250,7 @@ async function processCustomScriptToScenes(
   rawScript: string,
   format: VideoFormat,
   language: Language,
-  visualStyle: VisualStyle = "AI_GENERATED"
+  visualStyle: VisualStyle = "STOCK_4K"
 ): Promise<ScriptGenerationResult> {
   const paragraphs = rawScript
     .split(/\n\s*\n/)
@@ -308,7 +308,7 @@ async function generateDeterministicScript(
   language: Language,
   targetDurationMinutes: number,
   research: ResearchResult,
-  visualStyle: VisualStyle = "AI_GENERATED"
+  visualStyle: VisualStyle = "STOCK_4K"
 ): Promise<ScriptGenerationResult> {
   const isDoc = format === "DOCUMENTARY";
   const targetMins = Math.max(3, Number(targetDurationMinutes) || 10);
