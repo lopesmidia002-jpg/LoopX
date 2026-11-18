@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   Tv,
   ChevronDown,
@@ -25,6 +26,7 @@ export default function ChannelSelector({ onChannelChanged }: ChannelSelectorPro
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   // New channel form state
   const [newName, setNewName] = useState("");
@@ -46,6 +48,7 @@ export default function ChannelSelector({ onChannelChanged }: ChannelSelectorPro
   };
 
   useEffect(() => {
+    setMounted(true);
     fetchChannels();
   }, []);
 
@@ -207,9 +210,9 @@ export default function ChannelSelector({ onChannelChanged }: ChannelSelectorPro
         </div>
       )}
 
-      {/* Modal: Vincular Novo Canal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md overflow-y-auto p-4 flex min-h-full items-center justify-center">
+      {/* Modal: Vincular Novo Canal (Renderizado via Portal no body para evitar aprisionamento de contexto z-index) */}
+      {isModalOpen && mounted && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md overflow-y-auto p-4 flex min-h-screen items-center justify-center">
           <div className="relative w-full max-w-md bg-surface border border-surface-border rounded-2xl p-6 shadow-2xl animate-fadeIn my-auto">
             <button
               onClick={() => setIsModalOpen(false)}
@@ -311,7 +314,8 @@ export default function ChannelSelector({ onChannelChanged }: ChannelSelectorPro
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

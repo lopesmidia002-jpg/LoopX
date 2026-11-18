@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import {
   Play,
@@ -53,6 +54,12 @@ export default function StudioHeader({
   const [isABModalOpen, setIsABModalOpen] = useState(false);
   const [rechargeLoading, setRechargeLoading] = useState(false);
   const [rechargeSuccess, setRechargeSuccess] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const percentage = Math.round((availableMinutes / maxMinutes) * 100);
 
   const handleRecharge = async (minutes: number, amount: number) => {
@@ -205,9 +212,9 @@ export default function StudioHeader({
       </div>
 
       {/* Recharge Minutes Modal */}
-      {isRechargeModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#1a202c] border border-surface-border rounded-2xl max-w-md w-full p-6 shadow-2xl relative animate-fadeIn">
+      {isRechargeModalOpen && mounted && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md overflow-y-auto p-4 flex min-h-screen items-center justify-center">
+          <div className="bg-[#1a202c] border border-surface-border rounded-2xl max-w-md w-full p-6 shadow-2xl relative animate-fadeIn my-auto">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-base font-bold text-white flex items-center gap-2">
                 <Zap className="w-4 h-4 text-amber-400" />
@@ -256,7 +263,8 @@ export default function StudioHeader({
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
       {/* Api Keys & BYOK Settings Modal */}
       <ApiSettingsModal

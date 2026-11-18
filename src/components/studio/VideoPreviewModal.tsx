@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { 
   X, 
   Play, 
@@ -44,8 +45,13 @@ export default function VideoPreviewModal({
   const [isSubmittingYouTube, setIsSubmittingYouTube] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [isABModalOpen, setIsABModalOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !mounted) return null;
 
   // Auto-generate Chapters with timestamps
   const chaptersText = scenes
@@ -90,9 +96,9 @@ export default function VideoPreviewModal({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-[#181e29] border border-surface-border rounded-2xl max-w-4xl w-full overflow-hidden shadow-2xl flex flex-col max-h-[92vh] animate-fadeIn">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md overflow-y-auto p-4 flex min-h-screen items-center justify-center">
+      <div className="bg-[#181e29] border border-surface-border rounded-2xl max-w-4xl w-full overflow-hidden shadow-2xl flex flex-col max-h-[92vh] animate-fadeIn my-auto">
         
         {/* Modal Top Bar */}
         <div className="px-6 py-4 bg-[#131822] border-b border-surface-border flex items-center justify-between">
@@ -386,6 +392,7 @@ export default function VideoPreviewModal({
           currentProjectTitle={topicTitle}
         />
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

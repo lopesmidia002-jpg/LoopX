@@ -410,7 +410,22 @@ loopx/
 
 ---
 
-## 17. Como Executar via Docker
+## 17. Arquitetura de Modais com React Portals (`createPortal`)
+
+### 17.1. Diagnóstico do Aprisionamento por `backdrop-filter`
+- **Causa Raiz:**
+  - O cabeçalho do estúdio (`StudioHeader.tsx`) utiliza classes modernas de desfoque e fixação (`sticky top-0 z-40 bg-[#141923]/95 backdrop-blur-xl`).
+  - Segundo a especificação W3C do CSS, qualquer elemento ancestral com a propriedade `backdrop-filter` ou `transform` torna-se automaticamente o **containing block** para todos os seus nós descendentes com `position: fixed`.
+  - Desse modo, as modais filhas do cabeçalho (`ChannelSelector`, `ApiSettingsModal`, `ScheduleCalendarModal`, `ABTestingModal`, modal de recarga) não utilizavam o `window` (viewport real) como referência, ficando presas à altura de ~60px da barra de topo. O conteúdo principal da página (`<main>`) era renderizado por cima, ocultando o corpo e os botões da janela secundária.
+- **Solução com React Portals:**
+  - Todas as janelas modais da aplicação foram migradas para utilizar `createPortal(modalElement, document.body)`.
+  - A renderização ocorre diretamente no nó raiz do `document.body` com `z-[9999]`, desacoplada de qualquer ancestral com estilos de desfoque ou z-index restrito.
+  - Implementado estado reativo `mounted` via `useEffect` para prevenir incompatibilidades com SSR (Server-Side Rendering).
+  - Centralização vertical perfeita com `my-auto`, espaçamento responsivo e rolagem independente (`overflow-y-auto min-h-screen`).
+
+---
+
+## 18. Como Executar via Docker
 
 ### Subir todos os serviços (App, PostgreSQL e Redis)
 ```bash

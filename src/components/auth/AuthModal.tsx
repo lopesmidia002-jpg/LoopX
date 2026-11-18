@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { X, Lock, Mail, User, Sparkles, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
 
@@ -23,8 +24,13 @@ export default function AuthModal({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [mounted, setMounted] = useState(false);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !mounted) return null;
 
   const handleFillDemo = () => {
     setEmail("criador@loopx.com");
@@ -69,10 +75,10 @@ export default function AuthModal({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto min-h-screen animate-fade-in">
       {/* Modal Container */}
-      <div className="liquid-glass rounded-3xl w-full max-w-md p-6 sm:p-8 relative border border-white/20 shadow-2xl backdrop-blur-2xl">
+      <div className="liquid-glass rounded-3xl w-full max-w-md p-6 sm:p-8 relative border border-white/20 shadow-2xl backdrop-blur-2xl my-auto">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -232,6 +238,7 @@ export default function AuthModal({
           </button>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

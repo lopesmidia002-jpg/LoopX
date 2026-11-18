@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import {
   X,
@@ -42,6 +43,11 @@ export default function ABTestingModal({
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [aiGenerating, setAiGenerating] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Formulário de novo experimento
   const [newTitle, setNewTitle] = useState(currentProjectTitle);
@@ -203,11 +209,11 @@ export default function ABTestingModal({
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-      <div className="relative w-full max-w-5xl bg-[#141923] border border-surface-border rounded-2xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden animate-fadeIn">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md overflow-y-auto p-3 sm:p-4 flex min-h-screen items-center justify-center">
+      <div className="relative w-full max-w-5xl bg-[#141923] border border-surface-border rounded-2xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden animate-fadeIn my-auto">
         
         {/* Top Header */}
         <div className="px-6 py-4 bg-[#0f131a] border-b border-surface-border flex items-center justify-between shrink-0">
@@ -639,6 +645,7 @@ export default function ABTestingModal({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

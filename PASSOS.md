@@ -201,3 +201,8 @@
   - [x] Guia de início rápido passo a passo 100% conteinerizado com Docker.
   - [x] Detalhamento da suíte de 17 testes automatizados E2E e checagem de tipos estáticos TypeScript.
   - [x] Tabela de variáveis de ambiente, mapa da árvore de diretórios e links para documentações complementares.
+- [x] Correção de Exibição das Janelas Secundárias com React Portals (`createPortal`):
+  - [x] Eliminação do aprisionamento de containing block causado pelo `backdrop-filter: blur` do cabeçalho fixo.
+  - [x] Migração de todas as modais (`ChannelSelector`, `ApiSettingsModal`, `ScheduleCalendarModal`, `ABTestingModal`, `VideoPreviewModal`, `AuthModal` e recarga) para montagem direta no `document.body` com `z-[9999]`.
+  - [x] Suporte a SSR seguro com verificação de estado `mounted` via `useEffect`.
+  - [x] Validação completa no Docker com zero erros TypeScript e 17/17 testes E2E aprovados.

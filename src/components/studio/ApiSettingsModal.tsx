@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   Key,
   ShieldCheck,
@@ -26,6 +27,11 @@ export default function ApiSettingsModal({ isOpen, onClose }: ApiSettingsModalPr
   const [activeInput, setActiveInput] = useState<{ [key: string]: string }>({});
   const [savingService, setSavingService] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -78,11 +84,11 @@ export default function ApiSettingsModal({ isOpen, onClose }: ApiSettingsModalPr
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="relative w-full max-w-2xl bg-surface border border-surface-border rounded-2xl p-6 sm:p-8 shadow-2xl animate-fadeIn">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md overflow-y-auto p-4 flex min-h-screen items-center justify-center">
+      <div className="relative w-full max-w-2xl bg-surface border border-surface-border rounded-2xl p-6 sm:p-8 shadow-2xl animate-fadeIn my-auto">
         <button
           onClick={onClose}
           className="absolute top-5 right-5 text-slate-400 hover:text-white"
@@ -194,6 +200,7 @@ export default function ApiSettingsModal({ isOpen, onClose }: ApiSettingsModalPr
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

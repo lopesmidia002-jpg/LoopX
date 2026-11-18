@@ -42,6 +42,7 @@ renders/
 Thumbs.db
 .vscode/
 .idea/
+.gemini/
 
 # Tipagem do Next.js
 next-env.d.ts
