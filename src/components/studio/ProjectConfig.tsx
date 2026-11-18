@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Sparkles,
   Film,
@@ -28,6 +28,7 @@ interface ProjectConfigProps {
     targetDuration: number;
   }) => void;
   isProcessing: boolean;
+  resetKey?: number;
 }
 
 const TEMPLATE_SUGGESTIONS = [
@@ -38,7 +39,7 @@ const TEMPLATE_SUGGESTIONS = [
   "O Que a Ciência Descobriu no Fundo da Fossa das Marianas",
 ];
 
-export default function ProjectConfig({ onStartPipeline, isProcessing }: ProjectConfigProps) {
+export default function ProjectConfig({ onStartPipeline, isProcessing, resetKey }: ProjectConfigProps) {
   const [topic, setTopic] = useState("");
   const [customScript, setCustomScript] = useState("");
   const [hasCustomScript, setHasCustomScript] = useState(false);
@@ -47,6 +48,20 @@ export default function ProjectConfig({ onStartPipeline, isProcessing }: Project
   const [selectedVoice, setSelectedVoice] = useState<VoiceOption>(VOICE_OPTIONS[0]);
   const [targetDuration, setTargetDuration] = useState<number>(10);
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (resetKey && resetKey > 0) {
+      setTopic("");
+      setCustomScript("");
+      setHasCustomScript(false);
+      const input = document.getElementById("project-topic-input");
+      if (input) {
+        input.focus();
+        input.classList.add("ring-2", "ring-brand-400");
+        setTimeout(() => input.classList.remove("ring-2", "ring-brand-400"), 2000);
+      }
+    }
+  }, [resetKey]);
 
   const filteredVoices = VOICE_OPTIONS.filter((v) => v.language === language);
 
@@ -103,6 +118,7 @@ export default function ProjectConfig({ onStartPipeline, isProcessing }: Project
           </div>
 
           <textarea
+            id="project-topic-input"
             required
             rows={hasCustomScript ? 2 : 3}
             value={topic}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   TrendingUp,
   Eye,
@@ -17,37 +17,82 @@ import {
   ArrowUpRight,
   ShieldCheck,
   Play,
+  RefreshCw,
+  AlertTriangle,
 } from "lucide-react";
 import { ChannelAnalyticsOverview } from "@/lib/youtube/analytics";
+import { DarkChannel } from "@/lib/youtube/channel-manager";
 import { formatCurrencyBRL } from "@/lib/utils";
 
 interface AnalyticsDashboardProps {
   onNewProject: () => void;
+  activeChannel?: DarkChannel | null;
 }
 
-export default function AnalyticsDashboard({ onNewProject }: AnalyticsDashboardProps) {
+function formatNumber(val: number): string {
+  if (val >= 1000000) {
+    return `${(val / 1000000).toFixed(2)}M`;
+  }
+  if (val >= 10000) {
+    return `${(val / 1000).toFixed(1)}k`;
+  }
+  return val.toLocaleString("pt-BR");
+}
+
+function formatWatchTime(hours: number): string {
+  if (hours >= 1000) {
+    return `${(hours / 1000).toFixed(1)}k hrs`;
+  }
+  return `${hours.toLocaleString("pt-BR")} hrs`;
+}
+
+function formatSubscribersGained(subs: number): string {
+  if (subs >= 1000) {
+    return `+${(subs / 1000).toFixed(1)}k`;
+  }
+  return `+${subs.toLocaleString("pt-BR")}`;
+}
+
+export default function AnalyticsDashboard({ onNewProject, activeChannel }: AnalyticsDashboardProps) {
   const [data, setData] = useState<ChannelAnalyticsOverview | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchAnalytics() {
+  const fetchAnalytics = useCallback(
+    async (isManual = false) => {
       try {
-        const res = await fetch("/api/youtube/analytics");
+        if (isManual) setRefreshing(true);
+        else setLoading(true);
+        setError(null);
+
+        const url = activeChannel?.id
+          ? `/api/youtube/analytics?channelId=${encodeURIComponent(activeChannel.id)}`
+          : "/api/youtube/analytics";
+
+        const res = await fetch(url);
         const json = await res.json();
         if (json.success && json.analytics) {
           setData(json.analytics);
+        } else {
+          setError(json.error || "Não foi possível carregar as métricas do canal.");
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Falha ao buscar analytics:", err);
+        setError(err?.message || "Erro de conexão ao carregar métricas.");
       } finally {
         setLoading(false);
+        setRefreshing(false);
       }
-    }
+    },
+    [activeChannel?.id]
+  );
 
+  useEffect(() => {
     fetchAnalytics();
-  }, []);
+  }, [fetchAnalytics]);
 
-  if (loading || !data) {
+  if (loading && !data) {
     return (
       <div className="py-24 flex flex-col items-center justify-center gap-3 text-slate-400">
         <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
@@ -56,37 +101,85 @@ export default function AnalyticsDashboard({ onNewProject }: AnalyticsDashboardP
     );
   }
 
+  if (error && !data) {
+    return (
+      <div className="py-24 flex flex-col items-center justify-center gap-3 text-center px-4">
+        <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+          <AlertTriangle className="w-6 h-6" />
+        </div>
+        <p className="text-sm font-bold text-white">Falha ao consultar métricas do canal</p>
+        <p className="text-xs text-slate-400 max-w-sm">{error}</p>
+        <button
+          onClick={() => fetchAnalytics(true)}
+          className="mt-2 px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold transition-all shadow-md"
+        >
+          Tentar Novamente
+        </button>
+      </div>
+    );
+  }
+
+  if (!data) return null;
+
+  const displayAvatar = activeChannel?.avatarUrl || data.avatarUrl;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fade-in">
       
       {/* Top Channel Bar */}
       <div className="glass-surface p-6 rounded-2xl border border-surface-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-brand-600 via-brand-500 to-brand-accent p-0.5 shadow-lg shadow-brand-500/20">
-            <div className="w-full h-full bg-[#131822] rounded-[14px] flex items-center justify-center text-brand-300 font-extrabold text-xl">
-              LX
-            </div>
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-brand-600 via-brand-500 to-brand-accent p-0.5 shadow-lg shadow-brand-500/20 overflow-hidden shrink-0">
+            {displayAvatar ? (
+              <img
+                src={displayAvatar}
+                alt={data.channelName}
+                className="w-full h-full object-cover rounded-[14px]"
+              />
+            ) : (
+              <div className="w-full h-full bg-[#131822] rounded-[14px] flex items-center justify-center text-brand-300 font-extrabold text-xl">
+                LX
+              </div>
+            )}
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-xl font-bold text-white tracking-tight">{data.channelName}</h2>
+              {data.handle && (
+                <span className="bg-brand-500/10 text-brand-300 border border-brand-500/20 text-[10px] px-2 py-0.5 rounded-full font-mono font-bold">
+                  {data.handle}
+                </span>
+              )}
               <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
                 <ShieldCheck className="w-3 h-3" /> Monetizado
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
               {data.subscriberCount.toLocaleString("pt-BR")} inscritos totais • Média de CTR: {data.averageCTR}%
+              {data.niche ? ` • Nicho: ${data.niche}` : ""}
             </p>
           </div>
         </div>
 
-        <button
-          onClick={onNewProject}
-          className="px-5 py-2.5 bg-gradient-to-r from-brand-600 via-brand-500 to-brand-accent hover:opacity-95 text-white font-bold text-xs rounded-xl shadow-lg shadow-brand-500/25 flex items-center gap-2 transition-all shrink-0"
-        >
-          <Sparkles className="w-4 h-4" />
-          <span>Produzir Novo Vídeo com IA</span>
-        </button>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <button
+            onClick={() => fetchAnalytics(true)}
+            disabled={refreshing}
+            className="px-3.5 py-2.5 bg-surface hover:bg-surface-hover border border-surface-border text-slate-300 hover:text-white font-semibold text-xs rounded-xl shadow-sm flex items-center justify-center gap-1.5 transition-all disabled:opacity-50 min-h-[44px]"
+            title="Atualizar métricas em tempo real"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-brand-400 ${refreshing ? "animate-spin" : ""}`} />
+            <span>{refreshing ? "Atualizando..." : "Sincronizar"}</span>
+          </button>
+
+          <button
+            onClick={onNewProject}
+            className="flex-1 sm:flex-initial px-5 py-2.5 bg-gradient-to-r from-brand-600 via-brand-500 to-brand-accent hover:opacity-95 text-white font-bold text-xs rounded-xl shadow-lg shadow-brand-500/25 flex items-center justify-center gap-2 transition-all min-h-[44px]"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Produzir Novo Vídeo com IA</span>
+          </button>
+        </div>
       </div>
 
       {/* 4 Stat Cards */}
@@ -101,7 +194,7 @@ export default function AnalyticsDashboard({ onNewProject }: AnalyticsDashboardP
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-extrabold text-white font-mono">
-              {(data.totalViews30d / 1000000).toFixed(2)}M
+              {formatNumber(data.totalViews30d)}
             </span>
             <span className="text-xs font-semibold text-emerald-400 flex items-center">
               <TrendingUp className="w-3 h-3 mr-0.5" /> +28.4%
@@ -120,7 +213,7 @@ export default function AnalyticsDashboard({ onNewProject }: AnalyticsDashboardP
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-extrabold text-white font-mono">
-              {(data.watchTimeHours30d / 1000).toFixed(1)}k hrs
+              {formatWatchTime(data.watchTimeHours30d)}
             </span>
             <span className="text-xs font-semibold text-emerald-400 flex items-center">
               <TrendingUp className="w-3 h-3 mr-0.5" /> +32.1%
@@ -158,7 +251,7 @@ export default function AnalyticsDashboard({ onNewProject }: AnalyticsDashboardP
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-extrabold text-white font-mono">
-              +{(data.subscribersGained30d / 1000).toFixed(1)}k
+              {formatSubscribersGained(data.subscribersGained30d)}
             </span>
             <span className="text-xs font-semibold text-emerald-400 flex items-center">
               <TrendingUp className="w-3 h-3 mr-0.5" /> +19.8%
@@ -229,7 +322,7 @@ export default function AnalyticsDashboard({ onNewProject }: AnalyticsDashboardP
               Otimizações Recomendadas para os Próximos Vídeos
             </h4>
             <p className="text-xs text-slate-400 mt-1">
-              Baseadas no comportamento dos seus 1.96M espectadores no YouTube.
+              Baseadas no comportamento de {formatNumber(data.totalViews30d)} espectadores no nicho {data.niche || "Dark"}.
             </p>
 
             <ul className="mt-4 space-y-3">

@@ -251,3 +251,37 @@
   - [x] Proteção da rota `/admin` com barreira de autorização e mensagem de acesso restrito ao Administrador.
   - [x] Inclusão de botões de Acesso ADM e Acesso a Usuários na barra superior e na Hero da tela inicial (`LiquidHero.tsx`).
   - [x] Atualização dos testes E2E automatizados (Teste 18) validando o bloqueio 403 de usuários comuns no Portal ADM e aprovação integral de 18/18 testes no Docker.
+- [x] Auditoria Geral de Código, Resolução de Erros de Linting, Portais Modais & Permissões Docker:
+  - [x] Instalação e configuração de `eslint` (^8.57.0) e `eslint-config-next` (14.2.18) no `package.json` para execução nativa de `npm run lint`.
+  - [x] Correção de erro de permissão `TS5033: EACCES: permission denied` em `/app/tsconfig.tsbuildinfo` no Docker com `RUN chown -R nextjs:nodejs /app` no `Dockerfile` e redirecionamento de `tsBuildInfoFile` para `.next/cache` no `tsconfig.json`.
+  - [x] Correção de aprisionamento e corte de janelas secundárias em `Pricing.tsx` (Checkout), `Showcase.tsx` (Prévia de Vídeo) e `StoryboardEditor.tsx` (Curadoria de Mídia) com `createPortal(..., document.body)`, `mounted`, `z-[9999]` e `overflow-y-auto`.
+  - [x] Eliminação do fechamento acidental da gaveta mobile ao clicar no `ChannelSelector` em `StudioHeader.tsx`.
+  - [x] Correção de entidades JSX não-escapadas (`react/no-unescaped-entities`) em `Hero.tsx`, `Showcase.tsx` e `VideoPreviewModal.tsx`.
+  - [x] Correção de dependência de hook no `ABTestingModal.tsx` (`react-hooks/exhaustive-deps`).
+  - [x] Sincronização dinâmica de aba YouTube no `VideoPreviewModal.tsx` via `useEffect`.
+  - [x] Reconstrução completa no Docker, validação de linting com 0 erros, TypeScript com 0 erros e 18/18 testes automatizados E2E aprovados.
+- [x] Ativação e Resolução do Fluxo de "Novo Projeto" (Modal Rápido & Reset Dinâmico do Estúdio):
+  - [x] Diagnóstico da causa raiz: o botão `Novo Projeto` no cabeçalho executava apenas `setStudioStep("CONFIG")`, que já era o estado ativo ao abrir o estúdio, gerando aparente inoperância visual sem scroll, modal ou foco.
+  - [x] Criação do componente modal dedicado `NewProjectModal.tsx` montado via `createPortal(..., document.body)` em camada `z-[9999]`, com seleção de tema, formato (Documentário / Top 10), idioma/voz neural com preview de áudio e duração alvo.
+  - [x] Disparo automático do modal e reset de estado (`projectResetKey`) ao clicar em "Novo Projeto" no cabeçalho desktop (`StudioHeader.tsx`), na barra mobile e no `StoryboardEditor.tsx`.
+  - [x] Implementação de rolagem suave e foco automático no input (`#project-topic-input`) com efeito de realce em anel violeta e feedback visual via toast.
+  - [x] Compatibilização de parâmetros em `/api/script/generate` suportando tanto `targetDuration` quanto `targetDurationMinutes`.
+  - [x] Validação integral no Docker com TypeScript (0 erros), ESLint (0 erros) e suite E2E automatizada (18/18 testes aprovados).
+- [x] Sincronização em Tempo Real de Canais do YouTube, Persistência Local & Métricas Dinâmicas:
+  - [x] Diagnóstico da causa raiz da ausência de dados do canal: canais eram mantidos em memória volátil, rotas GET eram estáticas no build do Next.js e o cadastro não consultava a página pública do YouTube.
+  - [x] Implementação do extrator de metadados reais do YouTube (`fetchYouTubeChannelInfo` e `parseSubscribers`) em `src/lib/youtube/channel-manager.ts`, obtendo título oficial, foto de alta resolução de `yt3.googleusercontent.com`, contagem de inscritos e biografia a partir do `@handle`.
+  - [x] Persistência em disco com `loadStore` e `saveStore` em `.loopx-channels.json` (com fallback seguro em `/tmp/loopx-channels.json`), preservando múltiplos canais e o canal ativo entre reboots do Docker.
+  - [x] Configuração de `export const dynamic = "force-dynamic"` e `revalidate = 0` em `/api/youtube/channels` e `/api/youtube/analytics` para desativar cache estático do Next.js.
+  - [x] Adição do botão "Sincronizar com YouTube" (`action: "REFRESH"`) no `ChannelSelector.tsx` com atualização visual imediata de foto e inscritos.
+  - [x] Propagação reativa do canal ativo de `StudioHeader` para `StudioPage` e `AnalyticsDashboard`, exibindo a foto real e calculando métricas e projeções com base no canal selecionado.
+  - [x] Adição de domínios do YouTube (`yt3.googleusercontent.com` e `yt3.ggpht.com`) aos `remotePatterns` do `next.config.mjs`.
+  - [x] Ajuste no botão "Novo Projeto" (`whitespace-nowrap shrink-0`) prevenindo quebras de texto indesejadas em resoluções intermediárias.
+  - [x] Reconstrução completa de produção no Docker (`npm run build`), verificação estática de tipos TypeScript com 0 erros, ESLint com 0 erros e 18/18 testes E2E aprovados.
+- [x] Correção e Otimização do Painel de Métricas do Canal Dark (AnalyticsDashboard):
+  - [x] Diagnóstico da inoperância ou ausência visual das métricas: divisão estática por 1.000.000 e 1.000 gerava `0.00M` e `+0.0k` para canais com audiências menores/iniciais, e a falta de `whitespace-nowrap` no seletor de abas quebrava o texto "Métricas do Canal" em duas linhas.
+  - [x] Implementação de formatação numérica inteligente (`formatNumber`, `formatWatchTime`, `formatSubscribersGained`) que exibe números reais formatados em pt-BR (ex: `1.330`, `160 hrs`, `+17`) e escala para `k` ou `M` apenas quando apropriado.
+  - [x] Suporte a consulta analítica por ID de canal (`GET /api/youtube/analytics?channelId=...`) e enriquecimento de `ChannelAnalyticsOverview` com `channelId`, `handle`, `avatarUrl` e `niche`.
+  - [x] Adição do botão "Sincronizar" no cabeçalho do `AnalyticsDashboard` com indicador de carregamento giratório (`RefreshCw`).
+  - [x] Fallback com tela de erro e botão "Tentar Novamente", eliminando o travamento do spinner infinito em caso de falha de conexão.
+  - [x] Exibição do `ChannelSelector` em telas médias e tablets (`hidden sm:flex`) e expansão do rótulo da aba para `Métricas do Canal` sem quebra de linha.
+  - [x] Reconstrução completa no Docker com `npm run build`, validação de 18/18 testes E2E aprovados, TypeScript (0 erros) e ESLint (0 erros).

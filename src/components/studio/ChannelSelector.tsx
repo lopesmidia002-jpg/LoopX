@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import {
   Tv,
@@ -12,6 +12,7 @@ import {
   Sparkles,
   X,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
 import { DarkChannel } from "@/lib/youtube/channel-manager";
 
@@ -26,6 +27,7 @@ export default function ChannelSelector({ onChannelChanged }: ChannelSelectorPro
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   // New channel form state
@@ -34,23 +36,50 @@ export default function ChannelSelector({ onChannelChanged }: ChannelSelectorPro
   const [newNiche, setNewNiche] = useState("Histórias de Crimes Reais & Mistérios");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const fetchChannels = async () => {
+  const fetchChannels = useCallback(async () => {
     try {
       const res = await fetch("/api/youtube/channels");
       const data = await res.json();
       if (data.success && data.channels) {
         setChannels(data.channels);
-        setActiveChannel(data.activeChannel || data.channels[0]);
+        const active = data.activeChannel || data.channels[0];
+        setActiveChannel(active);
+        if (onChannelChanged && active) {
+          onChannelChanged(active);
+        }
       }
     } catch (e) {
       console.error("Erro ao carregar canais:", e);
+    }
+  }, [onChannelChanged]);
+
+  const handleRefreshChannel = async (channelId: string) => {
+    try {
+      setIsRefreshing(true);
+      const res = await fetch("/api/youtube/channels", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "REFRESH", channelId }),
+      });
+      const data = await res.json();
+      if (data.success && data.channel) {
+        setActiveChannel(data.channel);
+        setChannels((prev) =>
+          prev.map((c) => (c.id === data.channel.id ? data.channel : c))
+        );
+        if (onChannelChanged) onChannelChanged(data.channel);
+      }
+    } catch (e) {
+      console.error("Erro ao atualizar dados do canal:", e);
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
   useEffect(() => {
     setMounted(true);
     fetchChannels();
-  }, []);
+  }, [fetchChannels]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -88,7 +117,7 @@ export default function ChannelSelector({ onChannelChanged }: ChannelSelectorPro
     }
 
     const formattedHandle = trimmedHandle.startsWith("@") ? trimmedHandle : `@${trimmedHandle}`;
-    const channelName = newName.trim() || formattedHandle.replace(/^@/, "");
+    const channelName = newName.trim();
 
     setLoading(true);
 
@@ -109,7 +138,12 @@ export default function ChannelSelector({ onChannelChanged }: ChannelSelectorPro
       }
 
       if (data.channel) {
-        setChannels((prev) => [...prev, data.channel]);
+        setChannels((prev) => {
+          const filtered = prev.filter(
+            (c) => c.id !== data.channel.id && c.handle.toLowerCase() !== data.channel.handle.toLowerCase()
+          );
+          return [...filtered, data.channel];
+        });
         setActiveChannel(data.channel);
         setIsModalOpen(false);
         setNewName("");
@@ -194,7 +228,17 @@ export default function ChannelSelector({ onChannelChanged }: ChannelSelectorPro
             })}
           </div>
 
-          <div className="pt-2">
+          <div className="pt-2 space-y-1.5">
+            <button
+              onClick={() => handleRefreshChannel(activeChannel.id)}
+              disabled={isRefreshing}
+              className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white text-[11px] font-semibold transition-all disabled:opacity-50"
+              title="Atualizar inscritos e foto a partir do YouTube"
+            >
+              <RefreshCw className={`w-3 h-3 text-brand-400 ${isRefreshing ? "animate-spin" : ""}`} />
+              <span>{isRefreshing ? "Sincronizando..." : "Sincronizar com YouTube"}</span>
+            </button>
+
             <button
               onClick={() => {
                 setIsOpen(false);
@@ -309,7 +353,7 @@ export default function ChannelSelector({ onChannelChanged }: ChannelSelectorPro
                   className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 via-brand-500 to-brand-accent hover:opacity-90 text-xs font-bold text-white shadow-lg shadow-brand-500/20 flex items-center gap-1.5 disabled:opacity-50"
                 >
                   {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>Vincular Canal</span>
+                  <span>{loading ? "Buscando dados no YouTube..." : "Vincular Canal"}</span>
                 </button>
               </div>
             </form>

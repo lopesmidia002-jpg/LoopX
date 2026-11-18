@@ -27,12 +27,15 @@ interface SecurityStore {
 // Caminho de persistência local seguro (no container ou host)
 const STORE_PATH = process.platform === "win32"
   ? path.join(process.cwd(), ".admin-security.json")
-  : "/tmp/loopx-admin-security.json";
+  : "/app/.admin-security.json";
 
 function loadStore(): SecurityStore {
   try {
     if (fs.existsSync(STORE_PATH)) {
       const data = fs.readFileSync(STORE_PATH, "utf-8");
+      return JSON.parse(data);
+    } else if (fs.existsSync("/tmp/loopx-admin-security.json")) {
+      const data = fs.readFileSync("/tmp/loopx-admin-security.json", "utf-8");
       return JSON.parse(data);
     }
   } catch (e) {
@@ -45,7 +48,11 @@ function saveStore(store: SecurityStore): void {
   try {
     fs.writeFileSync(STORE_PATH, JSON.stringify(store, null, 2), "utf-8");
   } catch (e) {
-    console.error("Aviso: Falha ao salvar arquivo de segredos do admin:", e);
+    try {
+      fs.writeFileSync("/tmp/loopx-admin-security.json", JSON.stringify(store, null, 2), "utf-8");
+    } catch (err) {
+      console.error("Aviso: Falha ao salvar arquivo de segredos do admin:", err);
+    }
   }
 }
 

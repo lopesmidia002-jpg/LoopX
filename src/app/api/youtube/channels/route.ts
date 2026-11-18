@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ChannelManager } from "@/lib/youtube/channel-manager";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET() {
   try {
     const channels = await ChannelManager.getChannels();
@@ -38,6 +41,21 @@ export async function POST(req: NextRequest) {
         success: true,
         message: `Canal alterado para "${activeChannel.name}"`,
         activeChannel,
+      });
+    }
+
+    if (body.action === "REFRESH") {
+      if (!body.channelId) {
+        return NextResponse.json(
+          { success: false, error: "ID do canal é obrigatório" },
+          { status: 400 }
+        );
+      }
+      const refreshedChannel = await ChannelManager.refreshChannel(body.channelId);
+      return NextResponse.json({
+        success: true,
+        message: `Dados do canal "${refreshedChannel.name}" atualizados com sucesso`,
+        channel: refreshedChannel,
       });
     }
 

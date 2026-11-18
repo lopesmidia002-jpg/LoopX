@@ -1,11 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Play, X, Clock, Eye, Sparkles } from "lucide-react";
 import { SHOWCASE_VIDEOS } from "@/lib/constants";
 
 export default function Showcase() {
   const [selectedVideo, setSelectedVideo] = useState<typeof SHOWCASE_VIDEOS[0] | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <section id="mostruario" className="py-24 relative bg-[#131822] border-b border-surface-border">
@@ -94,9 +100,9 @@ export default function Showcase() {
         </div>
 
         {/* Video Preview Modal */}
-        {selectedVideo && (
-          <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-            <div className="bg-[#1a202c] border border-surface-border rounded-2xl max-w-3xl w-full overflow-hidden shadow-2xl relative animate-fadeIn">
+        {selectedVideo && mounted && createPortal(
+          <div className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md overflow-y-auto p-4 flex min-h-screen items-center justify-center">
+            <div className="bg-[#1a202c] border border-surface-border rounded-2xl max-w-3xl w-full overflow-hidden shadow-2xl relative animate-fadeIn my-auto">
               
               {/* Modal Header */}
               <div className="p-4 bg-[#141923] border-b border-surface-border flex items-center justify-between">
@@ -127,7 +133,7 @@ export default function Showcase() {
                 {/* Word Subtitles simulation */}
                 <div className="absolute bottom-6 left-0 right-0 px-8 text-center">
                   <span className="bg-black/85 backdrop-blur-md text-white text-base sm:text-xl font-black px-4 py-2 rounded-xl border border-white/10 shadow-2xl">
-                    "O que a ciência escondeu durante mais de 70 anos..."
+                    &ldquo;O que a ciência escondeu durante mais de 70 anos...&rdquo;
                   </span>
                 </div>
 
@@ -149,7 +155,8 @@ export default function Showcase() {
               </div>
 
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
       </div>

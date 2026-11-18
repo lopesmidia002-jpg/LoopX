@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import {
   Check,
@@ -29,6 +30,11 @@ export default function Pricing() {
   const [checkoutSession, setCheckoutSession] = useState<any>(null);
   const [copied, setCopied] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleOpenCheckout = async (plan: any, packageMinutes?: number) => {
     setSelectedPlan(plan);
@@ -267,9 +273,9 @@ export default function Pricing() {
       </div>
 
       {/* Checkout Modal */}
-      {checkoutModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="relative w-full max-w-lg bg-surface border border-surface-border rounded-2xl p-6 sm:p-8 shadow-2xl animate-fade-in">
+      {checkoutModalOpen && mounted && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-md overflow-y-auto p-4 flex min-h-screen items-center justify-center">
+          <div className="relative w-full max-w-lg bg-surface border border-surface-border rounded-2xl p-6 sm:p-8 shadow-2xl animate-fade-in my-auto">
             <button
               onClick={() => setCheckoutModalOpen(false)}
               className="absolute top-5 right-5 text-slate-400 hover:text-white"
@@ -389,7 +395,8 @@ export default function Pricing() {
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </section>
   );

@@ -51,6 +51,12 @@ export default function VideoPreviewModal({
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    if (isPublishingToYouTube) {
+      setActiveTab("YOUTUBE");
+    }
+  }, [isPublishingToYouTube, isOpen]);
+
   if (!isOpen || !mounted) return null;
 
   // Auto-generate Chapters with timestamps
@@ -162,7 +168,7 @@ export default function VideoPreviewModal({
                 {/* Subtitles Overlay */}
                 <div className="absolute bottom-6 left-0 right-0 px-8 text-center">
                   <span className="bg-black/85 backdrop-blur-md text-white text-sm sm:text-lg font-black px-4 py-2 rounded-xl border border-white/10 shadow-2xl">
-                    "{scenes[0]?.narrationText || "Narrativa cinematográfica gerada automaticamente pelo LoopX..."}"
+                    &ldquo;{scenes[0]?.narrationText || "Narrativa cinematográfica gerada automaticamente pelo LoopX..."}&rdquo;
                   </span>
                 </div>
 

@@ -1,9 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { YouTubeAnalyticsManager } from "@/lib/youtube/analytics";
 
-export async function GET() {
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+export async function GET(req: NextRequest) {
   try {
-    const analytics = await YouTubeAnalyticsManager.getChannelOverview();
+    const { searchParams } = new URL(req.url);
+    const channelId = searchParams.get("channelId") || undefined;
+    const analytics = await YouTubeAnalyticsManager.getChannelOverview(channelId);
     return NextResponse.json({
       success: true,
       analytics,

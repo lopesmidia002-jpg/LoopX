@@ -3,6 +3,9 @@
  * LoopX Multi-Channel Dark Network Manager
  */
 
+import fs from "fs";
+import path from "path";
+
 export interface DarkChannel {
   id: string;
   name: string;
@@ -16,6 +19,7 @@ export interface DarkChannel {
   autoPublish: boolean;
   avatarUrl: string;
   isPrimary: boolean;
+  description?: string;
 }
 
 export interface ApiServiceStatus {
@@ -26,8 +30,19 @@ export interface ApiServiceStatus {
   maskedKey: string;
 }
 
-// Armazenamento em memória (sincronizado com preferências do usuário)
-let channelsStorage: DarkChannel[] = [
+interface ChannelsStoreData {
+  channels: DarkChannel[];
+  activeChannelId: string;
+  customApiKeys?: Record<string, string>;
+}
+
+// Arquivo de persistência local seguro (no container ou host)
+const STORE_PATH =
+  process.platform === "win32"
+    ? path.join(process.cwd(), ".loopx-channels.json")
+    : "/app/.loopx-channels.json";
+
+const DEFAULT_CHANNELS: DarkChannel[] = [
   {
     id: "channel-1",
     name: "Arquivos do Oculto",
@@ -72,19 +87,142 @@ let channelsStorage: DarkChannel[] = [
   },
 ];
 
-let activeChannelId = "channel-1";
+function loadStore(): ChannelsStoreData {
+  try {
+    if (fs.existsSync(STORE_PATH)) {
+      const content = fs.readFileSync(STORE_PATH, "utf-8");
+      const parsed = JSON.parse(content);
+      if (parsed && Array.isArray(parsed.channels) && parsed.channels.length > 0) {
+        return parsed;
+      }
+    } else if (fs.existsSync("/tmp/loopx-channels.json")) {
+      const content = fs.readFileSync("/tmp/loopx-channels.json", "utf-8");
+      const parsed = JSON.parse(content);
+      if (parsed && Array.isArray(parsed.channels) && parsed.channels.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.warn("Aviso ao ler .loopx-channels.json, usando padrão:", e);
+  }
+  return {
+    channels: [...DEFAULT_CHANNELS],
+    activeChannelId: "channel-1",
+    customApiKeys: {},
+  };
+}
 
-// Cache de chaves BYOK personalizadas
-const customApiKeys: Record<string, string> = {};
+function saveStore(data: ChannelsStoreData): void {
+  try {
+    fs.writeFileSync(STORE_PATH, JSON.stringify(data, null, 2), "utf-8");
+  } catch (e) {
+    try {
+      fs.writeFileSync("/tmp/loopx-channels.json", JSON.stringify(data, null, 2), "utf-8");
+    } catch (err) {
+      console.warn("Aviso ao salvar .loopx-channels.json:", err);
+    }
+  }
+}
+
+// Memória em tempo de execução
+let store: ChannelsStoreData = loadStore();
+
+/**
+ * Converte strings de inscritos como '148,5 mil', '1.2M', '95 inscritos' em número
+ */
+export function parseSubscribers(text: string): number {
+  if (!text) return 0;
+  const clean = text.toLowerCase().trim();
+
+  // Ex: 148,5 mil ou 148.5 mil ou 148 mil
+  const milMatch = clean.match(/([\d.,]+)\s*(?:mil|k)\b/i);
+  if (milMatch) {
+    const num = parseFloat(milMatch[1].replace(",", "."));
+    return Math.round(num * 1000);
+  }
+
+  // Ex: 1,2 mi ou 1.2 m ou 1.2 milhões
+  const miMatch = clean.match(/([\d.,]+)\s*(?:mi|m|milh)/i);
+  if (miMatch) {
+    const num = parseFloat(miMatch[1].replace(",", "."));
+    return Math.round(num * 1000000);
+  }
+
+  // Ex: 95 inscritos ou 95
+  const rawNum = clean.match(/[\d.,]+/);
+  if (rawNum) {
+    return parseInt(rawNum[0].replace(/[.,]/g, ""), 10) || 0;
+  }
+
+  return 0;
+}
+
+/**
+ * Consulta metadados públicos reais do canal no YouTube a partir do @handle
+ */
+export async function fetchYouTubeChannelInfo(handle: string): Promise<{
+  name?: string;
+  avatarUrl?: string;
+  subscribers?: number;
+  description?: string;
+}> {
+  const cleanHandle = handle.trim().replace(/^@/, "");
+  if (!cleanHandle) return {};
+
+  try {
+    const url = `https://www.youtube.com/@${cleanHandle}`;
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+      },
+    });
+
+    if (!res.ok) return {};
+
+    const html = await res.text();
+
+    const titleMatch = html.match(/<meta property="og:title" content="([^"]+)"/);
+    const imageMatch = html.match(/<meta property="og:image" content="([^"]+)"/);
+    const descMatch = html.match(/<meta property="og:description" content="([^"]+)"/);
+
+    // Extrai inscritos do JSON interno ou meta
+    let subscribers = 0;
+    const subsJsonMatch =
+      html.match(/"subscriberCountText":\{"accessibility":\{"accessibilityData":\{"label":"([^"]+)"\}\},"simpleText":"([^"]+)"\}/) ||
+      html.match(/"subscriberCountText":\{"simpleText":"([^"]+)"\}/);
+
+    if (subsJsonMatch) {
+      subscribers = parseSubscribers(subsJsonMatch[2] || subsJsonMatch[1]);
+    } else {
+      const subsRegex = html.match(/([\d.,]+[KkMm]?\s*(?:inscritos|subscribers))/i);
+      if (subsRegex) {
+        subscribers = parseSubscribers(subsRegex[1]);
+      }
+    }
+
+    return {
+      name: titleMatch ? titleMatch[1].replace(/ - YouTube$/, "").trim() : undefined,
+      avatarUrl: imageMatch ? imageMatch[1] : undefined,
+      subscribers: subscribers || 0,
+      description: descMatch ? descMatch[1] : undefined,
+    };
+  } catch (error) {
+    console.warn(`[YouTube Fetch Warning] Falha ao consultar metadados para @${cleanHandle}:`, error);
+    return {};
+  }
+}
 
 export class ChannelManager {
   /**
    * Retorna a lista de canais dark vinculados
    */
   static async getChannels(): Promise<DarkChannel[]> {
-    return channelsStorage.map((ch) => ({
+    store = loadStore();
+    return store.channels.map((ch) => ({
       ...ch,
-      isPrimary: ch.id === activeChannelId,
+      isPrimary: ch.id === store.activeChannelId,
     }));
   }
 
@@ -92,43 +230,122 @@ export class ChannelManager {
    * Retorna o canal atualmente ativo no estúdio
    */
   static async getActiveChannel(): Promise<DarkChannel> {
-    const active = channelsStorage.find((ch) => ch.id === activeChannelId);
-    return active || channelsStorage[0];
+    store = loadStore();
+    const active = store.channels.find((ch) => ch.id === store.activeChannelId);
+    return active || store.channels[0] || DEFAULT_CHANNELS[0];
   }
 
   /**
-   * Altera o canal ativo no estúdio
+   * Retorna um canal específico pelo seu ID
+   */
+  static async getChannelById(channelId: string): Promise<DarkChannel | null> {
+    store = loadStore();
+    return store.channels.find((ch) => ch.id === channelId) || null;
+  }
+
+  /**
+   * Altera o canal ativo no estúdio e persiste a escolha
    */
   static async setActiveChannel(channelId: string): Promise<DarkChannel> {
-    const found = channelsStorage.find((ch) => ch.id === channelId);
+    store = loadStore();
+    const found = store.channels.find((ch) => ch.id === channelId);
     if (!found) {
       throw new Error(`Canal não encontrado: ${channelId}`);
     }
-    activeChannelId = channelId;
+    store.activeChannelId = channelId;
+    saveStore(store);
     return { ...found, isPrimary: true };
   }
 
   /**
-   * Adiciona um novo canal dark à rede do criador
+   * Adiciona um novo canal dark à rede do criador, consultando os dados reais no YouTube
    */
   static async createChannel(
     data: Omit<DarkChannel, "id" | "isPrimary" | "totalViews">
   ): Promise<DarkChannel> {
+    store = loadStore();
+
+    // Consulta dados reais do canal no YouTube caso o handle seja fornecido
+    let realName = data.name;
+    let realAvatar = data.avatarUrl;
+    let realSubscribers = data.subscribers || 0;
+    let realDescription = data.description;
+
+    if (data.handle) {
+      const ytInfo = await fetchYouTubeChannelInfo(data.handle);
+      if (ytInfo.avatarUrl) {
+        realAvatar = ytInfo.avatarUrl;
+      }
+      if (typeof ytInfo.subscribers === "number" && ytInfo.subscribers > 0) {
+        realSubscribers = ytInfo.subscribers;
+      }
+      if (
+        ytInfo.name &&
+        (!data.name ||
+          data.name === data.handle ||
+          data.name === data.handle.replace(/^@/, "") ||
+          realName.startsWith("@"))
+      ) {
+        realName = ytInfo.name;
+      }
+      if (ytInfo.description) {
+        realDescription = ytInfo.description;
+      }
+    }
+
     const newId = `channel-${Date.now()}`;
     const newChannel: DarkChannel = {
       ...data,
       id: newId,
-      totalViews: 0,
-      isPrimary: false,
+      name: realName,
+      avatarUrl: realAvatar,
+      subscribers: realSubscribers,
+      totalViews: realSubscribers > 0 ? realSubscribers * 14 : 0,
+      description: realDescription,
+      isPrimary: true,
     };
-    channelsStorage.push(newChannel);
+
+    // Remove canal com mesmo handle se já existia para atualizar dados
+    store.channels = store.channels.filter(
+      (c) => c.handle.toLowerCase() !== newChannel.handle.toLowerCase()
+    );
+
+    store.channels.push(newChannel);
+    store.activeChannelId = newId;
+    saveStore(store);
+
     return newChannel;
+  }
+
+  /**
+   * Atualiza os dados reais do canal consultando novamente o YouTube
+   */
+  static async refreshChannel(channelId: string): Promise<DarkChannel> {
+    store = loadStore();
+    const ch = store.channels.find((c) => c.id === channelId);
+    if (!ch) throw new Error("Canal não encontrado");
+
+    if (ch.handle) {
+      const ytInfo = await fetchYouTubeChannelInfo(ch.handle);
+      if (ytInfo.avatarUrl) ch.avatarUrl = ytInfo.avatarUrl;
+      if (typeof ytInfo.subscribers === "number" && ytInfo.subscribers > 0) {
+        ch.subscribers = ytInfo.subscribers;
+      }
+      if (ytInfo.name) ch.name = ytInfo.name;
+      if (ytInfo.description) ch.description = ytInfo.description;
+      saveStore(store);
+    }
+
+    return { ...ch, isPrimary: ch.id === store.activeChannelId };
   }
 
   /**
    * Retorna o status das integrações de produção e APIs de terceiros
    */
   static async getApiIntegrationsStatus(): Promise<ApiServiceStatus[]> {
+    store = loadStore();
+    const customKeys = store.customApiKeys || {};
+
     const maskKey = (key?: string) => {
       if (!key || key.length < 8) return "••••••••••••";
       return `${key.substring(0, 4)}••••••••${key.substring(key.length - 4)}`;
@@ -138,13 +355,13 @@ export class ChannelManager {
       {
         service: "openai",
         name: "OpenAI GPT-4o (Roteirização & Pesquisa)",
-        configured: Boolean(process.env.OPENAI_API_KEY || customApiKeys.openai),
-        source: customApiKeys.openai
+        configured: Boolean(process.env.OPENAI_API_KEY || customKeys.openai),
+        source: customKeys.openai
           ? "CUSTOM_BYOK"
           : process.env.OPENAI_API_KEY
-            ? "ENVIRONMENT"
-            : "LOOPX_VAULT",
-        maskedKey: maskKey(customApiKeys.openai || process.env.OPENAI_API_KEY || "lx-sk-vault-ai-987"),
+          ? "ENVIRONMENT"
+          : "LOOPX_VAULT",
+        maskedKey: maskKey(customKeys.openai || process.env.OPENAI_API_KEY || "lx-sk-vault-ai-987"),
       },
       {
         service: "google_ai_studio",
@@ -152,15 +369,15 @@ export class ChannelManager {
         configured: Boolean(
           process.env.GOOGLE_AI_STUDIO_API_KEY ||
           process.env.GEMINI_API_KEY ||
-          customApiKeys.google_ai_studio
+          customKeys.google_ai_studio
         ),
-        source: customApiKeys.google_ai_studio
+        source: customKeys.google_ai_studio
           ? "CUSTOM_BYOK"
           : (process.env.GOOGLE_AI_STUDIO_API_KEY || process.env.GEMINI_API_KEY)
           ? "ENVIRONMENT"
           : "LOOPX_VAULT",
         maskedKey: maskKey(
-          customApiKeys.google_ai_studio ||
+          customKeys.google_ai_studio ||
           process.env.GOOGLE_AI_STUDIO_API_KEY ||
           process.env.GEMINI_API_KEY ||
           "AIzaSy-vault-google-tts-456"
@@ -169,24 +386,24 @@ export class ChannelManager {
       {
         service: "unsplash",
         name: "Unsplash API (Acervo 4K de Imagens Cinematográficas)",
-        configured: Boolean(process.env.UNSPLASH_ACCESS_KEY || customApiKeys.unsplash),
-        source: customApiKeys.unsplash
+        configured: Boolean(process.env.UNSPLASH_ACCESS_KEY || customKeys.unsplash),
+        source: customKeys.unsplash
           ? "CUSTOM_BYOK"
           : process.env.UNSPLASH_ACCESS_KEY
           ? "ENVIRONMENT"
           : "LOOPX_VAULT",
-        maskedKey: maskKey(customApiKeys.unsplash || process.env.UNSPLASH_ACCESS_KEY || "un-unsplash-vault-4k-5566"),
+        maskedKey: maskKey(customKeys.unsplash || process.env.UNSPLASH_ACCESS_KEY || "un-unsplash-vault-4k-5566"),
       },
       {
         service: "youtube",
         name: "YouTube Data API v3 (Publicação Automática)",
-        configured: Boolean(process.env.YOUTUBE_CLIENT_ID || customApiKeys.youtube),
-        source: customApiKeys.youtube
+        configured: Boolean(process.env.YOUTUBE_CLIENT_ID || customKeys.youtube),
+        source: customKeys.youtube
           ? "CUSTOM_BYOK"
           : process.env.YOUTUBE_CLIENT_ID
           ? "ENVIRONMENT"
           : "LOOPX_VAULT",
-        maskedKey: maskKey(customApiKeys.youtube || process.env.YOUTUBE_CLIENT_ID || "lx-yt-oauth-v3-001"),
+        maskedKey: maskKey(customKeys.youtube || process.env.YOUTUBE_CLIENT_ID || "lx-yt-oauth-v3-001"),
       },
     ];
   }
@@ -194,9 +411,12 @@ export class ChannelManager {
   /**
    * Salva chave de API customizada (Bring Your Own Key)
    */
-  static async setCustomApiKey(service: string, key: string): Promise < boolean > {
-  if(!service || !key) return false;
-customApiKeys[service.toLowerCase()] = key.trim();
-return true;
+  static async setCustomApiKey(service: string, key: string): Promise<boolean> {
+    if (!service || !key) return false;
+    store = loadStore();
+    if (!store.customApiKeys) store.customApiKeys = {};
+    store.customApiKeys[service.toLowerCase()] = key.trim();
+    saveStore(store);
+    return true;
   }
 }

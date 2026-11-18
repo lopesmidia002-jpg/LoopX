@@ -70,26 +70,26 @@ export default function ABTestingModal({
   useEffect(() => {
     if (!isOpen) return;
 
-    loadExperiments();
-  }, [isOpen]);
-
-  const loadExperiments = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/youtube/ab-tests");
-      const data = await res.json();
-      if (data.success && Array.isArray(data.experiments)) {
-        setExperiments(data.experiments);
-        if (data.experiments.length > 0 && !selectedExperiment) {
-          setSelectedExperiment(data.experiments[0]);
+    const loadExperiments = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch("/api/youtube/ab-tests");
+        const data = await res.json();
+        if (data.success && Array.isArray(data.experiments)) {
+          setExperiments(data.experiments);
+          if (data.experiments.length > 0 && !selectedExperiment) {
+            setSelectedExperiment(data.experiments[0]);
+          }
         }
+      } catch (e) {
+        console.error("Erro ao carregar testes A/B:", e);
+      } finally {
+        setLoading(false);
       }
-    } catch (e) {
-      console.error("Erro ao carregar testes A/B:", e);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    loadExperiments();
+  }, [isOpen, selectedExperiment]);
 
   const handleStart = async (experimentId: string) => {
     try {

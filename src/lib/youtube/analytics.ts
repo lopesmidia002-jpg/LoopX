@@ -3,6 +3,8 @@
  * LoopX YouTube Dark Channel Analytics Engine
  */
 
+import { ChannelManager } from "./channel-manager";
+
 export interface VideoAnalyticsItem {
   id: string;
   title: string;
@@ -28,7 +30,11 @@ export interface RetentionStagePoint {
 }
 
 export interface ChannelAnalyticsOverview {
+  channelId?: string;
   channelName: string;
+  handle?: string;
+  avatarUrl?: string;
+  niche?: string;
   subscriberCount: number;
   subscribersGained30d: number;
   totalViews30d: number;
@@ -46,7 +52,7 @@ export class YouTubeAnalyticsManager {
   /**
    * Retorna os dados analíticos consolidados do canal dark do usuário
    */
-  static async getChannelOverview(): Promise<ChannelAnalyticsOverview> {
+  static async getChannelOverview(channelId?: string): Promise<ChannelAnalyticsOverview> {
     const retentionCurve: RetentionStagePoint[] = [
       {
         stage: "Gancho Inicial",
@@ -147,19 +153,38 @@ export class YouTubeAnalyticsManager {
       },
     ];
 
+    let activeChannel = channelId
+      ? await ChannelManager.getChannelById(channelId)
+      : null;
+    if (!activeChannel) {
+      activeChannel = await ChannelManager.getActiveChannel();
+    }
+
+    const channelName = activeChannel.name;
+    const subscriberCount = activeChannel.subscribers;
+    const totalViews30d = activeChannel.totalViews > 0 ? activeChannel.totalViews : Math.max(12000, subscriberCount * 14);
+    const watchTimeHours30d = Math.round(totalViews30d * 0.12);
+    const estimatedRevenueBRL30d = Number(((totalViews30d / 1000) * 15.0).toFixed(2));
+    const subscribersGained30d = Math.max(10, Math.round(subscriberCount * 0.18));
+
     return {
-      channelName: "Arquivos do Oculto (Dark Channel)",
-      subscriberCount: 148500,
-      subscribersGained30d: 28400,
-      totalViews30d: 1965800,
-      watchTimeHours30d: 234770,
-      estimatedRevenueBRL30d: 29487.0,
+      channelId: activeChannel.id,
+      channelName: `${channelName} (Dark Channel)`,
+      handle: activeChannel.handle,
+      avatarUrl: activeChannel.avatarUrl,
+      niche: activeChannel.niche,
+      subscriberCount,
+      subscribersGained30d,
+      totalViews30d,
+      watchTimeHours30d,
+      estimatedRevenueBRL30d,
       averageRPMBRL: 15.0,
       averageCTR: 12.35,
       averageRetention: 57.0,
       retentionCurve,
       videos,
       aiOptimizationTips: [
+        `Recomendação para "${channelName}": Vídeos com gancho nos primeiros 30s aumentam o tempo de exibição em +28%.`,
         "Vídeos documentais acima de 12 minutos estão gerando 31% mais RPM graças à inserção automática de mid-rolls pelo algoritmo do YouTube.",
         "A voz 'Marcus Dark' no idioma PT-BR obteve a maior retenção no minuto 3:00 entre todos os criadores da categoria.",
         "Adicionar a palavra 'Inexplicável' ou 'Segredo Revelado' nos títulos gerados pela IA aumentou a taxa de cliques (CTR) média de 9.4% para 13.8%.",

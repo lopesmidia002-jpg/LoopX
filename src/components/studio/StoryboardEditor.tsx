@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { 
   Film, 
   Sparkles, 
@@ -18,7 +19,8 @@ import {
   Image as ImageIcon,
   FileText,
   Search,
-  Loader2
+  Loader2,
+  PlusCircle,
 } from "lucide-react";
 import { SceneItem, MotionEffect } from "@/lib/types";
 
@@ -28,6 +30,7 @@ interface StoryboardEditorProps {
   onOpenPreviewModal: () => void;
   onOpenYouTubePublishModal: () => void;
   topicTitle: string;
+  onNewProject?: () => void;
 }
 
 const MOTION_EFFECT_LABELS: Record<MotionEffect, string> = {
@@ -54,6 +57,7 @@ export default function StoryboardEditor({
   onOpenPreviewModal,
   onOpenYouTubePublishModal,
   topicTitle,
+  onNewProject,
 }: StoryboardEditorProps) {
   const [activeMediaModalSceneId, setActiveMediaModalSceneId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -61,6 +65,11 @@ export default function StoryboardEditor({
   const [curatedResults, setCuratedResults] = useState<string[]>(SAMPLE_MEDIA_LIBRARY);
   const [playingAudioSceneId, setPlayingAudioSceneId] = useState<string | null>(null);
   const [isExportingSrt, setIsExportingSrt] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Download do arquivo .SRT real
   const handleDownloadSrt = async () => {
@@ -191,6 +200,16 @@ export default function StoryboardEditor({
             <Youtube className="w-4 h-4" />
             <span>Publicar no YouTube</span>
           </button>
+
+          {onNewProject && (
+            <button
+              onClick={onNewProject}
+              className="px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-brand-accent hover:opacity-90 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-brand-500/20 transition-all hover:scale-105"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>Novo Projeto</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -309,9 +328,9 @@ export default function StoryboardEditor({
       </div>
 
       {/* Media Swapper Modal with Search */}
-      {activeMediaModalSceneId && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#1a202c] border border-surface-border rounded-2xl max-w-2xl w-full p-6 shadow-2xl">
+      {activeMediaModalSceneId && mounted && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md overflow-y-auto p-4 flex min-h-screen items-center justify-center">
+          <div className="relative bg-[#1a202c] border border-surface-border rounded-2xl max-w-2xl w-full p-6 shadow-2xl my-auto animate-fadeIn">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-base font-bold text-white flex items-center gap-2">
                 <ImageIcon className="w-4 h-4 text-brand-400" />
@@ -375,7 +394,8 @@ export default function StoryboardEditor({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>

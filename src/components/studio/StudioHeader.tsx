@@ -143,31 +143,33 @@ export default function StudioHeader({
               <div className="flex items-center gap-1.5 p-1 rounded-xl bg-surface border border-surface-border">
                 <button
                   onClick={() => onTabChange && onTabChange("STUDIO")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 min-h-[36px] ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 min-h-[36px] whitespace-nowrap shrink-0 ${
                     activeTab === "STUDIO"
                       ? "bg-brand-600 text-white shadow-sm"
                       : "text-slate-400 hover:text-white"
                   }`}
+                  title="Abrir Estúdio de Criação de Vídeos"
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
+                  <Sparkles className="w-3.5 h-3.5 shrink-0" />
                   <span>Estúdio</span>
                 </button>
                 <button
                   onClick={() => onTabChange && onTabChange("ANALYTICS")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 min-h-[36px] ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 min-h-[36px] whitespace-nowrap shrink-0 ${
                     activeTab === "ANALYTICS"
                       ? "bg-brand-600 text-white shadow-sm"
                       : "text-slate-400 hover:text-white"
                   }`}
+                  title="Abrir Dashboard de Métricas do Canal Dark"
                 >
-                  <BarChart3 className="w-3.5 h-3.5" />
-                  <span>Métricas</span>
+                  <BarChart3 className="w-3.5 h-3.5 shrink-0" />
+                  <span>Métricas do Canal</span>
                 </button>
               </div>
             </div>
 
             {/* Desktop Channel Selector & ADM Button */}
-            <div className="hidden lg:flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2">
               <ChannelSelector onChannelChanged={onChannelChanged} />
               {isAdmin && (
                 <button
@@ -260,7 +262,7 @@ export default function StudioHeader({
             {/* Desktop Novo Projeto CTA */}
             <button
               onClick={onNewProject}
-              className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-white px-3.5 py-2 rounded-xl bg-gradient-to-r from-brand-600 to-brand-accent hover:opacity-90 shadow-md shadow-brand-500/20 transition-all hover:scale-105 min-h-[44px]"
+              className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-white px-3.5 py-2 rounded-xl bg-gradient-to-r from-brand-600 to-brand-accent hover:opacity-90 shadow-md shadow-brand-500/20 transition-all hover:scale-105 min-h-[44px] whitespace-nowrap shrink-0"
             >
               <PlusCircle className="w-3.5 h-3.5" />
               <span>Novo Projeto</span>
@@ -395,8 +397,13 @@ export default function StudioHeader({
                     <span className="text-[10px] text-slate-400">Trocar ou conectar canal dark</span>
                   </div>
                 </div>
-                <div onClick={() => setIsMobileMenuOpen(false)}>
-                  <ChannelSelector onChannelChanged={onChannelChanged} />
+                <div>
+                  <ChannelSelector
+                    onChannelChanged={(ch) => {
+                      onChannelChanged?.(ch);
+                      setIsMobileMenuOpen(false);
+                    }}
+                  />
                 </div>
               </div>
 

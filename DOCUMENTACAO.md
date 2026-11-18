@@ -559,7 +559,88 @@ Em telas móveis (`sm:hidden`, `< 640px`), o aplicativo ativa uma barra de naveg
 
 ---
 
-## 21. Como Executar via Docker
+## 21. Auditoria de Qualidade de Código & Correção de Erros
+
+### 21.1. Configuração Nativa do ESLint
+- Inclusão dos pacotes `eslint` (`^8.57.0`) e `eslint-config-next` (`14.2.18`) no `package.json` em `devDependencies`.
+- Execução do comando `npm run lint` validando a ausência de violações de acessibilidade, hooks ou entidades JSX mal-escapadas (`react/no-unescaped-entities`).
+
+### 21.2. Correção de Permissões de Sistema de Arquivos no Docker
+- **Erro Detectado:** `error TS5033: Could not write file '/app/tsconfig.tsbuildinfo': EACCES: permission denied, open '/app/tsconfig.tsbuildinfo'`.
+- **Causa Raiz:** O diretório de trabalho `/app` foi instanciado pelo usuário `root` no estágio base do Dockerfile, impedindo o usuário `nextjs` (UID 1001) de gerar arquivos temporários ou de build incremental diretamente na raiz.
+- **Resolução:**
+  1. Inclusão de `RUN chown -R nextjs:nodejs /app` imediatamente antes da diretiva `USER nextjs` no estágio runner do `Dockerfile`.
+  2. Configuração de `"tsBuildInfoFile": ".next/cache/tsconfig.tsbuildinfo"` no `tsconfig.json`, mantendo arquivos de cache em pastas dedicadas.
+
+### 21.3. Padronização Global de Modais com React Portals
+- **Problema de Janelas Secundárias:** Elementos modais definidos dentro de nós com propriedades CSS `backdrop-filter: blur()`, `transform` ou `overflow: hidden` eram aprisionados em contextos de empilhamento locais, causando cortes visuais ou sobreposição indevida por outros componentes.
+- **Resolução:**
+  - Padronização de todas as modais restantes (`Pricing.tsx`, `Showcase.tsx`, `StoryboardEditor.tsx`, `VideoPreviewModal.tsx`, `ChannelSelector.tsx`) com `createPortal(..., document.body)`.
+  - Atribuição de camada de z-index máxima `z-[9999]`, fundo `backdrop-blur-md` escurecido e rolagem vertical independente `overflow-y-auto min-h-screen`.
+
+### 21.4. Validação Contínua no Docker
+```bash
+# Executar o linter Next.js/ESLint
+docker compose exec -T app npm run lint
+
+# Executar a checagem de tipos estáticos TypeScript
+docker compose exec -T app ./node_modules/.bin/tsc --project tsconfig.json --noEmit
+
+# Executar a suíte de 18 testes automatizados E2E
+docker compose exec -T app npm run test:e2e
+```
+
+---
+
+## 22. Fluxo e Modal de Criação de Novo Projeto
+
+### 22.1. Arquitetura do Componente `NewProjectModal.tsx`
+- **Renderização via Portal:** O modal é montado diretamente no `document.body` com `z-[9999]`, eliminando qualquer confinamento de empilhamento do cabeçalho fixo.
+- **Campos Interativos:**
+  - **Tema / Ideia Central:** Campo de texto com botões de sugestões em 1 clique ("Voo MH370", "10 Descobertas Arqueológicas", etc.).
+  - **Roteiro Opcional:** Alternador para criadores que já possuem roteiro próprio pronto.
+  - **Formato do Vídeo:** Alternância entre Documentário Cinematográfico e Top 10 / Ranking.
+  - **Idioma & Voz Neural:** Suporte a Português, Inglês e Espanhol com botão de escuta de prévia de áudio.
+  - **Duração Alvo:** Seleção entre 8, 10, 12 e 15 minutos.
+- **Submissão Direta:** Ao submeter, o modal fecha, despacha os parâmetros para `/api/script/generate` e transiciona o estúdio diretamente para a etapa `PROCESSING` com o pipeline de 8 etapas ativo.
+
+### 22.2. Integração com a Interface da Página
+- **Disparo pelo Cabeçalho:** O botão `Novo Projeto` no cabeçalho desktop (`StudioHeader.tsx`) e o botão central `+` da barra mobile disparam a abertura do modal e redefinem o estado do projeto.
+- **Reset Dinâmico via `resetKey`:** Redefine os campos internos do formulário [ProjectConfig.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/ProjectConfig.tsx) e foca automaticamente no input `#project-topic-input` com destaque visual em anel.
+- **Atalho no Storyboard:** O componente [StoryboardEditor.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/StoryboardEditor.tsx) agora inclui um botão dedicado `Novo Projeto` ao lado das ações de prévia e publicação.
+
+---
+
+## 23. Sincronização em Tempo Real de Canais do YouTube & Persistência Local
+
+### 23.1. Extrator de Metadados Públicos do YouTube
+O módulo [channel-manager.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/lib/youtube/channel-manager.ts) implementa a função `fetchYouTubeChannelInfo(handle: string)` e o parser numérico `parseSubscribers(text: string)`. Ao vincular um novo canal pelo `@handle` (por exemplo `@Oobservador-rw2gq`), o backend consulta a página pública do canal no YouTube e extrai:
+- **Título Oficial:** Extraído da tag `og:title` (substituindo nomes genéricos ou derivados do handle).
+- **Foto de Perfil Real:** Obtida em alta resolução a partir do CDN oficial do Google/YouTube (`yt3.googleusercontent.com` ou `yt3.ggpht.com`).
+- **Contagem Real de Inscritos:** Parsing de `subscriberCountText` em JSON ou regex (ex: converte "95 inscritos" em `95`, "148 mil" em `148000`).
+- **Descrição do Canal:** Extraída de `og:description` para contexto do criador.
+
+### 23.2. Persistência em Disco (`.loopx-channels.json`)
+Os dados de canais e o canal ativo são salvos em arquivo JSON (`/app/.loopx-channels.json` com fallback para `/tmp/loopx-channels.json`), garantindo que novas vinculações e trocas de canal persistam entre reinicializações de contêineres e reloads de página.
+
+### 23.3. Rotas Dinâmicas no Next.js App Router
+As rotas [/api/youtube/channels](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/app/api/youtube/channels/route.ts) e [/api/youtube/analytics](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/app/api/youtube/analytics/route.ts) foram marcadas com `export const dynamic = "force-dynamic"` e `export const revalidate = 0`. Isso desativa a pré-renderização estática do Next.js e garante respostas reativas imediatas a cada alternância de canal.
+
+### 23.4. Botão de Sincronização Sob Demanda ("Sincronizar com YouTube")
+No dropdown [ChannelSelector.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/ChannelSelector.tsx), foi inserido o botão "Sincronizar com YouTube" com a ação `action: "REFRESH"`. O criador pode atualizar os inscritos e a foto do canal a qualquer momento com feedback animado de progresso (`RefreshCw`).
+
+### 23.5. Integração com o Dashboard Analítico
+O componente [AnalyticsDashboard.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/AnalyticsDashboard.tsx) recebe o canal ativo via prop do [StudioPage](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/app/studio/page.tsx), re-executando a consulta analítica a cada troca e exibindo o avatar real do canal no cabeçalho das métricas, recalculando visualizações e faturamento proporcional à audiência real.
+
+### 23.6. Formatação Inteligente de Métricas e Sincronização Sob Demanda
+- **Formatação Adaptativa:** Implementação de `formatNumber`, `formatWatchTime` e `formatSubscribersGained`, prevenindo a exibição de zeros artificiais (`0.00M` ou `+0.0k`) para canais menores ou recém-criados. Os números são formatados no padrão pt-BR de acordo com a magnitude do valor.
+- **Botão de Sincronização de Métricas:** Inserção de botão "Sincronizar" no cabeçalho do `AnalyticsDashboard` com indicador giratório (`RefreshCw`), permitindo recarregar instantaneamente as métricas atualizadas da API `/api/youtube/analytics?channelId=...`.
+- **Prevenção de Travamento por Spinner Infinito:** Caso a API falhe, o componente renderiza um card informativo de erro com botão de recuperação rápida "Tentar Novamente".
+- **Tabs Protegidas no Cabeçalho:** O botão do estúdio foi fixado com o rótulo "Métricas do Canal" e classe `whitespace-nowrap shrink-0`, eliminando quebras de linha indesejadas.
+
+---
+
+## 24. Como Executar via Docker
 
 ### Subir todos os serviços (App, PostgreSQL e Redis)
 ```bash

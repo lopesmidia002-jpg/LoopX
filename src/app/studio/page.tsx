@@ -7,6 +7,8 @@ import PipelineStatus from "@/components/studio/PipelineStatus";
 import StoryboardEditor from "@/components/studio/StoryboardEditor";
 import VideoPreviewModal from "@/components/studio/VideoPreviewModal";
 import AnalyticsDashboard from "@/components/studio/AnalyticsDashboard";
+import NewProjectModal from "@/components/studio/NewProjectModal";
+import { DarkChannel } from "@/lib/youtube/channel-manager";
 import { INITIAL_DEMO_SCENES } from "@/lib/constants";
 import { SceneItem, VideoFormat, Language } from "@/lib/types";
 
@@ -19,6 +21,10 @@ export default function StudioPage() {
   const [scenes, setScenes] = useState<SceneItem[]>(INITIAL_DEMO_SCENES);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isYouTubeModalOpen, setIsYouTubeModalOpen] = useState(false);
+  const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
+  const [activeChannel, setActiveChannel] = useState<DarkChannel | null>(null);
+  const [projectResetKey, setProjectResetKey] = useState(0);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Minutes and concurrent renders state
   const [availableMinutes, setAvailableMinutes] = useState(184.5);
@@ -62,12 +68,16 @@ export default function StudioPage() {
     setPipelineProgress(5);
     setCurrentPipelineStage(1);
     setStudioStep("PROCESSING");
+    setIsNewProjectModalOpen(false);
 
     try {
       const res = await fetch("/api/script/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(config),
+        body: JSON.stringify({
+          ...config,
+          targetDurationMinutes: config.targetDuration,
+        }),
       });
       const data = await res.json();
       if (data.success && data.scenes && data.scenes.length > 0) {
@@ -90,6 +100,22 @@ export default function StudioPage() {
     setStudioStep("CONFIG");
     setPipelineProgress(0);
     setCurrentPipelineStage(1);
+    setIsNewProjectModalOpen(true);
+    setProjectResetKey((prev) => prev + 1);
+    setToastMessage("✨ Pronto para criar um novo projeto!");
+
+    // Suporte a foco e rolagem imediata se o usuário preferir usar a página
+    setTimeout(() => {
+      const input = document.getElementById("project-topic-input");
+      if (input) {
+        input.scrollIntoView({ behavior: "smooth", block: "center" });
+        input.focus();
+      }
+    }, 150);
+
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 4500);
   };
 
   return (
@@ -102,6 +128,7 @@ export default function StudioPage() {
         maxConcurrentRenders={1}
         activeTab={activeTab}
         onTabChange={(tab) => setActiveTab(tab)}
+        onChannelChanged={(channel) => setActiveChannel(channel)}
         onNewProject={handleNewProject}
         onMinutesRecharged={(newM) => setAvailableMinutes(newM)}
       />
@@ -109,13 +136,17 @@ export default function StudioPage() {
       {/* Main View Switcher */}
       <main className="flex-1 pb-24 sm:pb-8">
         {activeTab === "ANALYTICS" ? (
-          <AnalyticsDashboard onNewProject={handleNewProject} />
+          <AnalyticsDashboard
+            activeChannel={activeChannel}
+            onNewProject={handleNewProject}
+          />
         ) : (
           <>
             {studioStep === "CONFIG" && (
               <ProjectConfig
                 onStartPipeline={handleStartPipeline}
                 isProcessing={false}
+                resetKey={projectResetKey}
               />
             )}
 
@@ -138,6 +169,7 @@ export default function StudioPage() {
                   setIsYouTubeModalOpen(true);
                 }}
                 topicTitle={topicTitle}
+                onNewProject={handleNewProject}
               />
             )}
           </>
@@ -152,6 +184,21 @@ export default function StudioPage() {
         scenes={scenes}
         isPublishingToYouTube={isYouTubeModalOpen}
       />
+
+      {/* New Project Quick Creation Modal */}
+      <NewProjectModal
+        isOpen={isNewProjectModalOpen}
+        onClose={() => setIsNewProjectModalOpen(false)}
+        onSubmit={handleStartPipeline}
+        initialTopic=""
+      />
+
+      {/* Toast Notification Feedback */}
+      {toastMessage && (
+        <div className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-[9999] px-4 py-3 rounded-2xl bg-brand-600 text-white font-bold text-xs shadow-2xl border border-brand-400/40 animate-fadeIn flex items-center gap-2">
+          <span>{toastMessage}</span>
+        </div>
+      )}
     </div>
   );
 }

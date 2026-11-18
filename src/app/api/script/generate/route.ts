@@ -12,9 +12,12 @@ export async function POST(req: Request) {
       format = "DOCUMENTARY",
       language = "PT_BR",
       voiceId = "pt-br-marcos-deep",
-      targetDurationMinutes = 10,
+      targetDurationMinutes,
+      targetDuration,
       customScript,
     } = body;
+
+    const duration = Number(targetDurationMinutes || targetDuration) || 10;
 
     if (!topic || typeof topic !== "string" || topic.trim().length === 0) {
       return NextResponse.json(
@@ -35,7 +38,7 @@ export async function POST(req: Request) {
       topic: topic.trim(),
       format: format as VideoFormat,
       language: language as Language,
-      targetDurationMinutes: Number(targetDurationMinutes) || 10,
+      targetDurationMinutes: duration,
       researchData,
       customScript,
     });

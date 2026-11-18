@@ -119,7 +119,7 @@ export default function Hero() {
                   <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
                   <div className="w-3 h-3 rounded-full bg-green-500/80" />
                   <span className="ml-3 text-xs text-slate-400 font-mono hidden sm:inline">
-                    loopx-studio // Projeto #892: "O Mistério Inexplicável do Voo MH370"
+                    loopx-studio // Projeto #892: &ldquo;O Mistério Inexplicável do Voo MH370&rdquo;
                   </span>
                 </div>
                 
