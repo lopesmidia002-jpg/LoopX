@@ -1,27 +1,35 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { isAuthorizedAdminEmail, verifyAdminPassword, getUserRole } from "@/lib/auth/admin-auth";
+import {
+  isAuthorizedAdminEmail,
+  verifyAdminPassword,
+  getUserRole,
+  normalizeUserEmail,
+} from "@/lib/auth/admin-auth";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { email, password, action = "LOGIN", name } = body;
 
-    if (!email || !password) {
+    const rawEmail = String(email || "").trim();
+    const rawPassword = String(password || "").trim();
+
+    if (!rawEmail || !rawPassword) {
       return NextResponse.json(
-        { success: false, error: "E-mail e senha são obrigatórios." },
+        { success: false, error: "Login/E-mail e senha são obrigatórios." },
         { status: 400 }
       );
     }
 
-    if (password.length < 6) {
+    if (rawPassword.length < 5) {
       return NextResponse.json(
-        { success: false, error: "A senha deve ter no mínimo 6 caracteres." },
+        { success: false, error: "A senha deve ter no mínimo 5 caracteres." },
         { status: 400 }
       );
     }
 
-    const normalizedEmail = String(email).toLowerCase().trim();
+    const normalizedEmail = normalizeUserEmail(rawEmail);
 
     // 1. Verificação estrita de autorização (ADM ou Usuário previamente cadastrado pelo ADM)
     if (!isAuthorizedAdminEmail(normalizedEmail)) {

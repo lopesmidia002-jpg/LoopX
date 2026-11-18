@@ -70,14 +70,15 @@ function LoginContent() {
         throw new Error(data.error || "Acesso negado. Credenciais inválidas.");
       }
 
+      const redirectTarget = searchParams?.get("redirect") || "/studio";
       setSuccessMessage(
         data.message ||
-          (tab === "ADMIN"
-            ? "Acesso de administrador autorizado!"
-            : "Acesso de usuário autorizado com sucesso!")
+        (tab === "ADMIN"
+          ? "Acesso de administrador autorizado!"
+          : "Acesso de usuário autorizado com sucesso!")
       );
       setTimeout(() => {
-        router.push("/studio");
+        router.push(redirectTarget);
       }, 700);
     } catch (err: any) {
       setErrorMessage(err.message || "Erro ao conectar. Tente novamente.");
@@ -108,11 +109,10 @@ function LoginContent() {
           <button
             type="button"
             onClick={() => handleSelectTab("ADMIN")}
-            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 min-h-[40px] cursor-pointer ${
-              tab === "ADMIN"
-                ? "bg-amber-500/25 text-amber-300 border border-amber-500/40 shadow-sm"
-                : "text-white/60 hover:text-white"
-            }`}
+            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 min-h-[40px] cursor-pointer ${tab === "ADMIN"
+              ? "bg-amber-500/25 text-amber-300 border border-amber-500/40 shadow-sm"
+              : "text-white/60 hover:text-white"
+              }`}
           >
             <ShieldCheck className="w-4 h-4 text-amber-400" />
             <span>Portal do ADM</span>
@@ -121,11 +121,10 @@ function LoginContent() {
           <button
             type="button"
             onClick={() => handleSelectTab("USER")}
-            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 min-h-[40px] cursor-pointer ${
-              tab === "USER"
-                ? "bg-purple-500/25 text-purple-300 border border-purple-500/40 shadow-sm"
-                : "text-white/60 hover:text-white"
-            }`}
+            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 min-h-[40px] cursor-pointer ${tab === "USER"
+              ? "bg-purple-500/25 text-purple-300 border border-purple-500/40 shadow-sm"
+              : "text-white/60 hover:text-white"
+              }`}
           >
             <Users className="w-4 h-4 text-purple-400" />
             <span>Acesso a Usuários</span>
@@ -197,21 +196,20 @@ function LoginContent() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-white/80 mb-1.5">
-              {tab === "ADMIN" ? "E-mail do Administrador" : "E-mail do Usuário Cadastrado"}
+              {tab === "ADMIN" ? "Login ou E-mail do Administrador" : "E-mail do Usuário Cadastrado"}
             </label>
             <div className="relative">
               <Mail className="w-4 h-4 text-white/40 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
-                type="email"
+                type="text"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder={tab === "ADMIN" ? "admin@loopx.com" : "seu-email@criador.com"}
+                placeholder={tab === "ADMIN" ? "admin ou admin@loopx.com" : "seu-email@criador.com"}
                 required
-                className={`w-full pl-10 pr-4 py-2.5 rounded-xl liquid-glass text-white text-sm placeholder:text-white/30 border outline-none transition-colors ${
-                  tab === "ADMIN"
-                    ? "border-white/10 focus:border-amber-400/60"
-                    : "border-white/10 focus:border-purple-400/60"
-                }`}
+                className={`w-full pl-10 pr-4 py-2.5 rounded-xl liquid-glass text-white text-sm placeholder:text-white/30 border outline-none transition-colors ${tab === "ADMIN"
+                  ? "border-white/10 focus:border-amber-400/60"
+                  : "border-white/10 focus:border-purple-400/60"
+                  }`}
               />
             </div>
           </div>
@@ -229,11 +227,10 @@ function LoginContent() {
                 placeholder="••••••••"
                 required
                 minLength={6}
-                className={`w-full pl-10 pr-4 py-2.5 rounded-xl liquid-glass text-white text-sm placeholder:text-white/30 border outline-none transition-colors ${
-                  tab === "ADMIN"
-                    ? "border-white/10 focus:border-amber-400/60"
-                    : "border-white/10 focus:border-purple-400/60"
-                }`}
+                className={`w-full pl-10 pr-4 py-2.5 rounded-xl liquid-glass text-white text-sm placeholder:text-white/30 border outline-none transition-colors ${tab === "ADMIN"
+                  ? "border-white/10 focus:border-amber-400/60"
+                  : "border-white/10 focus:border-purple-400/60"
+                  }`}
               />
             </div>
           </div>

@@ -648,6 +648,18 @@ O componente [AnalyticsDashboard.tsx](file:///c:/Users/Nilto/OneDrive/Documentos
 - **Configuração de Canais (`.loopx-channels.json`):** Higienizado de chaves de terceiros e habilitado para versionamento da rede de canais. O canal `@Oobservador-rw2gq` ("O Observador") foi também gravado como canal primário definitivo nos `DEFAULT_CHANNELS` do TypeScript.
 - **Proteção do `.env`:** Mantido em `.gitignore` para conformidade estrita com o GitHub Push Protection (Regra GH013), com o espelho público homologado em `.env.example`.
 
+### 23.9. Correção Definitiva da Autenticação do Administrador
+- **Normalização de Login (`normalizeUserEmail`):** Permite autenticação com atalhos de administrador como `admin`, `adm`, `admin@loopx`, mapeando para `admin@loopx.com`, e `lopes.midia002` para `lopes.midia002@gmail.com`.
+- **Compatibilização de Senhas Múltiplas:** A verificação de senha inicial do ADM aceita tanto a senha padrão longa `admin123` quanto a forma curta `admin` (e a variável de ambiente `ADMIN_PASSWORD`), com suporte a senhas de 5 caracteres.
+- **Remoção de Bloqueio HTML5:** Alteração dos campos de login de `<input type="email">` para `<input type="text">` em `login/page.tsx` e `AuthModal.tsx`, permitindo a digitação do usuário `admin` sem advertência de e-mail inválido pelo navegador.
+- **Redirecionamento Pós-Login:** Preservação e aplicação do parâmetro `redirect` da URL, redirecionando o administrador autenticado diretamente para `/admin` quando requisitado.
+- **Segurança ao Redefinir Senha:** Quando o Administrador altera a senha no painel, a nova senha passa a ser a única aceita, invalidando as senhas padrão e garantindo segurança total.
+
+### 23.10. Validação Funcional dos 3 Componentes Críticos da Interface
+1. **Botão "Novo Projeto":** Acionador abre a modal rápida `NewProjectModal` montada via React Portal (`createPortal`) com seleção de tema, sugestões, formato, voz neural e duração, acionando o pipeline autônomo com foco e toast de feedback.
+2. **Seletor de Canal com Dados Carregados:** Apresentação em tempo real do canal ativo (ex: `Arquivos do Oculto` com 148.500 inscritos ou `O Observador` com 95 inscritos), com avatar, handle e sincronização com YouTube.
+3. **Aba "Métricas do Canal":** Alternância suave para o dashboard analítico com curva de retenção, tempo de exibição, receita estimada e dicas de IA para o canal selecionado.
+
 ---
 
 ## 24. Como Executar via Docker

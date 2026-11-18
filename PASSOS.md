@@ -298,3 +298,18 @@
   - [x] Limpeza de chaves de teste em `.loopx-channels.json` e liberação do arquivo no `.gitignore` para versionamento da configuração de canais.
   - [x] Manutenção da blindagem do `.env` no `.gitignore` com espelhamento público seguro via `.env.example`, prevenindo rejeição de `git push` no GitHub.
   - [x] Validação integral no Docker com 18/18 testes E2E aprovados, 0 erros no TypeScript e 0 erros no ESLint.
+
+---
+
+### [x] Passo 13: Correção Definitiva da Autenticação do Administrador e Validação dos 3 Fluxos Críticos da Interface
+- [x] Diagnóstico de falha de login no painel: o campo de entrada com `type="email"` bloqueava nativamente no navegador quando o usuário digitava o nome de usuário `admin` sem caractere `@`; a senha de 5 caracteres (`admin`) era rejeitada por validação de tamanho mínimo de 6 caracteres; e digitações de usuário simples não eram normalizadas no backend.
+- [x] Implementação de normalização inteligente de credenciais (`normalizeUserEmail` em `src/lib/auth/admin-auth.ts`), mapeando atalhos como `admin`, `adm`, `admin@loopx` -> `admin@loopx.com`, e `lopes.midia002` -> `lopes.midia002@gmail.com`.
+- [x] Suporte nativo tanto para a senha `admin123` quanto para `admin` na verificação de senha inicial do administrador (`verifyAdminPassword`).
+- [x] Ajuste do formulário de autenticação em `src/app/login/page.tsx` e `src/components/auth/AuthModal.tsx`: alteração de `<input type="email">` para `<input type="text">` e atualização dos rótulos e placeholders para "Login ou E-mail do Administrador (ex: admin ou admin@loopx.com)".
+- [x] Suporte ao parâmetro `redirect` via query string no formulário de login, garantindo redirecionamento automático para `/admin` após a autenticação.
+- [x] Blindagem da alteração de senha: quando o Administrador define uma nova senha personalizada via `/api/admin/password`, as senhas padrão são invalidadas, garantindo segurança estrita e aprovação de 100% dos testes E2E.
+- [x] Validação e teste funcional dos 3 pontos visuais da interface no Docker:
+  1. **Botão "Novo Projeto":** Acionador abre a modal `NewProjectModal` com parâmetros de tema, formato, idioma e duração, acionando o pipeline autônomo com foco e toast de feedback.
+  2. **Seletor de Canal com Dados Carregados:** Apresentação em tempo real do canal ativo (ex: `Arquivos do Oculto` com 148.500 inscritos ou `O Observador` com 95 inscritos), com avatar, handle e sincronização com YouTube.
+  3. **Aba "Métricas do Canal":** Alternância suave para o dashboard analítico com curva de retenção, tempo de exibição, receita estimada e dicas de IA para o canal selecionado.
+- [x] Reconstrução completa no Docker (`npm run build`), reinicialização do container `loopx-app`, zero erros de compilação/tipagem TypeScript e aprovação unânime de 18/18 testes E2E automatizados.

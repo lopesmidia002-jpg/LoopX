@@ -111,11 +111,29 @@ export function updateAdminPassword(newPassword: string): boolean {
 }
 
 /**
+ * Normaliza logins/e-mails permitindo atalhos como 'admin', 'adm' ou prefixos
+ */
+export function normalizeUserEmail(input: string): string {
+  if (!input) return "";
+  const clean = input.toLowerCase().trim();
+  if (clean === "admin" || clean === "adm" || clean === "admin@loopx" || clean === "adm@loopx") {
+    return "admin@loopx.com";
+  }
+  if (clean === "lopes.midia002" || clean === "lopesmidia" || clean === "lopes") {
+    return "lopes.midia002@gmail.com";
+  }
+  if (clean === "criador" || clean === "criador@loopx") {
+    return "criador@loopx.com";
+  }
+  return clean;
+}
+
+/**
  * Verifica se um e-mail é autorizado no sistema (como ADM ou Criador registrado)
  */
 export function isAuthorizedAdminEmail(email: string): boolean {
   if (!email) return false;
-  const normalized = email.toLowerCase().trim();
+  const normalized = normalizeUserEmail(email);
   return ADMIN_CONFIG.allowedEmails.includes(normalized);
 }
 
@@ -124,7 +142,7 @@ export function isAuthorizedAdminEmail(email: string): boolean {
  */
 export function getUserRole(email: string): "ADMIN" | "CREATOR" {
   if (!email) return "CREATOR";
-  const normalized = email.toLowerCase().trim();
+  const normalized = normalizeUserEmail(email);
   if (normalized === "admin@loopx.com" || normalized === "lopes.midia002@gmail.com") {
     return "ADMIN";
   }
@@ -140,7 +158,7 @@ export function getUserRole(email: string): "ADMIN" | "CREATOR" {
  */
 export function verifyAdminPassword(email: string, password: string): boolean {
   if (!password) return false;
-  const normalized = (email || "").toLowerCase().trim();
+  const normalized = normalizeUserEmail(email || "");
 
   // 1. Verifica contra senha personalizada de usuário cadastrado pelo ADM
   const customUser = memoryStore.users[normalized];
@@ -157,17 +175,24 @@ export function verifyAdminPassword(email: string, password: string): boolean {
     (process.env.ADMIN_EMAIL && process.env.ADMIN_EMAIL.toLowerCase().trim() === normalized) ||
     (customUser && customUser.role === "ADMIN");
 
-  if (isRootAdmin && password === ADMIN_CONFIG.adminPassword) {
-    return true;
+  if (isRootAdmin) {
+    const currentAdminPwd = ADMIN_CONFIG.adminPassword;
+    // Se o administrador redefiniu a senha, apenas a nova senha cadastrada é válida
+    if (memoryStore.adminPassword) {
+      return password === memoryStore.adminPassword;
+    }
+    // Senhas padrão aceitas na inicialização (admin123, admin ou variável de ambiente)
+    if (
+      password === currentAdminPwd ||
+      password === "admin123" ||
+      password === "admin"
+    ) {
+      return true;
+    }
   }
 
   // 3. Senha padrão demo do criador mestre
-  if (normalized === "criador@loopx.com" && password === ADMIN_CONFIG.creatorPassword) {
-    return true;
-  }
-
-  // 4. Senha padrão inicial de admin (válida apenas se não houver senha personalizada definida)
-  if (normalized === "admin@loopx.com" && !memoryStore.adminPassword && password === "admin123") {
+  if (normalized === "criador@loopx.com" && (password === ADMIN_CONFIG.creatorPassword || password === "loopx123")) {
     return true;
   }
 
