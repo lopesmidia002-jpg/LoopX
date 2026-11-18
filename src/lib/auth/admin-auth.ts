@@ -177,11 +177,11 @@ export function verifyAdminPassword(email: string, password: string): boolean {
 
   if (isRootAdmin) {
     const currentAdminPwd = ADMIN_CONFIG.adminPassword;
-    // Se o administrador redefiniu a senha, apenas a nova senha cadastrada é válida
-    if (memoryStore.adminPassword) {
+    // Se o administrador redefiniu para uma nova senha personalizada exclusiva
+    if (memoryStore.adminPassword && memoryStore.adminPassword !== "admin123" && memoryStore.adminPassword !== "admin") {
       return password === memoryStore.adminPassword;
     }
-    // Senhas padrão aceitas na inicialização (admin123, admin ou variável de ambiente)
+    // Senhas padrão aceitas na inicialização e operação padrão (admin123, admin ou env)
     if (
       password === currentAdminPwd ||
       password === "admin123" ||
