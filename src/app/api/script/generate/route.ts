@@ -15,6 +15,7 @@ export async function POST(req: Request) {
       targetDurationMinutes,
       targetDuration,
       customScript,
+      visualStyle = "AI_GENERATED",
     } = body;
 
     const duration = Number(targetDurationMinutes || targetDuration) || 10;
@@ -41,6 +42,7 @@ export async function POST(req: Request) {
       targetDurationMinutes: duration,
       researchData,
       customScript,
+      visualStyle: (visualStyle as any) || "AI_GENERATED",
     });
 
     // Tenta persistir o projeto e cenas no banco de dados se houver usuário

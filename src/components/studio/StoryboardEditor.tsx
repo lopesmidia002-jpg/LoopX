@@ -60,6 +60,9 @@ export default function StoryboardEditor({
   onNewProject,
 }: StoryboardEditorProps) {
   const [activeMediaModalSceneId, setActiveMediaModalSceneId] = useState<string | null>(null);
+  const [modalTab, setModalTab] = useState<"AI" | "STOCK">("AI");
+  const [aiPromptInput, setAiPromptInput] = useState("");
+  const [generatingAiImageSceneId, setGeneratingAiImageSceneId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchingMedia, setSearchingMedia] = useState(false);
   const [curatedResults, setCuratedResults] = useState<string[]>(SAMPLE_MEDIA_LIBRARY);
@@ -125,6 +128,35 @@ export default function StoryboardEditor({
       console.error("Erro ao exportar SRT:", e);
     } finally {
       setIsExportingSrt(false);
+    }
+  };
+
+  // Geração de imagem inédita por IA (Flux)
+  const handleGenerateAiImageForScene = async (sceneId: string, customPrompt?: string) => {
+    const targetScene = scenes.find((s) => s.id === sceneId);
+    if (!targetScene) return;
+
+    try {
+      setGeneratingAiImageSceneId(sceneId);
+      const res = await fetch("/api/pipeline/generate-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: topicTitle || "Documentário Dark",
+          keywords: targetScene.keywords,
+          narrationText: targetScene.narrationText,
+          customPrompt,
+          sceneIndex: targetScene.sceneOrder - 1,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.imageUrl) {
+        onUpdateScene(sceneId, { mediaUrl: data.imageUrl });
+      }
+    } catch (e) {
+      console.error("Erro ao gerar imagem por IA:", e);
+    } finally {
+      setGeneratingAiImageSceneId(null);
     }
   };
 
@@ -353,9 +385,26 @@ export default function StoryboardEditor({
                     <Volume2 className={`w-3.5 h-3.5 ${playingAudioSceneId === scene.id ? "text-brand-400 animate-pulse" : ""}`} />
                   </button>
 
+                  {/* Quick AI Image generation button */}
+                  <button
+                    onClick={() => handleGenerateAiImageForScene(scene.id)}
+                    disabled={generatingAiImageSceneId === scene.id}
+                    className="text-xs font-semibold text-purple-300 hover:text-white flex items-center gap-1 bg-[#1e152e] hover:bg-[#2a1c42] px-2.5 py-1 rounded-lg border border-purple-500/30 transition-colors disabled:opacity-50"
+                    title="Pintar nova imagem inédita com IA (Flux) para esta cena"
+                  >
+                    {generatingAiImageSceneId === scene.id ? (
+                      <Loader2 className="w-3 h-3 text-purple-400 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-3 h-3 text-purple-400" />
+                    )}
+                    <span>Gerar IA</span>
+                  </button>
+
                   <button
                     onClick={() => {
                       setActiveMediaModalSceneId(scene.id);
+                      setModalTab("AI");
+                      setAiPromptInput(scene.keywords?.join(", ") || "");
                       setCuratedResults(SAMPLE_MEDIA_LIBRARY);
                     }}
                     className="text-xs font-semibold text-brand-300 hover:text-white flex items-center gap-1 bg-[#141923] px-2.5 py-1 rounded-lg border border-surface-border transition-colors"
@@ -378,16 +427,29 @@ export default function StoryboardEditor({
                   {MOTION_EFFECT_LABELS[scene.motionEffect]}
                 </div>
 
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                  <button
+                    onClick={() => handleGenerateAiImageForScene(scene.id)}
+                    disabled={generatingAiImageSceneId === scene.id}
+                    className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-lg flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    {generatingAiImageSceneId === scene.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-3.5 h-3.5" />
+                    )}
+                    <span>Gerar com IA</span>
+                  </button>
                   <button
                     onClick={() => {
                       setActiveMediaModalSceneId(scene.id);
+                      setModalTab("STOCK");
                       setCuratedResults(SAMPLE_MEDIA_LIBRARY);
                     }}
-                    className="px-3 py-1.5 rounded-lg bg-brand-600 text-white text-xs font-bold shadow-lg flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-lg bg-[#141923] border border-surface-border text-white text-xs font-bold shadow-lg flex items-center gap-1.5 hover:bg-surface"
                   >
                     <ImageIcon className="w-3.5 h-3.5" />
-                    <span>Curar Outra Mídia 4K</span>
+                    <span>Acervo 4K</span>
                   </button>
                 </div>
               </div>
@@ -443,15 +505,20 @@ export default function StoryboardEditor({
         ))}
       </div>
 
-      {/* Media Swapper Modal with Search */}
+      {/* Media Swapper Modal with Search and AI Image Generator */}
       {activeMediaModalSceneId && mounted && createPortal(
         <div className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md overflow-y-auto p-4 flex min-h-screen items-center justify-center">
           <div className="relative bg-[#1a202c] border border-surface-border rounded-2xl max-w-2xl w-full p-6 shadow-2xl my-auto animate-fadeIn">
             <div className="flex items-center justify-between mb-4">
-              <h4 className="text-base font-bold text-white flex items-center gap-2">
-                <ImageIcon className="w-4 h-4 text-brand-400" />
-                <span>Curadoria de Mídia (Pexels / Unsplash / LoopX)</span>
-              </h4>
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 rounded-lg bg-purple-500/20 text-purple-400">
+                  <Sparkles className="w-4 h-4" />
+                </span>
+                <div>
+                  <h4 className="text-sm font-bold text-white">Central de Imagens da Cena</h4>
+                  <p className="text-[11px] text-slate-400">Gere uma imagem inédita com IA ou selecione do acervo 4K</p>
+                </div>
+              </div>
               <button
                 onClick={() => setActiveMediaModalSceneId(null)}
                 className="text-slate-400 hover:text-white text-xs font-semibold"
@@ -460,53 +527,122 @@ export default function StoryboardEditor({
               </button>
             </div>
 
-            {/* Live Search Input */}
-            <div className="flex gap-2 mb-4">
-              <div className="relative flex-1">
-                <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSearchCuratedMedia(searchQuery)}
-                  placeholder="Buscar acervo (ex: radar militar, oceano tempestade, espaço)..."
-                  className="w-full bg-[#12161f] border border-surface-border rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500"
-                />
-              </div>
+            {/* Modal Tabs: IA Generativa vs Acervo 4K */}
+            <div className="flex gap-2 p-1 bg-[#12161f] rounded-xl border border-surface-border mb-4">
               <button
                 type="button"
-                onClick={() => handleSearchCuratedMedia(searchQuery)}
-                className="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold flex items-center gap-1.5"
+                onClick={() => setModalTab("AI")}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                  modalTab === "AI"
+                    ? "bg-purple-600 text-white shadow"
+                    : "text-slate-400 hover:text-white"
+                }`}
               >
-                {searchingMedia ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
-                <span>Buscar</span>
+                <Sparkles className="w-3.5 h-3.5 text-purple-300" />
+                <span>IA Generativa (Flux 4K)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setModalTab("STOCK")}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                  modalTab === "STOCK"
+                    ? "bg-brand-600 text-white shadow"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <ImageIcon className="w-3.5 h-3.5" />
+                <span>Acervo Fotográfico 4K (Unsplash)</span>
               </button>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 mb-6 max-h-80 overflow-y-auto pr-1">
-              {curatedResults.map((url, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => {
-                    onUpdateScene(activeMediaModalSceneId, { mediaUrl: url });
-                    setActiveMediaModalSceneId(null);
-                  }}
-                  className="relative aspect-video rounded-xl overflow-hidden border border-surface-border hover:border-brand-500 cursor-pointer group shadow"
-                >
-                  <img src={url} alt="Mídia de exemplo" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                  <div className="absolute inset-0 bg-brand-500/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold">
-                    Selecionar
-                  </div>
+            {modalTab === "AI" ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">
+                    Prompt Visual para a IA (Crie ou Edite):
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={aiPromptInput}
+                    onChange={(e) => setAiPromptInput(e.target.value)}
+                    placeholder="Ex: Sala de controle de radar militar deserta na tempestade, luzes verdes volumétricas, cinematográfico 16:9 8k..."
+                    className="w-full bg-[#12161f] border border-surface-border rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 resize-none font-mono"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Dica: A IA Flux gera imagens foto-realistas inéditas em proporção cinematográfica 16:9 (1280x720) sem custo.
+                  </p>
                 </div>
-              ))}
-            </div>
 
-            <div className="text-right">
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    disabled={generatingAiImageSceneId === activeMediaModalSceneId}
+                    onClick={async () => {
+                      await handleGenerateAiImageForScene(activeMediaModalSceneId, aiPromptInput);
+                      setActiveMediaModalSceneId(null);
+                    }}
+                    className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
+                  >
+                    {generatingAiImageSceneId === activeMediaModalSceneId ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-4 h-4" />
+                    )}
+                    <span>Pintar Imagem com IA e Aplicar à Cena</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                {/* Live Search Input */}
+                <div className="flex gap-2 mb-4">
+                  <div className="relative flex-1">
+                    <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSearchCuratedMedia(searchQuery)}
+                      placeholder="Buscar acervo (ex: radar militar, oceano tempestade, espaço)..."
+                      className="w-full bg-[#12161f] border border-surface-border rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleSearchCuratedMedia(searchQuery)}
+                    className="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold flex items-center gap-1.5"
+                  >
+                    {searchingMedia ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+                    <span>Buscar</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 mb-6 max-h-72 overflow-y-auto pr-1">
+                  {curatedResults.map((url, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => {
+                        onUpdateScene(activeMediaModalSceneId, { mediaUrl: url });
+                        setActiveMediaModalSceneId(null);
+                      }}
+                      className="relative aspect-video rounded-xl overflow-hidden border border-surface-border hover:border-brand-500 cursor-pointer group shadow"
+                    >
+                      <img src={url} alt="Mídia de exemplo" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                      <div className="absolute inset-0 bg-brand-500/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold">
+                        Selecionar
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="text-right mt-4 pt-3 border-t border-surface-border">
               <button
                 onClick={() => setActiveMediaModalSceneId(null)}
                 className="px-4 py-2 rounded-xl bg-surface hover:bg-surface-hover text-slate-300 text-xs font-bold"
               >
-                Cancelar
+                Fechar
               </button>
             </div>
           </div>

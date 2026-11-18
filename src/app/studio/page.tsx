@@ -64,6 +64,7 @@ export default function StudioPage() {
     voiceId: string;
     customScript?: string;
     targetDuration: number;
+    visualStyle?: "AI_GENERATED" | "STOCK_4K";
   }) => {
     setConfiguredDuration(config.targetDuration || 10);
     setTopicTitle(config.topic);
@@ -79,6 +80,7 @@ export default function StudioPage() {
         body: JSON.stringify({
           ...config,
           targetDurationMinutes: config.targetDuration,
+          visualStyle: config.visualStyle || "AI_GENERATED",
         }),
       });
       const data = await res.json();

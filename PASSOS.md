@@ -360,3 +360,19 @@
   - [x] Atualização de `generateDeterministicScript` com 24 atos narrativos e escala dinâmica para minutagens longas.
   - [x] Atualização de `studio/page.tsx` para deduzir o saldo exato de minutos configurado (`configuredDuration`).
 - [x] Validação integral no Docker: compilação Next.js (0 erros), 18/18 testes E2E aprovados e testes práticos gerando 10m01s (14 cenas) e 15m01s (21 cenas) reais.
+
+---
+
+### [x] Passo 17: Integração do Motor de Geração de Imagens por IA (Flux AI / Pollinations) e Seletor de Estilo Visual
+- [x] Diagnóstico da geração de imagem no ecossistema Gemini: na chave gratuita do Google AI Studio, a cota de geração direta de imagens (Imagen 3 / gemini-image) é definida como `limit: 0` (grátis apenas para texto e roteiros, exigindo faturamento ativo no Google Cloud).
+- [x] Integração do motor de IA Generativa de alta fidelidade via Flux.1 (Pollinations AI): geração de imagens inéditas 16:9 widescreen (1280x720) sem custo, sem travamento de cotas e renderização foto-realista de cinema em ~3-4s.
+- [x] Prompt engineering contextual em `src/lib/pipeline/media-curator.ts`:
+  - [x] Implementação de `buildCinematicAiImagePrompt` que analisa o tema, palavras-chave e narração de cada cena, gerando um prompt cinematográfico Dark YouTube exclusivo.
+  - [x] Implementação de `getAiGeneratedImageUrl` gerando URLs seguras com sementes (`seed`) únicas e determinísticas para cada cena.
+- [x] Criação do endpoint dedicado `/api/pipeline/generate-image` (POST) para geração e regeneração sob demanda de imagens via IA.
+- [x] Seletor de Estilo Visual no modal "Novo Projeto" (`NewProjectModal.tsx`): o criador pode escolher entre "IA Generativa (Flux)" e "Acervo 4K (Unsplash)".
+- [x] Central de Imagens da Cena e Ações Rápidas no `StoryboardEditor.tsx`:
+  - [x] Botão "Gerar IA" diretamente nos cabeçalhos das cenas com feedback de loading giratório (`Loader2`).
+  - [x] Hover overlay na imagem com opções "Gerar com IA" e "Acervo 4K".
+  - [x] Modal de Curadoria expandido com duas abas: "IA Generativa (Flux 4K)" com input de prompt customizável e "Acervo Fotográfico 4K (Unsplash)".
+- [x] Recompilação Next.js no Docker (`npm run build` com 26/26 rotas com 0 erros), reinicialização do contêiner e 18/18 testes E2E aprovados.

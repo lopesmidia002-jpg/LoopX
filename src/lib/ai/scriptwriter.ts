@@ -1,6 +1,6 @@
 import { SYSTEM_DOCUMENTARY_WRITER_PROMPT, SYSTEM_TOP10_WRITER_PROMPT } from "./prompts";
 import { ResearchResult } from "./researcher";
-import { SceneItem, VideoFormat, Language, MotionEffect } from "../types";
+import { SceneItem, VideoFormat, Language, MotionEffect, VisualStyle } from "../types";
 import { getCuratedMediaForScene } from "../pipeline/media-curator";
 
 export interface ScriptGenerationResult {
@@ -29,12 +29,13 @@ export async function generateCinematicScript(params: {
   targetDurationMinutes: number;
   researchData: ResearchResult;
   customScript?: string;
+  visualStyle?: VisualStyle;
 }): Promise<ScriptGenerationResult> {
-  const { topic, format, language, targetDurationMinutes, researchData, customScript } = params;
+  const { topic, format, language, targetDurationMinutes, researchData, customScript, visualStyle = "AI_GENERATED" } = params;
 
   // Se o usuário já forneceu um roteiro bruto, faz a segmentação estruturada
   if (customScript && customScript.trim().length > 50) {
-    return await processCustomScriptToScenes(topic, customScript, format, language);
+    return await processCustomScriptToScenes(topic, customScript, format, language, visualStyle);
   }
 
   const targetMins = Math.max(3, Number(targetDurationMinutes) || 10);
@@ -114,6 +115,8 @@ Retorne estritamente um JSON no formato:
                   keywords: sc.keywords || [topic],
                   sceneIndex: idx,
                   totalScenes: rawScenes.length,
+                  visualStyle,
+                  narrationText: narration,
                 });
 
                 return {
@@ -201,6 +204,8 @@ Retorne estritamente um JSON no formato:
                 keywords: sc.keywords || [topic],
                 sceneIndex: idx,
                 totalScenes: rawScenes.length,
+                visualStyle,
+                narrationText: narration,
               });
 
               return {
@@ -237,14 +242,15 @@ Retorne estritamente um JSON no formato:
   }
 
   // 3. Motor Narrativo Autônomo com Escala Dinâmica para a Minutagem Escolhida
-  return await generateDeterministicScript(topic, format, language, targetMins, researchData);
+  return await generateDeterministicScript(topic, format, language, targetMins, researchData, visualStyle);
 }
 
 async function processCustomScriptToScenes(
   topic: string,
   rawScript: string,
   format: VideoFormat,
-  language: Language
+  language: Language,
+  visualStyle: VisualStyle = "AI_GENERATED"
 ): Promise<ScriptGenerationResult> {
   const paragraphs = rawScript
     .split(/\n\s*\n/)
@@ -264,6 +270,8 @@ async function processCustomScriptToScenes(
         keywords: extractedKeywords,
         sceneIndex: idx,
         totalScenes: finalParagraphs.length,
+        visualStyle,
+        narrationText: para,
       });
 
       return {
@@ -299,7 +307,8 @@ async function generateDeterministicScript(
   format: VideoFormat,
   language: Language,
   targetDurationMinutes: number,
-  research: ResearchResult
+  research: ResearchResult,
+  visualStyle: VisualStyle = "AI_GENERATED"
 ): Promise<ScriptGenerationResult> {
   const isDoc = format === "DOCUMENTARY";
   const targetMins = Math.max(3, Number(targetDurationMinutes) || 10);
@@ -424,6 +433,8 @@ async function generateDeterministicScript(
         keywords: item.keywords,
         sceneIndex: idx,
         totalScenes: selectedScenesData.length,
+        visualStyle,
+        narrationText: item.narration,
       });
 
       return {

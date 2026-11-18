@@ -704,7 +704,33 @@ O componente [AnalyticsDashboard.tsx](file:///c:/Users/Nilto/OneDrive/Documentos
 
 ---
 
-## 24. Como Executar via Docker
+## 24. Motor de IA Generativa de Imagens (Flux AI / Pollinations) & Seletor de Estilo Visual
+
+### 24.1. Arquitetura de Geração de Imagens
+- **Diagnóstico da Cota de Imagens do Google AI Studio (Gemini):**
+  - As chaves gratuitas do Google AI Studio oferecem cota ilimitada para texto/pesquisa (`gemini-flash-lite-latest`), porém estabelecem cota `limit: 0` para geração direta de imagens por tokens (`Imagen 3`), exigindo conta com faturamento ativado no Google Cloud.
+- **Integração do Motor Flux.1 (Pollinations AI):**
+  - Implementação de gerador autônomo baseado no modelo de ponta **Flux.1**.
+  - Saída nativa em formato cinematográfico **16:9 widescreen (1280x720)**, sem custo, sem necessidade de credenciais pagas e sem risco de travamento de cotas.
+  - Renderização fotográfica ultra-rápida (3 a 4 segundos por imagem).
+- **Prompt Engineering Cinematográfico Contextual:**
+  - Função `buildCinematicAiImagePrompt` em [media-curator.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/lib/pipeline/media-curator.ts) analisa o tema do documentário, narração do parágrafo e palavras-chave da cena.
+  - Injeta modificadores de estética Dark YouTube: iluminação volumétrica, sombras dramáticas, granulação de película de 35mm, realismo documental estilo National Geographic e semente determinística (`seed`) exclusiva por cena.
+- **Endpoint Dedicado de Geração sob Demanda:**
+  - `POST /api/pipeline/generate-image`: aceita tema, palavras-chave, narração e prompt customizado, retornando a URL direta da imagem gerada por IA.
+
+### 24.2. Recursos na Interface do Estúdio
+- **Seletor de Estilo Visual no Modal "Novo Projeto" ([NewProjectModal.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/NewProjectModal.tsx)):**
+  - **IA Generativa (Flux) [Recomendado]:** Pinta imagens de IA inéditas para cada cena.
+  - **Acervo 4K (Unsplash):** Utiliza fotografias documentais de arquivo em alta resolução.
+- **Ações Rápidas no Storyboard ([StoryboardEditor.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/StoryboardEditor.tsx)):**
+  - Botão **"Gerar IA"** diretamente nos cabeçalhos das cenas para regerar imagens com 1 clique.
+  - Hover overlay com opções separadas: "Gerar com IA" e "Acervo 4K".
+  - **Central de Imagens da Cena:** Modal com abas para alternar entre "IA Generativa (Flux 4K)" com campo de prompt editável e "Acervo Fotográfico 4K (Unsplash)".
+
+---
+
+## 25. Como Executar via Docker
 
 ### Subir todos os serviços (App, PostgreSQL e Redis)
 ```bash

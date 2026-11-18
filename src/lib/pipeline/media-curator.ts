@@ -3,7 +3,7 @@
  * Etapa 3 do Pipeline do LoopX
  */
 
-import { MediaType } from "../types";
+import { MediaType, VisualStyle } from "../types";
 
 export interface CuratedMediaItem {
   id: string;
@@ -133,19 +133,64 @@ export function detectCategoryForTopic(topic: string): string {
 }
 
 /**
- * Curadoria dinâmica em tempo real para uma cena específica com base no tema e palavras-chave
+ * Constrói prompt cinematográfico altamente detalhado para a IA Generativa (Flux)
+ */
+export function buildCinematicAiImagePrompt(
+  topic: string,
+  keywords: string[] = [],
+  sceneIndex: number = 0,
+  narrationText?: string
+): string {
+  const cleanTopic = (topic || "").replace(/[^\w\s\u00C0-\u017F]/gi, " ").trim();
+  const cleanKeywords = (keywords || []).slice(0, 3).join(", ").replace(/[^\w\s\u00C0-\u017F]/gi, " ").trim();
+
+  let sceneContext = "";
+  if (narrationText) {
+    const firstSentence = narrationText.split(/[.!?]/)[0] || "";
+    sceneContext = firstSentence.slice(0, 90).replace(/[^\w\s\u00C0-\u017F]/gi, " ").trim();
+  }
+
+  const focus = sceneContext || cleanKeywords || cleanTopic;
+  return `cinematic dark documentary shot, ${cleanTopic}, ${focus}, 8k photorealistic, hyper-detailed, dramatic shadows, volumetric rim lighting, film grain, anamorphic widescreen 16:9, documentary cinematography, award winning photography`;
+}
+
+/**
+ * Retorna URL direta da imagem gerada por IA via Flux (Pollinations AI)
+ */
+export function getAiGeneratedImageUrl(prompt: string, seed?: number): string {
+  const cleanSeed = seed !== undefined ? seed : Math.floor(Math.random() * 999999);
+  const encoded = encodeURIComponent(prompt.trim());
+  return `https://image.pollinations.ai/prompt/${encoded}?width=1280&height=720&model=flux&nologo=true&seed=${cleanSeed}`;
+}
+
+/**
+ * Curadoria dinâmica em tempo real para uma cena específica com suporte a IA Generativa ou Acervo 4K
  */
 export async function getCuratedMediaForScene(params: {
   topic: string;
   keywords: string[];
   sceneIndex: number;
   totalScenes?: number;
+  visualStyle?: VisualStyle;
+  narrationText?: string;
 }): Promise<string> {
-  const { topic, keywords, sceneIndex } = params;
+  const { topic, keywords, sceneIndex, visualStyle = "AI_GENERATED", narrationText } = params;
+
+  // 1. Se visualStyle for AI_GENERATED (padrão), gera a imagem inédita por IA via Flux
+  if (visualStyle === "AI_GENERATED") {
+    try {
+      const prompt = buildCinematicAiImagePrompt(topic, keywords, sceneIndex, narrationText);
+      const seed = (sceneIndex + 1) * 31337 + 101;
+      return getAiGeneratedImageUrl(prompt, seed);
+    } catch (e) {
+      console.warn("Aviso na geração de imagem IA, recorrendo ao acervo:", e);
+    }
+  }
+
   const categoryKey = detectCategoryForTopic(topic);
   const fallbackList = VAULT_CATEGORIES[categoryKey] || VAULT_CATEGORIES.mystery;
 
-  // 1. Tenta buscar no Unsplash se houver chave configurada
+  // 2. Tenta buscar no Unsplash se houver chave configurada
   const unsplashKey = process.env.UNSPLASH_ACCESS_KEY;
   if (unsplashKey) {
     try {
@@ -167,7 +212,7 @@ export async function getCuratedMediaForScene(params: {
     }
   }
 
-  // 2. Fallback enriquecido: seleciona a imagem temática precisa da categoria para esta cena
+  // 3. Fallback enriquecido: seleciona a imagem temática precisa da categoria para esta cena
   return fallbackList[sceneIndex % fallbackList.length];
 }
 

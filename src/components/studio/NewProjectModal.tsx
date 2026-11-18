@@ -17,7 +17,7 @@ import {
   PlusCircle,
 } from "lucide-react";
 import { VOICE_OPTIONS } from "@/lib/constants";
-import { VideoFormat, Language, VoiceOption } from "@/lib/types";
+import { VideoFormat, Language, VoiceOption, VisualStyle } from "@/lib/types";
 import { DarkChannel } from "@/lib/youtube/channel-manager";
 
 interface NewProjectModalProps {
@@ -30,6 +30,7 @@ interface NewProjectModalProps {
     voiceId: string;
     customScript?: string;
     targetDuration: number;
+    visualStyle?: VisualStyle;
   }) => void;
   initialTopic?: string;
   activeChannel?: DarkChannel | null;
@@ -55,6 +56,7 @@ export default function NewProjectModal({
   const [language, setLanguage] = useState<Language>("PT_BR");
   const [selectedVoice, setSelectedVoice] = useState<VoiceOption>(VOICE_OPTIONS[0]);
   const [targetDuration, setTargetDuration] = useState<number>(10);
+  const [visualStyle, setVisualStyle] = useState<VisualStyle>("AI_GENERATED");
   const [hasCustomScript, setHasCustomScript] = useState(false);
   const [customScript, setCustomScript] = useState("");
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
@@ -87,6 +89,7 @@ export default function NewProjectModal({
       voiceId: selectedVoice.id,
       customScript: hasCustomScript ? customScript : undefined,
       targetDuration,
+      visualStyle,
     });
     onClose();
   };
@@ -227,6 +230,53 @@ export default function NewProjectModal({
                 <div>
                   <h4 className="text-xs font-bold text-white">Top 10 / Ranking</h4>
                   <p className="text-[10px] text-slate-400">Lista progressiva do 10º ao 1º</p>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Visual Style: IA Generativa vs Acervo 4K */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-bold text-white flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                <span>Motor Visual das Imagens *</span>
+              </label>
+              <span className="text-[10px] text-purple-400 font-medium">100% Inédito por Cena</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
+              <button
+                type="button"
+                onClick={() => setVisualStyle("AI_GENERATED")}
+                className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all ${
+                  visualStyle === "AI_GENERATED"
+                    ? "bg-purple-950/30 border-purple-500 text-white ring-1 ring-purple-500/50"
+                    : "bg-[#141923] border-surface-border text-slate-300 hover:border-slate-700"
+                }`}
+              >
+                <Sparkles className="w-4 h-4 text-purple-400 shrink-0" />
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <h4 className="text-xs font-bold text-white">IA Generativa (Flux)</h4>
+                    <span className="bg-purple-500/20 text-purple-300 text-[9px] px-1.5 py-0.2 rounded font-bold">RECOMENDADO</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400">Pinta imagens de IA inéditas para cada cena</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setVisualStyle("STOCK_4K")}
+                className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all ${
+                  visualStyle === "STOCK_4K"
+                    ? "bg-brand-500/20 border-brand-500 text-white ring-1 ring-brand-500/50"
+                    : "bg-[#141923] border-surface-border text-slate-300 hover:border-slate-700"
+                }`}
+              >
+                <Film className="w-4 h-4 text-brand-400 shrink-0" />
+                <div>
+                  <h4 className="text-xs font-bold text-white">Acervo 4K (Unsplash)</h4>
+                  <p className="text-[10px] text-slate-400">Fotografia documental real de arquivo</p>
                 </div>
               </button>
             </div>
