@@ -275,8 +275,8 @@ export default function NewProjectModal({
               >
                 <Sparkles className="w-4 h-4 text-purple-400 shrink-0" />
                 <div>
-                  <h4 className="text-xs font-bold text-white">IA Generativa (Flux)</h4>
-                  <p className="text-[10px] text-slate-400">Imagens inéditas (1 foto a cada 45s no tier grátis)</p>
+                  <h4 className="text-xs font-bold text-white">100% IA Generativa (I2V)</h4>
+                  <p className="text-[10px] text-slate-400">Imagens IA fotorrealistas + Clipes de vídeo em movimento</p>
                 </div>
               </button>
             </div>

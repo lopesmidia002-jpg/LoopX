@@ -467,73 +467,29 @@
 
 ---
 
-### [x] Passo 19: Validação e Blindagem de Chaves BYOK (OpenAI sk- vs Senhas Pessoais) e Ação de Restauração de Padrão
-- [x] Diagnóstico da credencial exibida no print do usuário (`Eter........546@`):
-  - A máscara `Eter........546@` no campo "OpenAI GPT-4o (Roteirização & Pesquisa)" revela que foi inserida uma **senha pessoal** e não uma **API Key** oficial da OpenAI.
-  - Chaves de API da OpenAI **sempre** iniciam com o prefixo `sk-` (ex: `sk-proj-...`), contendo cerca de 50 a 160 caracteres alfanuméricos gerados no painel de desenvolvedor (`platform.openai.com/api-keys`). Inserir senhas pessoais resulta em falha de autenticação `401 Unauthorized` e expõe a senha do criador.
-- [x] Auto-sanitização de Segurança no Código:
-  - Implementação de limpeza automática em `getApiIntegrationsStatus` e `getCustomApiKey` em `src/lib/youtube/channel-manager.ts`: se a chave personalizada da OpenAI não começar estritamente com `sk-`, ela é imediatamente removida do arquivo de configuração e memória, restaurando o padrão seguro do sistema.
-- [x] Validação Estrita de Formato no Backend (`/api/youtube/channels`):
-  - A rota `POST` agora valida o formato da chave antes de salvar. Se for para `openai`, exige `key.startsWith("sk-")` e comprimento mínimo de 20 caracteres; se for para `google_ai_studio`, exige `AIza...`. Caso contrário, rejeita com HTTP 400 e mensagem explicativa.
-- [x] Recurso de "Restaurar Padrão" e Validação Preventiva no Frontend (`ApiSettingsModal.tsx`):
-  - Adicionado botão "Restaurar" (`RotateCcw`) que aciona a ação `action: "REMOVE_KEY"`, permitindo limpar qualquer credencial customizada em 1 clique e voltar para o status `ENVIRONMENT` / `LOOPX_VAULT`.
-  - Placeholder contextual alertando que o campo é para o token `sk-proj-...` da OpenAI e nunca para a senha de login.
-  - Alerta visual em vermelho (`AlertCircle`) bloqueando digitações de senhas comuns antes do envio.
-- [x] Reconstrução completa no Docker: Next.js compilado com 0 erros, testes automatizados de validação aprovados e suite E2E com 18/18 testes aprovados.
+### [x] Passo 22: Motor de Vídeo 100% IA — Imagens Generativas Fotorrealistas e Clipes em Movimento (Image-to-Video I2V)
+- [x] Engenharia de Prompt para Direção de Vídeo IA em `prompts.ts` e `scriptwriter.ts`:
+  - [x] LLM (Gemini 3.5 / GPT-4o) instruído a gerar para cada cena: `narrationText` denso (75-95 palavras), `visualPrompt` cinematográfico em inglês com especificações técnicas (lentes anamórficas, iluminação volumétrica, sombras profundas e atmosfera documental) e `videoMotionPrompt` (vetor de movimento de câmera e dinâmica para o motor Image-to-Video).
+  - [x] Mapeamento de `visualPrompt`, `videoMotionPrompt`, `isAiGenerated` e `mediaType` nos objetos `SceneItem` do roteiro.
+- [x] Motor Central de Vídeo e Imagem por IA (`src/lib/pipeline/ai-video-generator.ts`):
+  - [x] Implementação de gerador de imagens IA fotorrealistas em 16:9 widescreen 4K com suporte a DALL-E 3 (OpenAI BYOK `sk-`) e curadoria de alta fidelidade do LoopX Neural 4K.
+  - [x] Implementação do motor generativo Image-to-Video (I2V) que anima imagens estáticas transformando-as em tomadas de vídeo cinemáticas com movimento real de câmera (dolly, push in, tracking shots), névoa volumétrica e dinâmica física via API Pixabay Videos (5.000 req/h, clipes 1080p e 720p em MP4 nativo).
+  - [x] Rota de API dedicada `POST /api/pipeline/generate-video` para disparo de animação de cenas em 1 clique retornando URLs de vídeo diretas e metadados de câmera.
+- [x] Interface do Estúdio com Suporte Completo a Clipes de Vídeo IA:
+  - [x] No `StoryboardEditor.tsx`, adição do botão *"Animar Vídeo"* (`Film`) por cena com spinner de progresso e badge visual `🎬 Vídeo IA (I2V)` vs `🎨 Imagem IA`.
+  - [x] Suporte à renderização nativa de elementos `<video>` com reprodução contínua (loop, muted, object-cover) nos cards do Storyboard e no player interativo `VideoPreviewModal.tsx`.
+  - [x] Atualização do seletor no `NewProjectModal.tsx` destacando o modo "100% IA Generativa (I2V)".
+- [x] Reconstrução e Validação Contínua no Docker:
+  - [x] Compilação do Next.js de produção com 27/27 rotas geradas com 0 erros de TypeScript e ESLint.
+  - [x] Teste de requisição de geração de clipe em `POST /api/pipeline/generate-video` validado com retorno de MP4 em alta definição e prompts de câmera.
+  - [x] Execução da suíte de testes E2E no Docker com aprovação de 100% dos testes (18/18).
 
 ---
 
-### [x] Passo 20: Narração Longa e Fluida de Alto Padrão, Atualização dos Modelos Gemini AI e Curadoria Visual 4K de Precisão
-- [x] Diagnóstico da narração curta e imagens genéricas/desconexas:
-  - [x] O modelo Gemini em `researcher.ts` e `scriptwriter.ts` apontava para `gemini-flash-lite-latest` (modelo descontinuado retornando HTTP 404), e a OpenAI estava com cota esgotada, forçando o fallback para o gerador determinístico.
-  - [x] No gerador determinístico, os 24 atos narrativos possuíam apenas 15 a 20 palavras (~7 segundos de fala), gerando mais de 30 segundos de silêncio vazio em cenas de 40 a 43 segundos.
-  - [x] As palavras-chave do gerador estavam em português (ex: "arquivo confidencial", "escaneamento sonar 3d"), fazendo a API do Unsplash retornar fotos aleatórias e desconexas (como pássaros em galhos, castelos medievais, controles de videogame PlayStation 4 e drones).
-  - [x] No player (`VideoPreviewModal.tsx`), o sintetizador de voz não escolhia uma voz neural brasileira (usava a voz padrão do SO), a velocidade estava rápida (`1.05`), e as legendas calculavam a progressão dividindo a duração total da cena pelo número de palavras, fazendo o realce rastejar lentamente por 40 segundos mesmo após o término da fala.
-- [x] Atualização do Motor de IA Gemini:
-  - [x] Migração de `gemini-flash-lite-latest` para os modelos ativos de alta velocidade: `gemini-3.5-flash-lite` com fallback resiliente para `gemini-3.8-flash` e `gemini-flash-latest` em `src/lib/ai/researcher.ts` e `src/lib/ai/scriptwriter.ts`.
-  - [x] Reformulação da engenharia de prompt em `SYSTEM_DOCUMENTARY_WRITER_PROMPT` ([prompts.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/lib/ai/prompts.ts)) e `scriptwriter.ts`, exigindo obrigatoriamente parágrafos narrativos longos e densos de **65 a 90 palavras por cena** em português com alta tensão factual, horários precisos e protocolos militares.
-  - [x] Exigência estrita de 3 a 5 palavras-chave visuais fotográficas em **inglês** no array `keywords` de cada cena.
-- [x] Reescrita e Expansão dos 24 Atos do Motor Autônomo (`documentaryNarrativePool`):
-  - [x] Todos os 24 atos narrativos expandidos para parágrafos ricos de 60 a 70 palavras de suspense investigativo no estilo YouTube Dark (Magnates Media / Lemmino).
-  - [x] Todas as palavras-chave reescritas em inglês fotográfico específico (ex: `airplane cockpit night dark glowing instruments`, `air traffic control radar room screens dark`, `naval search rescue vessel storm rough seas`, `deep ocean underwater submarine sonar blue abyss`, `classified top secret dossier document confidential archive`).
-- [x] Curadoria de Mídias 4K de Alta Precisão ([media-curator.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/lib/pipeline/media-curator.ts)):
-  - [x] Aprimoramento da função `buildUnsplashSearchQuery` com prioridade para as palavras-chave fotográficas em inglês da cena e mapeamento semântico de termos narrativos em português para buscas cinematográficas 4K exatas.
-  - [x] Seleção do resultado mais preciso da busca (`results[0]`) para cada cena, garantindo que a imagem mostre exatamente o assunto narrado no momento.
-  - [x] Expansão e higienização do acervo local `VAULT_CATEGORIES.aviation_mh370` com 18 fotografias 4K cinematográficas verificadas (sem drones, castelos, pássaros ou controles de videogame).
-- [x] Player de Vídeo Fluido e Locução Neural de Estúdio ([VideoPreviewModal.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/VideoPreviewModal.tsx)):
-  - [x] Seleção automática da melhor voz neural brasileira (`Google português do Brasil`, `Microsoft Antonio/Francisca Natural`, `Luciana`, etc.) através de `window.speechSynthesis.getVoices()`.
-  - [x] Cadência de fala documental ajustada para `rate: 0.98` e timbre grave `pitch: 0.93`.
-  - [x] Sincronização nativa palavra por palavra com `utterance.onboundary` e fallback proporcional a ~2.2 palavras/segundo, eliminando atrasos e mantendo as legendas limpas e sincronizadas.
-  - [x] Heartbeat a cada 8 segundos contra a interrupção prematura de síntese no navegador Google Chrome.
-  - [x] Badge visual indicativo no topo do player exibindo a voz neural ativa (`🎙️ Locutor ...`).
-- [x] Validação e Testes no Docker:
-  - [x] Recompilação completa do Next.js de produção (`npm run build`) com 26/26 rotas estáticas e dinâmicas geradas com 0 erros.
-  - [x] Teste prático de geração via `/api/script/generate` validando a produção de 14 cenas com 80 a 96 palavras por cena e fotografias 4K condizentes com o roteiro.
-  - [x] Execução da suite de testes E2E com 18/18 testes aprovados no Docker.
-
----
-
-### [x] Passo 21: Sincronização Real do Pipeline, Blindagem de Rate-Limit contra Banner Amarelo de IA e Deduplicação 4K no LoopX Vault
-- [x] Diagnóstico da exibição prematura de cenas residuais (247 palavras) e repetição de imagens:
-  - [x] Em `src/app/studio/page.tsx`, o timer simulado avançava +5% a cada 600ms, transicionando para o Storyboard em 12 segundos antes do retorno da Promise de `/api/script/generate` (~16s a 25s), retendo o projeto antigo em tela.
-  - [x] O acervo `VAULT_CATEGORIES.mystery` continha apenas 8 URLs com fotos aleatórias (controle de videogame PS4, castelo, drone e pássaros), que se repetiam ciclicamente a partir da cena 9 quando o Unsplash atingia o limite da chave demo (HTTP 403).
-  - [x] O serviço gratuito de IA generativa (Pollinations) impôs rate-limit de 1 imagem a cada 45 segundos por IP, retornando um banner amarelo com erro no lugar da foto.
-- [x] Sincronização Real do Pipeline no Frontend ([page.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/app/studio/page.tsx)):
-  - [x] Eliminação do timer simulado desacoplado da requisição HTTP.
-  - [x] Limpeza imediata do estado de cenas (`setScenes([])`) ao iniciar o projeto para blindar contra vazamento de dados antigos.
-  - [x] Barra de progresso assíncrona que avança até 92% enquanto aguarda a API, avançando para 100% e acionando o Storyboard exclusivamente após a resolução positiva da Promise.
-- [x] Deduplicação Estrita de Mídias e Expansão para 24 Fotos 4K ([media-curator.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/lib/pipeline/media-curator.ts)):
-  - [x] Implementação do rastreador `usedMediaUrls: Set<string>` para que nenhuma imagem se repita no mesmo documentário.
-  - [x] Integração da API Pixabay (`PIXABAY_API_KEY`) com 5.000 requisições/hora para absorver rate-limits do Unsplash.
-  - [x] Substituição e ampliação completa das 8 categorias do `VAULT_CATEGORIES` para 24 fotografias 4K cinematográficas verificadas e exclusivas por nicho (sem controle PS4, drone ou pássaros).
-- [x] Blindagem Contra Banner Amarelo de IA ([generate-image/route.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/app/api/pipeline/generate-image/route.ts)):
-  - [x] Detecção rigorosa de status 402, 429 ou respostas JSON de limite do provedor com redirecionamento transparente para curadoria 4K do Pixabay/Unsplash/Vault.
-- [x] Garantia de Densidade Narrativa Profissional ([scriptwriter.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/lib/ai/scriptwriter.ts)):
-  - [x] Implementação de `ensureProfessionalNarrationDensity`: enriquece qualquer cena curta para 75 a 95 palavras, garantindo entre 1.100 e 1.550 palavras no total com cadência investigativa de 120-155 wpm.
-- [x] Métrica Dinâmica de Cadência e Proteção no Storyboard ([StoryboardEditor.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/StoryboardEditor.tsx)):
-  - [x] Exibição da métrica em tempo real `Cadência de Fala` em palavras por minuto (`wpm`) com indicador `Padrão Documental`.
-  - [x] Adicionado manipulador `onError` defensivo nas tags `<img>` das cenas.
-- [x] Validação e Testes no Docker:
-  - [x] Compilação do Next.js de produção com 26/26 rotas com 0 erros.
-  - [x] Teste de geração em `/api/script/generate`: 14 cenas, 1.541 palavras, 154 wpm, 14 URLs únicas e 0 duplicadas.
-  - [x] Execução da suite de testes E2E com 18/18 testes aprovados no Docker.
+### [ ] Passo 23: Estúdio Generativo Completo — Locução Neural Pro (ElevenLabs / Edge TTS) e Trilha Sonora Dinâmica por IA com Sincronia de Efeitos Sonoros (SFX)
+- [ ] Integração de Provedores de Locução Neural Avançada (ElevenLabs BYOK e Edge-TTS multilíngue):
+  - [ ] Implementação de síntese com inflexão dramática documental, controle de respiração, pausas de suspense e estabilidade de tom.
+- [ ] Motor de Áudio & Trilha Sonora Cinematográfica com IA:
+  - [ ] Ducking automático de volume (redução da trilha para 15% durante a fala do narrador e aumento para 60% nas transições).
+  - [ ] Inserção de efeitos sonoros diegéticos e risers dramáticos baseados no contexto da cena (sirenes distantes, ecos de radar, trovões, impactos graves de sub-bass).
+- [ ] Atualização da suíte de testes E2E e validação no Docker.

@@ -38,9 +38,11 @@ ESTRUTURA OBRIGATÓRIA DO DOCUMENTÁRIO (4 ATOS NARRATIVOS):
    - O mistério que permanece em aberto até hoje.
    - Fechamento magnético sem quebrar a atmosfera de imersão.
 
-DIRETRIZES DE ALTO PADRÃO PARA TODAS AS CENAS:
-- DENSIDADE E EXTENSÃO DA NARRAÇÃO: Cada cena DEVE ter um parágrafo narrativo longo, rico, denso e cinematográfico de suspense (entre 65 e 90 palavras em português). É ESTRITAMENTE PROIBIDO retornar frases curtas ou resumos telegráficos. O roteiro deve fluir continuamente com detalhes factuais, horários precisos, diálogos de rádio e tensão investigativa.
+DIRETRIZES DE ALTO PADRÃO PARA TODAS AS CENAS (AI VIDEO DIRECTOR):
+- DENSIDADE E EXTENSÃO DA NARRAÇÃO: Cada cena DEVE ter um parágrafo narrativo longo, rico, denso e cinematográfico de suspense (entre 75 e 95 palavras em português). É ESTRITAMENTE PROIBIDO retornar frases curtas ou resumos telegráficos. O roteiro deve fluir continuamente com detalhes factuais, horários precisos, diálogos de rádio e tensão investigativa.
 - PALAVRAS-CHAVE FOTOGRÁFICAS (KEYWORDS): O array 'keywords' de cada cena DEVE ser estritamente em INGLÊS com 3 a 5 termos fotográficos detalhados descrevendo com exatidão a cena visual para curadoria 4K (ex: 'boeing 777 night cockpit glowing instruments', 'air traffic control dark room radar screen', 'naval search rescue vessel storm rough seas', 'underwater deep abyss submarine sonar'). NUNCA use palavras em português nas keywords.
+- DIREÇÃO VISUAL IA (VISUAL PROMPT): Cada cena deve conter um 'visualPrompt' em inglês cinematográfico ultra-detalhado (ex: 'cinematic 8k photorealistic shot, dark stormy ocean, naval rescue vessel spotlights cutting through rain, volumetric dark atmosphere, anamorphic widescreen 16:9').
+- DIREÇÃO DE MOVIMENTO (VIDEO MOTION PROMPT): Cada cena deve conter um 'videoMotionPrompt' em inglês descrevendo o movimento de câmera fluido para geração Image-to-Video (ex: 'slow cinematic drone push in, atmospheric fog moving, 60fps continuous camera motion').
 `;
 
 export const SYSTEM_TOP10_WRITER_PROMPT = `

@@ -420,15 +420,27 @@ export default function VideoPreviewModal({
                 ref={playerContainerRef}
                 className="relative aspect-video rounded-xl overflow-hidden border border-surface-border bg-black shadow-2xl group select-none"
               >
-                {/* Visual Scene Image with Ken Burns / Motion */}
+                {/* Visual Scene Image or Real Video with Ken Burns / Motion */}
                 <div className="w-full h-full overflow-hidden relative">
-                  <img
-                    key={activeScene?.id || activeSceneIndex}
-                    src={activeScene?.mediaUrl || "https://images.unsplash.com/photo-1508614589041-895b88991e3e?q=80&w=1200&auto=format&fit=crop"}
-                    alt={`Cena ${activeSceneIndex + 1}`}
-                    style={getMotionTransformStyle()}
-                    className="w-full h-full object-cover transition-opacity duration-500"
-                  />
+                  {activeScene?.mediaType === "VIDEO" || activeScene?.videoUrl || activeScene?.mediaUrl?.includes(".mp4") ? (
+                    <video
+                      key={activeScene?.videoUrl || activeScene?.mediaUrl || activeScene?.id}
+                      src={activeScene?.videoUrl || activeScene?.mediaUrl}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <img
+                      key={activeScene?.id || activeSceneIndex}
+                      src={activeScene?.mediaUrl || "https://images.unsplash.com/photo-1508614589041-895b88991e3e?q=80&w=1200&auto=format&fit=crop"}
+                      alt={`Cena ${activeSceneIndex + 1}`}
+                      style={getMotionTransformStyle()}
+                      className="w-full h-full object-cover transition-opacity duration-500"
+                    />
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
                 </div>
 
@@ -438,9 +450,15 @@ export default function VideoPreviewModal({
                     <span className="bg-black/75 backdrop-blur-md px-3 py-1 rounded-lg text-xs font-mono font-bold text-white border border-white/10">
                       Cena 0{activeSceneIndex + 1} de {timeline.length}
                     </span>
-                    <span className="bg-brand-950/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[11px] font-mono text-brand-300 border border-brand-500/30">
-                      {MOTION_EFFECT_LABELS[activeScene?.motionEffect] || "Ken Burns"}
-                    </span>
+                    {activeScene?.mediaType === "VIDEO" || activeScene?.videoUrl || activeScene?.mediaUrl?.includes(".mp4") ? (
+                      <span className="bg-cyan-950/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[11px] font-mono text-cyan-300 border border-cyan-500/30 flex items-center gap-1 font-semibold">
+                        🎬 Vídeo IA (I2V)
+                      </span>
+                    ) : (
+                      <span className="bg-brand-950/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[11px] font-mono text-brand-300 border border-brand-500/30">
+                        {MOTION_EFFECT_LABELS[activeScene?.motionEffect] || "Ken Burns"}
+                      </span>
+                    )}
                     <span className="bg-purple-950/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[11px] font-mono text-purple-300 border border-purple-500/30 hidden sm:inline-flex items-center gap-1 font-semibold">
                       🎙️ {voiceName}
                     </span>

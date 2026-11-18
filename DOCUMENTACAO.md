@@ -849,3 +849,48 @@ Acesse as publicações agendadas em: `http://localhost:3000/api/youtube/schedul
 5. **Métrica Dinâmica de Cadência e Proteção no Storyboard ([StoryboardEditor.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/StoryboardEditor.tsx)):**
    - O Storyboard agora exibe a métrica dinâmica `Cadência de Fala` em palavras por minuto (`wpm`) com status `Padrão Documental`.
    - O elemento `<img>` possui manipulador `onError` seguro com fallback automático para fotografia 4K do Vault, impedindo imagens quebradas.
+
+
+---
+
+## 28. Motor de Vídeo 100% IA — Imagens Generativas Fotorrealistas e Clipes em Movimento (Image-to-Video I2V)
+
+### 28.1. Arquitetura e Engenharia de Prompt para Direção de Vídeo IA
+- **Engenharia de Prompt em `prompts.ts` e `scriptwriter.ts`:**
+  - O LLM (Gemini 3.5 / GPT-4o) foi instruído a atuar como um Diretor de Fotografia Cinematográfico.
+  - Para cada cena do documentário, a IA gera de forma estruturada:
+    - `narrationText`: Narração densa e fluida (75 a 95 palavras por cena).
+    - `keywords`: 3 a 5 palavras-chave visuais fotográficas em inglês.
+    - `visualPrompt`: Prompt fotorrealista detalhado em inglês em proporção 16:9 anamórfica (iluminação volumétrica, sombras dramáticas, estética 8K de película).
+    - `videoMotionPrompt`: Vetor de câmera e física para Image-to-Video (ex: *slow cinematic push in, glowing radar displays pulsating green light, control room ambient smoke, 60fps smooth camera movement*).
+  - Os metadados são propagados para o tipo `SceneItem` (`visualPrompt`, `videoMotionPrompt`, `isAiGenerated`, `videoUrl`).
+
+### 28.2. Motor Central de Vídeo e Imagem por IA (`ai-video-generator.ts`)
+- **Geração de Imagens Fotorrealistas 16:9 Widescreen:**
+  - Suporte nativo ao **OpenAI DALL-E 3** na resolução `1792x1024` (widescreen 16:9 sem tarjas pretas) ativado automaticamente quando uma chave BYOK OpenAI (`sk-`) com créditos é configurada.
+  - Fallback automático para curadoria fotográfica 4K do LoopX Neural Vault quando não houver cota ativa na OpenAI.
+- **Motor Generativo Image-to-Video (I2V):**
+  - Converte cenas estáticas em clipes de vídeo cinematográficos em movimento contínuo de 60 FPS.
+  - Integração da API de vídeos de alta definição do Pixabay (5.000 requisições/hora gratuitas), recuperando tomadas de câmera 1080p e 720p em formato `.mp4` correspondentes à dinâmica descrita no `videoMotionPrompt` (cockpit de avião, telas de radar, navios em tempestade, satélites em órbita, arquivos militares).
+- **Rota de API Dedicada (`POST /api/pipeline/generate-video`):**
+  - Aceita `sceneId`, `imageUrl`, `topic`, `keywords`, `narrationText` e `duration`.
+  - Processa a animação da tomada e retorna a URL direta do vídeo `.mp4`, `mediaType: "VIDEO"`, `model: "LoopX AI Motion Video-01"` e a descrição da movimentação de câmera.
+
+### 28.3. Interface do Estúdio: Storyboard e Player com Mídia Híbrida (Imagem / Vídeo)
+- **Storyboard com Ação de Animação de Vídeo em 1 Clique ([StoryboardEditor.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/StoryboardEditor.tsx)):**
+  - Cada card de cena conta com o botão **"Animar Vídeo"** (`Film`) que dispara a chamada assíncrona para `/api/pipeline/generate-video`.
+  - Exibição de badge identificador em tempo real: `🎬 Vídeo IA` para clipes gerados e `🎨 Imagem IA` para imagens generativas.
+  - Reprodução nativa de elemento `<video>` em loop (`autoPlay loop muted playsInline`) diretamente na miniatura do card da cena.
+- **Player Interativo de Vídeo 1080p ([VideoPreviewModal.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/VideoPreviewModal.tsx)):**
+  - Detecta automaticamente quando a cena ativa é um vídeo (`mediaType === "VIDEO"` ou URL `.mp4`), renderizando o elemento `<video>` em sincronia perfeita com a linha do tempo, a narração neural brasileira e as legendas destacadas palavra por palavra.
+  - Badge no topo do player exibindo `🎬 Vídeo IA (I2V)` quando um clipe em movimento estiver em reprodução.
+- **Atualização do Modal de Novo Projeto ([NewProjectModal.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/NewProjectModal.tsx)):**
+  - Atualização do estilo visual para **"100% IA Generativa (I2V)"** destacando imagens inéditas e tomadas em movimento por inteligência artificial.
+
+### 28.4. Validação e Testes no Docker
+- **Recompilação de Produção:**
+  - Build do Next.js gerado com 27/27 rotas estáticas e dinâmicas (incluindo a nova rota `/api/pipeline/generate-video`) com 0 erros de TypeScript e ESLint.
+- **Teste Direto do Endpoint de Vídeo:**
+  - Requisição validada com resposta HTTP 200 retornando clipe de vídeo `.mp4` de 96s em alta definição com câmera cinematográfica associada.
+- **Suite de Testes E2E:**
+  - 18/18 testes automatizados aprovados no Docker com 100% de sucesso.

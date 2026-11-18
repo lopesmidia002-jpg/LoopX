@@ -72,8 +72,10 @@ Retorne estritamente um JSON no formato:
   "scenes": [
     {
       "sceneOrder": 1,
-      "narrationText": "Texto completo e denso da narração desta cena com alta tensão e suspense (65 a 90 palavras)...",
+      "narrationText": "Texto completo e denso da narração desta cena com alta tensão e suspense (75 a 95 palavras)...",
       "keywords": ["precise visual keyword 1", "precise visual keyword 2", "cinematic shot description"],
+      "visualPrompt": "Detailed cinematic 8k photorealistic prompt in English for DALL-E/Midjourney representing this scene with dramatic lighting, 16:9 widescreen composition, no text or watermark",
+      "videoMotionPrompt": "Cinematic camera movement and physics description in English (e.g. slow atmospheric drone zoom forward, volumetric mist drifting across ruins)",
       "estimatedSeconds": 40
     }
   ]
@@ -136,6 +138,9 @@ Retorne estritamente um JSON no formato:
                 });
                 usedMediaUrls.add(mediaUrl);
 
+                const visualPrompt = sc.visualPrompt || (sc.keywords ? sc.keywords.join(", ") : topic);
+                const videoMotionPrompt = sc.videoMotionPrompt || "Cinematic slow zoom forward with volumetric atmosphere and 4k photorealism";
+
                 scenes.push({
                   id: `sc-ai-${idx + 1}`,
                   sceneOrder: idx + 1,
@@ -146,6 +151,9 @@ Retorne estritamente um JSON no formato:
                   durationSeconds: duration,
                   keywords: sc.keywords || ["dark mystery", "cinematic footage"],
                   subtitles: generateWordTimestamps(denseNarration, duration),
+                  visualPrompt,
+                  videoMotionPrompt,
+                  isAiGenerated: visualStyle === "AI_GENERATED",
                 });
               }
 
@@ -491,6 +499,9 @@ async function generateDeterministicScript(
     });
     usedMediaUrls.add(mediaUrl);
 
+    const visualPrompt = item.keywords.join(", ") + ", cinematic 8k, photorealistic atmospheric lighting, 16:9 anamorphic lens, master cinematography";
+    const videoMotionPrompt = "Slow cinematic tracking shot with volumetric mist and dramatic lighting";
+
     scenes.push({
       id: `sc-engine-${idx + 1}`,
       sceneOrder: idx + 1,
@@ -501,6 +512,9 @@ async function generateDeterministicScript(
       durationSeconds: durationPerScene,
       keywords: item.keywords,
       subtitles: generateWordTimestamps(denseNarration, durationPerScene),
+      visualPrompt,
+      videoMotionPrompt,
+      isAiGenerated: visualStyle === "AI_GENERATED",
     });
   }
 

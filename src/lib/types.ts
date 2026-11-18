@@ -43,6 +43,10 @@ export interface SceneItem {
   durationSeconds: number;
   keywords: string[];
   subtitles?: { word: string; start: number; end: number }[];
+  visualPrompt?: string;
+  videoMotionPrompt?: string;
+  isAiGenerated?: boolean;
+  videoUrl?: string;
 }
 
 export interface PlanPricing {

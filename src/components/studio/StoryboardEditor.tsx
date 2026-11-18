@@ -63,6 +63,7 @@ export default function StoryboardEditor({
   const [modalTab, setModalTab] = useState<"AI" | "STOCK">("AI");
   const [aiPromptInput, setAiPromptInput] = useState("");
   const [generatingAiImageSceneId, setGeneratingAiImageSceneId] = useState<string | null>(null);
+  const [animatingVideoSceneId, setAnimatingVideoSceneId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchingMedia, setSearchingMedia] = useState(false);
   const [curatedResults, setCuratedResults] = useState<string[]>(SAMPLE_MEDIA_LIBRARY);
@@ -162,6 +163,42 @@ export default function StoryboardEditor({
       console.error("Erro ao gerar imagem por IA:", e);
     } finally {
       setGeneratingAiImageSceneId(null);
+    }
+  };
+
+  // Animar cena estática transformando em clipe de vídeo HD em movimento (Image-to-Video)
+  const handleGenerateVideoForScene = async (sceneId: string) => {
+    const targetScene = scenes.find((s) => s.id === sceneId);
+    if (!targetScene) return;
+
+    try {
+      setAnimatingVideoSceneId(sceneId);
+      const res = await fetch("/api/pipeline/generate-video", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sceneId: targetScene.id,
+          imageUrl: targetScene.mediaUrl,
+          topic: topicTitle || "Documentário Dark",
+          keywords: targetScene.keywords,
+          narrationText: targetScene.narrationText,
+          sceneIndex: targetScene.sceneOrder - 1,
+          duration: targetScene.durationSeconds || 8,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.videoUrl) {
+        onUpdateScene(sceneId, {
+          mediaUrl: data.videoUrl,
+          videoUrl: data.videoUrl,
+          mediaType: "VIDEO",
+          isAiGenerated: true,
+        });
+      }
+    } catch (e) {
+      console.error("Erro ao animar cena com IA:", e);
+    } finally {
+      setAnimatingVideoSceneId(null);
     }
   };
 
@@ -376,11 +413,22 @@ export default function StoryboardEditor({
             <div>
               {/* Scene Header */}
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-mono font-bold text-brand-300 bg-brand-500/10 px-2.5 py-0.5 rounded-md border border-brand-500/20">
-                  Cena 0{scene.sceneOrder} • {scene.durationSeconds.toFixed(1)}s
-                </span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-xs font-mono font-bold text-brand-300 bg-brand-500/10 px-2.5 py-0.5 rounded-md border border-brand-500/20">
+                    Cena 0{scene.sceneOrder} • {scene.durationSeconds.toFixed(1)}s
+                  </span>
+                  {scene.mediaType === "VIDEO" || scene.videoUrl || scene.mediaUrl?.includes(".mp4") ? (
+                    <span className="text-[10px] font-mono font-bold text-cyan-300 bg-cyan-500/15 px-2 py-0.5 rounded-md border border-cyan-500/30 flex items-center gap-1">
+                      <Film className="w-2.5 h-2.5" /> 🎬 Vídeo IA
+                    </span>
+                  ) : scene.isAiGenerated ? (
+                    <span className="text-[10px] font-mono font-bold text-purple-300 bg-purple-500/15 px-2 py-0.5 rounded-md border border-purple-500/30 flex items-center gap-1">
+                      <Sparkles className="w-2.5 h-2.5" /> 🎨 Imagem IA
+                    </span>
+                  ) : null}
+                </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 flex-wrap justify-end">
                   {/* TTS Voice preview button */}
                   <button
                     onClick={() => handlePlaySceneAudio(scene.id, scene.narrationText)}
@@ -390,12 +438,27 @@ export default function StoryboardEditor({
                     <Volume2 className={`w-3.5 h-3.5 ${playingAudioSceneId === scene.id ? "text-brand-400 animate-pulse" : ""}`} />
                   </button>
 
+                  {/* Animate to Video button (I2V) */}
+                  <button
+                    onClick={() => handleGenerateVideoForScene(scene.id)}
+                    disabled={animatingVideoSceneId === scene.id}
+                    className="text-xs font-semibold text-cyan-300 hover:text-white flex items-center gap-1 bg-[#0f232c] hover:bg-[#153442] px-2.5 py-1 rounded-lg border border-cyan-500/30 transition-colors disabled:opacity-50"
+                    title="Transformar esta cena em clipe de vídeo cinematográfico em movimento com IA"
+                  >
+                    {animatingVideoSceneId === scene.id ? (
+                      <Loader2 className="w-3 h-3 text-cyan-400 animate-spin" />
+                    ) : (
+                      <Film className="w-3 h-3 text-cyan-400" />
+                    )}
+                    <span>Animar Vídeo</span>
+                  </button>
+
                   {/* Quick AI Image generation button */}
                   <button
                     onClick={() => handleGenerateAiImageForScene(scene.id)}
                     disabled={generatingAiImageSceneId === scene.id}
                     className="text-xs font-semibold text-purple-300 hover:text-white flex items-center gap-1 bg-[#1e152e] hover:bg-[#2a1c42] px-2.5 py-1 rounded-lg border border-purple-500/30 transition-colors disabled:opacity-50"
-                    title="Pintar nova imagem inédita com IA (Flux) para esta cena"
+                    title="Pintar nova imagem inédita com IA para esta cena"
                   >
                     {generatingAiImageSceneId === scene.id ? (
                       <Loader2 className="w-3 h-3 text-purple-400 animate-spin" />
@@ -415,31 +478,56 @@ export default function StoryboardEditor({
                     className="text-xs font-semibold text-brand-300 hover:text-white flex items-center gap-1 bg-[#141923] px-2.5 py-1 rounded-lg border border-surface-border transition-colors"
                   >
                     <RefreshCw className="w-3 h-3" />
-                    <span>Trocar Mídia</span>
+                    <span>Trocar</span>
                   </button>
                 </div>
               </div>
 
-              {/* Media Thumbnail Container with Ken Burns */}
+              {/* Media Thumbnail Container with Ken Burns / Video Playback */}
               <div className="relative aspect-video rounded-xl overflow-hidden border border-surface-border bg-black mb-4 group">
-                <img
-                  src={scene.mediaUrl}
-                  alt={`Cena ${scene.sceneOrder}`}
-                  className="w-full h-full object-cover ken-burns-active"
-                  onError={(e) => {
-                    const target = e.currentTarget;
-                    const safeFallback = "https://images.unsplash.com/photo-1506452305024-9d3f02d1c9b5?auto=format&fit=crop&w=1920&q=80";
-                    if (target.src !== safeFallback) {
-                      target.src = safeFallback;
-                    }
-                  }}
-                />
+                {scene.mediaType === "VIDEO" || scene.videoUrl || scene.mediaUrl?.includes(".mp4") ? (
+                  <video
+                    key={scene.videoUrl || scene.mediaUrl}
+                    src={scene.videoUrl || scene.mediaUrl}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <img
+                    src={scene.mediaUrl}
+                    alt={`Cena ${scene.sceneOrder}`}
+                    className="w-full h-full object-cover ken-burns-active"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      const safeFallback = "https://images.unsplash.com/photo-1506452305024-9d3f02d1c9b5?auto=format&fit=crop&w=1920&q=80";
+                      if (target.src !== safeFallback) {
+                        target.src = safeFallback;
+                      }
+                    }}
+                  />
+                )}
 
                 <div className="absolute top-2 left-2 bg-black/80 backdrop-blur-md px-2 py-0.5 rounded text-[10px] text-white border border-white/10 font-mono">
-                  {MOTION_EFFECT_LABELS[scene.motionEffect]}
+                  {scene.mediaType === "VIDEO" || scene.videoUrl || scene.mediaUrl?.includes(".mp4") ? "60 FPS Clipa Vídeo" : MOTION_EFFECT_LABELS[scene.motionEffect]}
                 </div>
 
                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                  <button
+                    onClick={() => handleGenerateVideoForScene(scene.id)}
+                    disabled={animatingVideoSceneId === scene.id}
+                    className="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shadow-lg flex items-center gap-1.5 disabled:opacity-50"
+                    title="Animar clipe com IA"
+                  >
+                    {animatingVideoSceneId === scene.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Film className="w-3.5 h-3.5" />
+                    )}
+                    <span>Animar Vídeo</span>
+                  </button>
                   <button
                     onClick={() => handleGenerateAiImageForScene(scene.id)}
                     disabled={generatingAiImageSceneId === scene.id}
@@ -450,7 +538,7 @@ export default function StoryboardEditor({
                     ) : (
                       <Sparkles className="w-3.5 h-3.5" />
                     )}
-                    <span>Gerar com IA</span>
+                    <span>Imagem IA</span>
                   </button>
                   <button
                     onClick={() => {
