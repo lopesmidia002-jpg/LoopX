@@ -1,6 +1,7 @@
 import { SYSTEM_DOCUMENTARY_WRITER_PROMPT, SYSTEM_TOP10_WRITER_PROMPT } from "./prompts";
 import { ResearchResult } from "./researcher";
 import { SceneItem, VideoFormat, Language, MotionEffect } from "../types";
+import { getCuratedMediaForScene } from "../pipeline/media-curator";
 
 export interface ScriptGenerationResult {
   title: string;
@@ -44,7 +45,7 @@ export async function generateCinematicScript(params: {
 
   // Se o usuário já forneceu um roteiro bruto, faz a segmentação estruturada
   if (customScript && customScript.trim().length > 50) {
-    return processCustomScriptToScenes(topic, customScript, format, language);
+    return await processCustomScriptToScenes(topic, customScript, format, language);
   }
 
   // Se houver OpenAI configurada, gera roteiro cinematográfico via LLM
@@ -80,24 +81,33 @@ export async function generateCinematicScript(params: {
       if (response.ok) {
         const data = await response.json();
         const parsed = JSON.parse(data.choices[0].message.content);
+        const rawScenes = parsed.scenes || [];
 
-        const scenes: SceneItem[] = (parsed.scenes || []).map((sc: any, idx: number) => {
-          const narration = sc.narrationText || "";
-          const words = narration.split(/\s+/).filter(Boolean).length;
-          const duration = Math.max(5.5, Number(sc.estimatedSeconds) || words * 0.45);
+        const scenes: SceneItem[] = await Promise.all(
+          rawScenes.map(async (sc: any, idx: number) => {
+            const narration = sc.narrationText || "";
+            const words = narration.split(/\s+/).filter(Boolean).length;
+            const duration = Math.max(5.5, Number(sc.estimatedSeconds) || words * 0.45);
+            const mediaUrl = await getCuratedMediaForScene({
+              topic,
+              keywords: sc.keywords || [topic],
+              sceneIndex: idx,
+              totalScenes: rawScenes.length,
+            });
 
-          return {
-            id: `sc-ai-${idx + 1}`,
-            sceneOrder: idx + 1,
-            narrationText: narration,
-            mediaUrl: SAMPLE_CURATED_MEDIA[idx % SAMPLE_CURATED_MEDIA.length],
-            mediaType: "IMAGE",
-            motionEffect: MOTION_EFFECTS_SEQUENCE[idx % MOTION_EFFECTS_SEQUENCE.length],
-            durationSeconds: parseFloat(duration.toFixed(1)),
-            keywords: sc.keywords || ["dark mystery", "cinematic footage"],
-            subtitles: generateWordTimestamps(narration, duration),
-          };
-        });
+            return {
+              id: `sc-ai-${idx + 1}`,
+              sceneOrder: idx + 1,
+              narrationText: narration,
+              mediaUrl,
+              mediaType: "IMAGE",
+              motionEffect: MOTION_EFFECTS_SEQUENCE[idx % MOTION_EFFECTS_SEQUENCE.length],
+              durationSeconds: parseFloat(duration.toFixed(1)),
+              keywords: sc.keywords || ["dark mystery", "cinematic footage"],
+              subtitles: generateWordTimestamps(narration, duration),
+            };
+          })
+        );
 
         if (scenes.length > 0) {
           const totalDuration = scenes.reduce((acc, s) => acc + s.durationSeconds, 0);
@@ -120,37 +130,45 @@ export async function generateCinematicScript(params: {
   }
 
   // Motor Narrativo de Alta Retenção Interno
-  return generateDeterministicScript(topic, format, language, targetDurationMinutes, researchData);
+  return await generateDeterministicScript(topic, format, language, targetDurationMinutes, researchData);
 }
 
-function processCustomScriptToScenes(
+async function processCustomScriptToScenes(
   topic: string,
   rawScript: string,
   format: VideoFormat,
   language: Language
-): ScriptGenerationResult {
+): Promise<ScriptGenerationResult> {
   // Quebra por parágrafos ou pontos finais
   const paragraphs = rawScript
     .split(/\n\n+|\.\s+/)
     .map((p) => p.trim())
     .filter((p) => p.length > 20);
 
-  const scenes: SceneItem[] = paragraphs.map((text, idx) => {
-    const words = text.split(/\s+/).length;
-    const duration = Math.max(5.0, words * 0.42);
+  const scenes: SceneItem[] = await Promise.all(
+    paragraphs.map(async (text, idx) => {
+      const words = text.split(/\s+/).length;
+      const duration = Math.max(5.0, words * 0.42);
+      const mediaUrl = await getCuratedMediaForScene({
+        topic,
+        keywords: [topic, "documentary archive"],
+        sceneIndex: idx,
+        totalScenes: paragraphs.length,
+      });
 
-    return {
-      id: `sc-custom-${idx + 1}`,
-      sceneOrder: idx + 1,
-      narrationText: text.endsWith(".") ? text : text + ".",
-      mediaUrl: SAMPLE_CURATED_MEDIA[idx % SAMPLE_CURATED_MEDIA.length],
-      mediaType: "IMAGE",
-      motionEffect: MOTION_EFFECTS_SEQUENCE[idx % MOTION_EFFECTS_SEQUENCE.length],
-      durationSeconds: parseFloat(duration.toFixed(1)),
-      keywords: ["documentary archive", "historical footage", "cinematic mystery"],
-      subtitles: generateWordTimestamps(text, duration),
-    };
-  });
+      return {
+        id: `sc-custom-${idx + 1}`,
+        sceneOrder: idx + 1,
+        narrationText: text.endsWith(".") ? text : text + ".",
+        mediaUrl,
+        mediaType: "IMAGE",
+        motionEffect: MOTION_EFFECTS_SEQUENCE[idx % MOTION_EFFECTS_SEQUENCE.length],
+        durationSeconds: parseFloat(duration.toFixed(1)),
+        keywords: ["documentary archive", "historical footage", "cinematic mystery"],
+        subtitles: generateWordTimestamps(text, duration),
+      };
+    })
+  );
 
   const totalDuration = scenes.reduce((acc, s) => acc + s.durationSeconds, 0);
   const totalWords = scenes.reduce((acc, s) => acc + s.narrationText.split(/\s+/).length, 0);
@@ -166,13 +184,13 @@ function processCustomScriptToScenes(
   };
 }
 
-function generateDeterministicScript(
+async function generateDeterministicScript(
   topic: string,
   format: VideoFormat,
   language: Language,
   targetDurationMinutes: number,
   research: ResearchResult
-): ScriptGenerationResult {
+): Promise<ScriptGenerationResult> {
   const isDoc = format === "DOCUMENTARY";
 
   const rawScenesData: { narration: string; keywords: string[]; effect: MotionEffect }[] = isDoc
@@ -251,22 +269,30 @@ function generateDeterministicScript(
         },
       ];
 
-  const scenes: SceneItem[] = rawScenesData.map((item, idx) => {
-    const words = item.narration.split(/\s+/).length;
-    const duration = Math.max(6.0, words * 0.44);
+  const scenes: SceneItem[] = await Promise.all(
+    rawScenesData.map(async (item, idx) => {
+      const words = item.narration.split(/\s+/).length;
+      const duration = Math.max(6.0, words * 0.44);
+      const mediaUrl = await getCuratedMediaForScene({
+        topic,
+        keywords: item.keywords,
+        sceneIndex: idx,
+        totalScenes: rawScenesData.length,
+      });
 
-    return {
-      id: `sc-engine-${idx + 1}`,
-      sceneOrder: idx + 1,
-      narrationText: item.narration,
-      mediaUrl: SAMPLE_CURATED_MEDIA[idx % SAMPLE_CURATED_MEDIA.length],
-      mediaType: "IMAGE",
-      motionEffect: item.effect,
-      durationSeconds: parseFloat(duration.toFixed(1)),
-      keywords: item.keywords,
-      subtitles: generateWordTimestamps(item.narration, duration),
-    };
-  });
+      return {
+        id: `sc-engine-${idx + 1}`,
+        sceneOrder: idx + 1,
+        narrationText: item.narration,
+        mediaUrl,
+        mediaType: "IMAGE",
+        motionEffect: item.effect,
+        durationSeconds: parseFloat(duration.toFixed(1)),
+        keywords: item.keywords,
+        subtitles: generateWordTimestamps(item.narration, duration),
+      };
+    })
+  );
 
   const totalDuration = scenes.reduce((acc, s) => acc + s.durationSeconds, 0);
   const totalWords = scenes.reduce((acc, s) => acc + s.narrationText.split(/\s+/).length, 0);

@@ -158,6 +158,7 @@ export default function StudioPage() {
                 progressPercentage={pipelineProgress}
                 onComplete={() => setStudioStep("STORYBOARD")}
                 topicTitle={topicTitle}
+                scenes={scenes}
               />
             )}
 

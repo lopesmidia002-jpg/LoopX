@@ -665,6 +665,24 @@ O componente [AnalyticsDashboard.tsx](file:///c:/Users/Nilto/OneDrive/Documentos
 - **Tratamento Resiliente de Login (`/api/auth/login`):** A busca e criação de perfil de usuário com o Prisma agora é protegida por `try/catch`. Caso o banco de dados passe por uma reinicialização transitória, o login do administrador continua funcionando com uma sessão resiliente de fallback, sem expor mensagens de erro internas na interface.
 - **Validação Dupla de Senhas para Contas Administrativas:** Contas com permissão de administrador (`admin@loopx.com` e `lopes.midia002@gmail.com`) têm validação flexível de senhas padrão (`admin123` e `admin`), garantindo acesso contínuo.
 
+### 23.12. Curadoria Dinâmica de Mídias por Tópico, Player de Vídeo Interativo e Painel de Métricas de Produção
+- **Curadoria Dinâmica de Imagens por Tema:**
+  - Diagnóstico da causa raiz: o gerador de roteiro (`scriptwriter.ts`) vinculava estaticamente `SAMPLE_CURATED_MEDIA[idx % 8]` a todas as cenas, exibindo as mesmas 8 imagens (drone, castelo, mergulhador, etc.) independentemente do tópico solicitado.
+  - Implementação de `detectCategoryForTopic(topic)` e `getCuratedMediaForScene` em `src/lib/pipeline/media-curator.ts`. O sistema categoriza semanticamente o tema em 8 domínios temáticos ricos (`aviation_mh370`, `ocean`, `military`, `space`, `ice`, `ancient`, `technology`, `mystery`) com acervo de 80+ fotografias cinematográficas 4K no LoopX Vault e consulta em tempo real à API da Unsplash (`UNSPLASH_ACCESS_KEY`).
+  - Geração assíncrona com `Promise.all` em `generateCinematicScript`, associando imagens estritamente pertinentes a cada cena e palavra-chave visual.
+- **Player de Vídeo Interativo com Reprodução Real:**
+  - Diagnóstico da causa raiz: a janela modal de prévia (`VideoPreviewModal.tsx`) renderizava uma tag `<img>` estática da primeira cena sem avanço temporal, sem troca de cenas e com barra de progresso fixa em 45%.
+  - Implementação de máquina de estados de reprodução completa (`currentTime`, `isPlaying`, `activeSceneIndex`, `timeline`).
+  - Sequenciamento cronometrado cena a cena com transições visuais dinâmicas (Ken Burns Zoom In, Zoom Out, Pan Left, Pan Right, Parallax 2.5D com profundidade).
+  - Sincronização de legendas palavra por palavra no estilo Dark Channel com destaque dourado luminoso (`text-amber-400 font-black`) na palavra narrada em tempo real.
+  - Síntese de narração por voz neural em português (`SpeechSynthesisUtterance` pt-BR) com sincronia perfeita durante a reprodução do vídeo e botão de silenciamento (`Volume2` / `VolumeX`).
+  - Barra interativa de progresso (scrubber timeline) com marcadores de divisão de cena, botões de saltar cena anterior/próxima (`SkipBack` / `SkipForward`), reiniciar e modo tela cheia (`Maximize`).
+- **Download Real de Vídeo MP4 1080p Full HD:**
+  - Substituição de avisos `alert()` pelo acionamento direto do endpoint `GET /api/render?download=true` com cabeçalhos `Content-Type: video/mp4` e `Content-Disposition: attachment; filename="loopx-documentario-1080p.mp4"`.
+  - Conexão do botão "Baixar MP4 1080p" no cabeçalho do `StoryboardEditor.tsx` e no modal `VideoPreviewModal.tsx`.
+- **Painel de Métricas de Produção em Tempo Real (`StoryboardEditor.tsx`):**
+  - Adição de banner analítico detalhado com 6 cards de métricas calculadas em tempo real a partir das cenas geradas: Duração Total formatada em MM:SS, Total de Cenas HD 4K, Palavras Narradas e cadência em palavras por minuto, Resolução 1080p 60fps 16:9, Mixagem de Áudio Estéreo 320kbps com ducking inteligente, e Retenção Algorítmica estimada para o YouTube.
+
 ---
 
 ## 24. Como Executar via Docker

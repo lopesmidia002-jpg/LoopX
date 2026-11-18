@@ -24,6 +24,7 @@ interface PipelineStatusProps {
   progressPercentage: number;
   onComplete: () => void;
   topicTitle: string;
+  scenes?: SceneItem[];
 }
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -42,6 +43,7 @@ export default function PipelineStatus({
   progressPercentage,
   onComplete,
   topicTitle,
+  scenes,
 }: PipelineStatusProps) {
   const [logs, setLogs] = useState<string[]>([
     "Inicializando cluster de processamento GPU...",
@@ -188,7 +190,7 @@ export default function PipelineStatus({
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              {INITIAL_DEMO_SCENES.map((scene, idx) => {
+              {(scenes && scenes.length > 0 ? scenes.slice(0, 4) : INITIAL_DEMO_SCENES).map((scene, idx) => {
                 const isSceneVisible = currentStage >= 3;
                 return (
                   <div

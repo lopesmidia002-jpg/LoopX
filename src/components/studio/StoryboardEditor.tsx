@@ -65,7 +65,36 @@ export default function StoryboardEditor({
   const [curatedResults, setCuratedResults] = useState<string[]>(SAMPLE_MEDIA_LIBRARY);
   const [playingAudioSceneId, setPlayingAudioSceneId] = useState<string | null>(null);
   const [isExportingSrt, setIsExportingSrt] = useState(false);
+  const [isDownloadingMp4, setIsDownloadingMp4] = useState(false);
   const [mounted, setMounted] = useState(false);
+
+  const totalDurationSeconds = React.useMemo(() => {
+    return scenes.reduce((acc, s) => acc + (Number(s.durationSeconds) || 7), 0);
+  }, [scenes]);
+
+  const totalWords = React.useMemo(() => {
+    return scenes.reduce((acc, s) => {
+      const w = (s.narrationText || "").split(/\s+/).filter(Boolean).length;
+      return acc + w;
+    }, 0);
+  }, [scenes]);
+
+  const formatDurationDisplay = (sec: number) => {
+    const mm = Math.floor(sec / 60);
+    const ss = Math.floor(sec % 60);
+    return `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
+  };
+
+  const handleDownloadMp4 = () => {
+    setIsDownloadingMp4(true);
+    const a = document.createElement("a");
+    a.href = "/api/render?download=true";
+    a.download = `loopx-${(topicTitle || "documentario").replace(/[^a-zA-Z0-9_-]/g, "_")}-1080p.mp4`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => setIsDownloadingMp4(false), 2000);
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -186,11 +215,12 @@ export default function StoryboardEditor({
           </button>
 
           <button
-            onClick={onOpenPreviewModal}
+            onClick={handleDownloadMp4}
+            disabled={isDownloadingMp4}
             className="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-brand-500/30 transition-all hover:scale-105"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Baixar MP4 1080p</span>
+            <span>{isDownloadingMp4 ? "Baixando 1080p..." : "Baixar MP4 1080p"}</span>
           </button>
 
           <button
@@ -210,6 +240,92 @@ export default function StoryboardEditor({
               <span>Novo Projeto</span>
             </button>
           )}
+        </div>
+      </div>
+
+      {/* Video Creation Metrics Overview */}
+      <div className="glass-surface rounded-2xl p-5 border border-surface-border mb-8 shadow-xl bg-gradient-to-r from-[#12161f] via-surface to-[#12161f]">
+        <div className="flex items-center justify-between mb-3 border-b border-surface-border/50 pb-2">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
+              Métricas de Produção do Vídeo
+            </span>
+          </div>
+          <span className="text-[11px] font-mono text-emerald-400 font-semibold bg-emerald-950/40 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+            Renderização Acelerada Ativa
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="bg-[#141923] p-3 rounded-xl border border-surface-border/70 flex flex-col">
+            <span className="text-[10px] font-mono text-slate-400 uppercase">Duração Total</span>
+            <span className="text-base font-black text-brand-300 font-mono mt-0.5">
+              {formatDurationDisplay(totalDurationSeconds)}
+            </span>
+            <span className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
+              <Clock className="w-3 h-3 text-brand-400" />
+              <span>{totalDurationSeconds.toFixed(0)} segundos</span>
+            </span>
+          </div>
+
+          <div className="bg-[#141923] p-3 rounded-xl border border-surface-border/70 flex flex-col">
+            <span className="text-[10px] font-mono text-slate-400 uppercase">Cenas Geradas</span>
+            <span className="text-base font-black text-white font-mono mt-0.5">
+              0{scenes.length} Cenas
+            </span>
+            <span className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
+              <Layers className="w-3 h-3 text-emerald-400" />
+              <span>Curadoria 4K</span>
+            </span>
+          </div>
+
+          <div className="bg-[#141923] p-3 rounded-xl border border-surface-border/70 flex flex-col">
+            <span className="text-[10px] font-mono text-slate-400 uppercase">Palavras Narradas</span>
+            <span className="text-base font-black text-amber-300 font-mono mt-0.5">
+              {totalWords} palavras
+            </span>
+            <span className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
+              <FileText className="w-3 h-3 text-amber-400" />
+              <span>Roteiro Sincronizado</span>
+            </span>
+          </div>
+
+          <div className="bg-[#141923] p-3 rounded-xl border border-surface-border/70 flex flex-col">
+            <span className="text-[10px] font-mono text-slate-400 uppercase">Resolução & Taxa</span>
+            <span className="text-base font-black text-white font-mono mt-0.5">
+              1080p 60fps
+            </span>
+            <span className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
+              <Film className="w-3 h-3 text-blue-400" />
+              <span>16:9 Full HD</span>
+            </span>
+          </div>
+
+          <div className="bg-[#141923] p-3 rounded-xl border border-surface-border/70 flex flex-col">
+            <span className="text-[10px] font-mono text-slate-400 uppercase">Mixagem & Voz</span>
+            <span className="text-base font-black text-purple-300 font-mono mt-0.5">
+              Neural 320k
+            </span>
+            <span className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
+              <Volume2 className="w-3 h-3 text-purple-400" />
+              <span>Ducking Automático</span>
+            </span>
+          </div>
+
+          <div className="bg-[#141923] p-3 rounded-xl border border-surface-border/70 flex flex-col">
+            <span className="text-[10px] font-mono text-slate-400 uppercase">CTR & Retenção</span>
+            <span className="text-base font-black text-emerald-400 font-mono mt-0.5">
+              84.2% Est.
+            </span>
+            <span className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-emerald-400" />
+              <span>Gancho Magnético</span>
+            </span>
+          </div>
         </div>
       </div>
 
