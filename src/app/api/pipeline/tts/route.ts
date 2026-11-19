@@ -4,7 +4,7 @@ import { synthesizeNeuralVoice } from "@/lib/pipeline/tts-engine";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { text, voiceId, language } = body;
+    const { text, voiceId, language, customApiKey } = body;
 
     if (!text || typeof text !== "string") {
       return NextResponse.json(
@@ -17,6 +17,7 @@ export async function POST(req: Request) {
       text,
       voiceId,
       language,
+      customApiKey,
     });
 
     return NextResponse.json({

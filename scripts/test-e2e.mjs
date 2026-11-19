@@ -612,6 +612,39 @@ async function runTestSuite() {
     if (!delRes.ok) throw new Error(`Status deletar usuário de teste: ${delRes.status}`);
   });
 
+  // 19. Motor de Áudio Cinematográfico, Ducking & Efeitos Sonoros (SFX)
+  await test("19. Motor de Áudio, Ducking & SFX (/api/pipeline/audio-tracks)", async () => {
+    // 19.1 Listagem de trilhas sonoras e SFX
+    const res = await fetch(`${BASE_URL}/api/pipeline/audio-tracks`);
+    if (!res.ok) throw new Error(`Status audio-tracks: ${res.status}`);
+    const data = await res.json();
+    if (!data.success || !Array.isArray(data.tracks) || data.tracks.length === 0) {
+      throw new Error("Trilhas sonoras cinematográficas não retornadas");
+    }
+    if (!Array.isArray(data.sfxLibrary) || data.sfxLibrary.length === 0) {
+      throw new Error("Biblioteca de efeitos sonoros SFX não retornada");
+    }
+
+    // 19.2 Sugestão inteligente de SFX e cálculo de Audio Ducking
+    const postRes = await fetch(`${BASE_URL}/api/pipeline/audio-tracks`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        keywords: ["radar", "militar"],
+        narrationText: "O transponder foi desligado e o radar militar perdeu o contato.",
+        isSpeaking: true,
+      }),
+    });
+    if (!postRes.ok) throw new Error(`Status POST audio-tracks: ${postRes.status}`);
+    const postData = await postRes.json();
+    if (!postData.success || !postData.suggestedSfx || !postData.ducking) {
+      throw new Error("Falha na sugestão de SFX ou cálculo de Ducking");
+    }
+    if (postData.ducking.bgmVolume > 0.20) {
+      throw new Error(`Audio Ducking incorreto durante fala: ${postData.ducking.bgmVolume}`);
+    }
+  });
+
   console.log("\n=======================================================");
   console.log(`   RESULTADO: ${passed} PASSARAM | ${failed} FALHARAM`);
   console.log("=======================================================\n");

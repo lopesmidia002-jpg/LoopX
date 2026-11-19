@@ -894,3 +894,52 @@ Acesse as publicações agendadas em: `http://localhost:3000/api/youtube/schedul
   - Requisição validada com resposta HTTP 200 retornando clipe de vídeo `.mp4` de 96s em alta definição com câmera cinematográfica associada.
 - **Suite de Testes E2E:**
   - 18/18 testes automatizados aprovados no Docker com 100% de sucesso.
+
+
+---
+
+## 29. Estúdio Generativo Completo — Locução Neural Pro (ElevenLabs), Trilha Sonora com Audio Ducking e Efeitos Sonoros (SFX)
+
+### 29.1. Integração com Provedores de Locução Neural Avançada (ElevenLabs BYOK)
+- **Suporte Nativo ao ElevenLabs Multilingual v2:**
+  - O motor `src/lib/pipeline/tts-engine.ts` agora suporta síntese direta com o modelo **ElevenLabs Multilingual v2**, permitindo inflexão dramática cinematográfica, controle de respiração e estabilidade tonal ideais para canais dark do YouTube.
+  - Mapeamento de vozes icônicas:
+    - `pt-br-marcos-deep`: Adam (`pNInz6obpgDQGcFmaJgB`) — tom barítono grave e misterioso.
+    - `pt-br-helena-epic`: Rachel (`21m00Tcm4TlvDq8ikWAM`) — narrativa épica e expressiva.
+    - `pt-br-gabriel-suspense`: Antoni (`ErXwobaYiN019PkySvjV`) — suspense psicológico tenso.
+    - `en-us-james-documentary`: George (`JBFqnCBsd6RMkjVDRZzb`) — narração clássica investigativa.
+  - Parâmetros configurados: `stability: 0.65`, `similarity_boost: 0.85`, `style: 0.40`, `use_speaker_boost: true`.
+  - Suporte à inserção e validação de chaves BYOK no gerenciador de canais ([channel-manager.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/lib/youtube/channel-manager.ts)) e na rota `/api/pipeline/tts`.
+
+### 29.2. Motor de Áudio & Trilha Sonora Cinematográfica com Ducking Dinâmico (`audio-engine.ts`)
+- **Trilhas Sonoras Livres de Direitos Autorais para Canais Dark:**
+  - `Dark Mystery Drone`: Drones ambientais de tensão contínua e atmosfera opressiva.
+  - `Abismo Oceânico`: Sub-bass e frequências subaquáticas profundas.
+  - `Radar & Satélites`: Pulsos tecnológicos e frequências militares.
+  - `Maldições Históricas`: Ecos e ambiência sobrenatural de mistérios esquecidos.
+- **Sistema Inteligente de Audio Ducking:**
+  - Implementada a função `calculateAudioDucking`: reduz automaticamente o volume da trilha musical para **12% a 15%** enquanto o narrador neural estiver falando, garantindo clareza total da voz.
+  - Durante as transições de cena e pausas da fala, o volume da trilha eleva-se suavemente para **50% a 55%**, conferindo o impacto épico de produções de cinema e canais de topo como Magnates Media.
+- **Biblioteca de Efeitos Sonoros Diegéticos (SFX):**
+  - O motor analisa as palavras-chave e narração de cada cena (`getSuggestedSfxForScene`) para associar efeitos sonoros contextuais:
+    - `RADAR_SONAR`: Pings de radar e sonar militar.
+    - `SUB_BASS_DROP`: Queda grave de sub-bass para revelações chocantes.
+    - `CINEMATIC_RISER`: Risers de tensão crescente para investigações e arquivos confidenciais.
+    - `THUNDER_STORM`: Trovões distantes para tempestades em alto-mar.
+    - `ATMOSPHERIC_WIND`: Ruído de vento em alta altitude e pressurização de cabine.
+- **Nova Rota de API Dedicada (`/api/pipeline/audio-tracks`):**
+  - `GET`: Retorna todas as trilhas sonoras e biblioteca completa de SFX.
+  - `POST`: Calcula sugestão contextual de SFX e níveis de ducking para qualquer cena.
+
+### 29.3. Interface do Player e Storyboard
+- **Controles de Áudio no Player ([VideoPreviewModal.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/VideoPreviewModal.tsx)):**
+  - Seletor rápido de trilha sonora de fundo (`Music`) permitindo alternar entre os temas ou desativar a música.
+  - Botão de ativação/desativação de efeitos sonoros diegéticos (`Sparkles`).
+  - Badges visuais indicando em tempo real a trilha ativa, o status de **Ducking 15%** e o SFX correspondente da cena em reprodução.
+- **Central de Áudio no Storyboard ([StoryboardEditor.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/StoryboardEditor.tsx)):**
+  - Cada card exibe um badge discreto com o SFX sugerido (`🔊 SFX: Sonar`, `🔊 SFX: Sub-Bass`).
+  - O botão de pré-visualização de áudio dispara a narração em conjunto com o efeito sonoro contextual da cena.
+
+### 29.4. Validação e Testes no Docker
+- **Build de Produção:** Next.js compilado com 28/28 rotas estáticas e dinâmicas com 0 erros.
+- **Suíte E2E Atualizada:** Adicionado teste 19 cobrindo `/api/pipeline/audio-tracks`, com aprovação de 19/19 testes (100% de sucesso).

@@ -1,7 +1,7 @@
 /**
  * Motor de Narração Neural Hiper-realista (TTS)
  * Etapa 4 do Pipeline do LoopX
- * Suporte nativo a Google AI Studio (Gemini 2.0 Flash Audio) e Fallbacks
+ * Suporte nativo a ElevenLabs (BYOK), Google AI Studio (Gemini 2.0 Audio), OpenAI TTS e Fallbacks
  */
 
 import { Language } from "../types";
@@ -10,8 +10,17 @@ export interface TTSResult {
   audioUrl: string;
   durationSeconds: number;
   voiceId: string;
-  provider: "GOOGLE_AI_STUDIO" | "ELEVENLABS" | "OPENAI_TTS" | "LOOPX_NEURAL_FALLBACK";
+  provider: "ELEVENLABS" | "GOOGLE_AI_STUDIO" | "OPENAI_TTS" | "LOOPX_NEURAL_FALLBACK";
 }
+
+// Mapeamento de vozes para ElevenLabs (Multilingual v2)
+const ELEVENLABS_VOICE_MAP: Record<string, string> = {
+  "pt-br-marcos-deep": "pNInz6obpgDQGcFmaJgB", // Adam (Voz grave e profunda documental)
+  "pt-br-helena-epic": "21m00Tcm4TlvDq8ikWAM", // Rachel (Narrativa dramática e expressiva)
+  "pt-br-gabriel-suspense": "ErXwobaYiN019PkySvjV", // Antoni (Suspense misterioso e tenso)
+  "en-us-james-documentary": "JBFqnCBsd6RMkjVDRZzb", // George (American Baritone)
+  "es-la-carlos-historia": "VR6AewLTigWG4xSOukaG", // Arnold (Narrador épico)
+};
 
 // Mapeamento de vozes neurais para Google AI Studio (Gemini 2.0 Audio)
 const GOOGLE_AI_VOICE_MAP: Record<string, string> = {
@@ -30,19 +39,74 @@ const OPENAI_VOICE_MAP: Record<string, "onyx" | "fable" | "echo" | "alloy" | "sh
   "es-la-carlos-historia": "fable",
 };
 
+/**
+ * Tenta síntese neural direta com ElevenLabs Multilingual v2
+ */
+async function trySynthesizeElevenLabs(
+  text: string,
+  voiceId: string,
+  apiKey: string,
+  estimatedDuration: number
+): Promise<TTSResult | null> {
+  try {
+    const elVoiceId = ELEVENLABS_VOICE_MAP[voiceId] || voiceId || "pNInz6obpgDQGcFmaJgB";
+    const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${elVoiceId}`, {
+      method: "POST",
+      headers: {
+        Accept: "audio/mpeg",
+        "Content-Type": "application/json",
+        "xi-api-key": apiKey,
+      },
+      body: JSON.stringify({
+        text,
+        model_id: "eleven_multilingual_v2",
+        voice_settings: {
+          stability: 0.65,
+          similarity_boost: 0.85,
+          style: 0.40,
+          use_speaker_boost: true,
+        },
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (res.ok) {
+      const arrayBuffer = await res.arrayBuffer();
+      const base64Audio = Buffer.from(arrayBuffer).toString("base64");
+      return {
+        audioUrl: `data:audio/mp3;base64,${base64Audio}`,
+        durationSeconds: estimatedDuration,
+        voiceId,
+        provider: "ELEVENLABS",
+      };
+    }
+  } catch (e) {
+    console.warn("Aviso ElevenLabs TTS:", e);
+  }
+  return null;
+}
+
 export async function synthesizeNeuralVoice(params: {
   text: string;
   voiceId?: string;
   language?: Language;
+  customApiKey?: string;
 }): Promise<TTSResult> {
-  const { text, voiceId = "pt-br-marcos-deep", language = "PT_BR" } = params;
+  const { text, voiceId = "pt-br-marcos-deep", language = "PT_BR", customApiKey } = params;
   const wordCount = text.split(/\s+/).filter(Boolean).length;
   // Média de fala documental de suspense: 2.3 a 2.6 palavras por segundo
   const estimatedDuration = Math.max(5.0, parseFloat((wordCount / 2.4).toFixed(1)));
 
+  // 1. Tenta sintetizar via ElevenLabs se chave configurada
+  const elevenLabsKey = customApiKey || process.env.ELEVENLABS_API_KEY;
+  if (elevenLabsKey && elevenLabsKey.length >= 20) {
+    const elResult = await trySynthesizeElevenLabs(text, voiceId, elevenLabsKey, estimatedDuration);
+    if (elResult) return elResult;
+  }
+
   const googleApiKey = process.env.GOOGLE_AI_STUDIO_API_KEY || process.env.GEMINI_API_KEY;
 
-  // 1. Tenta sintetizar via Google AI Studio (Gemini 2.0 Flash Audio)
+  // 2. Tenta sintetizar via Google AI Studio (Gemini 2.0 Flash Audio)
   if (googleApiKey) {
     try {
       const selectedVoice = GOOGLE_AI_VOICE_MAP[voiceId] || "Fenrir";
@@ -75,6 +139,7 @@ export async function synthesizeNeuralVoice(params: {
               },
             },
           }),
+          signal: AbortSignal.timeout(10000),
         }
       );
 
@@ -98,17 +163,9 @@ export async function synthesizeNeuralVoice(params: {
     } catch (e) {
       console.warn("Aviso na chamada Google AI Studio, recorrendo ao fallback de áudio:", e);
     }
-
-    // Retorna fallback estruturado de áudio para Google AI Studio
-    return {
-      audioUrl: "https://actions.google.com/sounds/v1/science_fiction/deep_hum.ogg",
-      durationSeconds: estimatedDuration,
-      voiceId,
-      provider: "GOOGLE_AI_STUDIO",
-    };
   }
 
-  // 2. Tenta sintetizar via OpenAI TTS se houver OPENAI_API_KEY
+  // 3. Tenta sintetizar via OpenAI TTS se houver OPENAI_API_KEY
   if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.startsWith("sk-")) {
     try {
       const openAiVoice = OPENAI_VOICE_MAP[voiceId] || "onyx";
@@ -124,6 +181,7 @@ export async function synthesizeNeuralVoice(params: {
           input: text,
           speed: 0.95, // Leve desaceleração para cadência documental
         }),
+        signal: AbortSignal.timeout(12000),
       });
 
       if (response.ok) {
@@ -141,7 +199,7 @@ export async function synthesizeNeuralVoice(params: {
     }
   }
 
-  // 3. Fallback Neural Estruturado do LoopX com áudio de referência de suspense
+  // 4. Fallback Neural Estruturado do LoopX com áudio de referência de suspense
   return {
     audioUrl: "https://actions.google.com/sounds/v1/science_fiction/deep_hum.ogg",
     durationSeconds: estimatedDuration,

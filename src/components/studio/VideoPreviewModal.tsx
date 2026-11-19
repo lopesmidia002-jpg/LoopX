@@ -22,9 +22,11 @@ import {
   Maximize,
   SkipBack,
   SkipForward,
-  RotateCcw
+  RotateCcw,
+  Music
 } from "lucide-react";
 import { SceneItem, MotionEffect } from "@/lib/types";
+import { CINEMATIC_BACKGROUND_TRACKS, getSuggestedSfxForScene } from "@/lib/pipeline/audio-engine";
 import ScheduleCalendarModal from "./ScheduleCalendarModal";
 import ABTestingModal from "./ABTestingModal";
 
@@ -67,9 +69,14 @@ export default function VideoPreviewModal({
   const [neuralVoice, setNeuralVoice] = useState<SpeechSynthesisVoice | null>(null);
   const [voiceName, setVoiceName] = useState<string>("Voz Neural (pt-BR)");
   const [boundaryWordIndex, setBoundaryWordIndex] = useState<number>(0);
+  const [selectedTrackIndex, setSelectedTrackIndex] = useState<number>(0);
+  const [enableBgm, setEnableBgm] = useState<boolean>(true);
+  const [enableSfx, setEnableSfx] = useState<boolean>(true);
+  const [isDucking, setIsDucking] = useState<boolean>(false);
 
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const timelineBarRef = useRef<HTMLDivElement>(null);
+  const bgmAudioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -116,6 +123,11 @@ export default function VideoPreviewModal({
       setIsPlaying(false);
       setCurrentTime(0);
       setBoundaryWordIndex(0);
+      setIsDucking(false);
+      if (bgmAudioRef.current) {
+        bgmAudioRef.current.pause();
+        bgmAudioRef.current.currentTime = 0;
+      }
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }
@@ -158,7 +170,59 @@ export default function VideoPreviewModal({
 
   useEffect(() => {
     setBoundaryWordIndex(0);
-  }, [activeSceneIndex]);
+
+    // Efeito Sonoro (SFX) cinematográfico na transição de cena
+    if (enableSfx && isPlaying && !isMuted && activeScene) {
+      try {
+        const sfx = getSuggestedSfxForScene({
+          keywords: activeScene.keywords,
+          narrationText: activeScene.narrationText,
+          sceneIndex: activeSceneIndex,
+        });
+        if (sfx?.url) {
+          const audio = new Audio(sfx.url);
+          audio.volume = sfx.defaultVolume || 0.65;
+          audio.play().catch(() => {});
+        }
+      } catch (e) {}
+    }
+  }, [activeSceneIndex, enableSfx, isPlaying, isMuted, activeScene]);
+
+  // Gerenciamento da Trilha Sonora Cinematográfica de Fundo (BGM)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (!isOpen || !isPlaying || !enableBgm || isMuted) {
+      if (bgmAudioRef.current) {
+        bgmAudioRef.current.pause();
+      }
+      return;
+    }
+
+    const currentTrack = CINEMATIC_BACKGROUND_TRACKS[selectedTrackIndex];
+    if (!currentTrack) return;
+
+    if (!bgmAudioRef.current || bgmAudioRef.current.src !== currentTrack.url) {
+      if (bgmAudioRef.current) {
+        bgmAudioRef.current.pause();
+      }
+      const audio = new Audio(currentTrack.url);
+      audio.loop = true;
+      audio.volume = isDucking ? currentTrack.duckingVolume : currentTrack.recommendedVolume;
+      bgmAudioRef.current = audio;
+    }
+
+    bgmAudioRef.current.play().catch(() => {});
+  }, [isOpen, isPlaying, enableBgm, isMuted, selectedTrackIndex, isDucking]);
+
+  // Aplicação do Audio Ducking em tempo real no elemento de áudio
+  useEffect(() => {
+    if (!bgmAudioRef.current) return;
+    const currentTrack = CINEMATIC_BACKGROUND_TRACKS[selectedTrackIndex];
+    if (!currentTrack) return;
+    const targetVol = isDucking ? currentTrack.duckingVolume : currentTrack.recommendedVolume;
+    bgmAudioRef.current.volume = isMuted ? 0 : targetVol;
+  }, [isDucking, isMuted, selectedTrackIndex]);
 
   // Playback ticker (updates currentTime every 50ms)
   useEffect(() => {
@@ -184,6 +248,7 @@ export default function VideoPreviewModal({
 
     if (!isPlaying || isMuted) {
       window.speechSynthesis.cancel();
+      setIsDucking(false);
       return;
     }
 
@@ -197,6 +262,16 @@ export default function VideoPreviewModal({
       utterance.lang = "pt-BR";
       utterance.rate = 0.98; // Cadência medida de suspense investigativo
       utterance.pitch = 0.93; // Timbre grave e cinematográfico
+
+      utterance.onstart = () => {
+        setIsDucking(true);
+      };
+      utterance.onend = () => {
+        setIsDucking(false);
+      };
+      utterance.onerror = () => {
+        setIsDucking(false);
+      };
 
       // Sincronização nativa da palavra falada
       utterance.onboundary = (event) => {
@@ -462,6 +537,21 @@ export default function VideoPreviewModal({
                     <span className="bg-purple-950/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[11px] font-mono text-purple-300 border border-purple-500/30 hidden sm:inline-flex items-center gap-1 font-semibold">
                       🎙️ {voiceName}
                     </span>
+                    {enableBgm && (
+                      <span className="bg-indigo-950/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[11px] font-mono text-indigo-300 border border-indigo-500/30 hidden md:inline-flex items-center gap-1 font-semibold">
+                        <Music className="w-3 h-3 text-indigo-400" />
+                        <span>Trilha: {CINEMATIC_BACKGROUND_TRACKS[selectedTrackIndex]?.name.split(" ")[0]}</span>
+                        {isDucking && (
+                          <span className="text-[9px] text-amber-300 bg-amber-500/20 px-1 py-0.2 rounded font-mono">Ducking 15%</span>
+                        )}
+                      </span>
+                    )}
+                    {enableSfx && (
+                      <span className="bg-amber-950/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[11px] font-mono text-amber-300 border border-amber-500/30 hidden lg:inline-flex items-center gap-1 font-semibold">
+                        <Sparkles className="w-3 h-3 text-amber-400" />
+                        <span>SFX: {getSuggestedSfxForScene({ keywords: activeScene?.keywords, narrationText: activeScene?.narrationText, sceneIndex: activeSceneIndex }).name.split("(")[0].trim()}</span>
+                      </span>
+                    )}
                   </div>
 
                   <span className="bg-black/75 backdrop-blur-md px-2.5 py-1 rounded-lg text-xs font-mono text-emerald-400 border border-emerald-500/20 font-bold">
@@ -578,7 +668,47 @@ export default function VideoPreviewModal({
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      {/* BGM Toggle & Selector Button */}
+                      <button
+                        onClick={() => {
+                          if (!enableBgm) {
+                            setEnableBgm(true);
+                          } else {
+                            const next = selectedTrackIndex + 1;
+                            if (next >= CINEMATIC_BACKGROUND_TRACKS.length) {
+                              setEnableBgm(false);
+                              setSelectedTrackIndex(0);
+                            } else {
+                              setSelectedTrackIndex(next);
+                            }
+                          }
+                        }}
+                        className={`p-1 px-2 rounded-lg transition-colors flex items-center gap-1.5 ${
+                          enableBgm ? "bg-indigo-950/60 border border-indigo-500/30 text-indigo-300" : "hover:bg-white/10 text-slate-500"
+                        }`}
+                        title="Alternar Trilha Sonora Cinematográfica de Fundo (BGM)"
+                      >
+                        <Music className="w-3.5 h-3.5" />
+                        <span className="text-[10px] font-mono hidden sm:inline">
+                          {enableBgm ? CINEMATIC_BACKGROUND_TRACKS[selectedTrackIndex]?.name.split(" ")[0] : "Sem Trilha"}
+                        </span>
+                      </button>
+
+                      {/* SFX Toggle Button */}
+                      <button
+                        onClick={() => setEnableSfx(!enableSfx)}
+                        className={`p-1 px-2 rounded-lg transition-colors flex items-center gap-1.5 ${
+                          enableSfx ? "bg-amber-950/60 border border-amber-500/30 text-amber-300" : "hover:bg-white/10 text-slate-500"
+                        }`}
+                        title="Alternar Efeitos Sonoros Diegéticos (SFX)"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span className="text-[10px] font-mono hidden sm:inline">
+                          {enableSfx ? "SFX On" : "SFX Off"}
+                        </span>
+                      </button>
+
                       {/* Audio Mute/Unmute */}
                       <button
                         onClick={() => setIsMuted(!isMuted)}

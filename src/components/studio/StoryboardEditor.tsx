@@ -23,6 +23,7 @@ import {
   PlusCircle,
 } from "lucide-react";
 import { SceneItem, MotionEffect } from "@/lib/types";
+import { getSuggestedSfxForScene } from "@/lib/pipeline/audio-engine";
 
 interface StoryboardEditorProps {
   scenes: SceneItem[];
@@ -223,13 +224,30 @@ export default function StoryboardEditor({
     }
   };
 
-  // Ouvir narração neural da cena com TTS
+  // Ouvir narração neural da cena com TTS e SFX diegético
   const handlePlaySceneAudio = async (sceneId: string, narration: string) => {
     if (playingAudioSceneId === sceneId) {
       setPlayingAudioSceneId(null);
       return;
     }
     setPlayingAudioSceneId(sceneId);
+
+    // Dispara o efeito sonoro (SFX) sugerido para a cena em sincronia
+    const targetScene = scenes.find((s) => s.id === sceneId);
+    if (targetScene) {
+      const sfx = getSuggestedSfxForScene({
+        keywords: targetScene.keywords,
+        narrationText: targetScene.narrationText,
+        sceneIndex: targetScene.sceneOrder - 1,
+      });
+      if (sfx?.url) {
+        try {
+          const sfxAudio = new Audio(sfx.url);
+          sfxAudio.volume = 0.55;
+          sfxAudio.play().catch(() => {});
+        } catch (e) {}
+      }
+    }
 
     try {
       const res = await fetch("/api/pipeline/tts", {
@@ -426,6 +444,9 @@ export default function StoryboardEditor({
                       <Sparkles className="w-2.5 h-2.5" /> 🎨 Imagem IA
                     </span>
                   ) : null}
+                  <span className="text-[10px] font-mono font-bold text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-500/30 hidden lg:inline-flex items-center gap-1">
+                    <Sparkles className="w-2.5 h-2.5" /> SFX: {getSuggestedSfxForScene({ keywords: scene.keywords, narrationText: scene.narrationText, sceneIndex: scene.sceneOrder - 1 }).name.split(" ")[0]}
+                  </span>
                 </div>
 
                 <div className="flex items-center gap-1.5 flex-wrap justify-end">

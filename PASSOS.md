@@ -486,10 +486,29 @@
 
 ---
 
-### [ ] Passo 23: Estúdio Generativo Completo — Locução Neural Pro (ElevenLabs / Edge TTS) e Trilha Sonora Dinâmica por IA com Sincronia de Efeitos Sonoros (SFX)
-- [ ] Integração de Provedores de Locução Neural Avançada (ElevenLabs BYOK e Edge-TTS multilíngue):
-  - [ ] Implementação de síntese com inflexão dramática documental, controle de respiração, pausas de suspense e estabilidade de tom.
-- [ ] Motor de Áudio & Trilha Sonora Cinematográfica com IA:
-  - [ ] Ducking automático de volume (redução da trilha para 15% durante a fala do narrador e aumento para 60% nas transições).
-  - [ ] Inserção de efeitos sonoros diegéticos e risers dramáticos baseados no contexto da cena (sirenes distantes, ecos de radar, trovões, impactos graves de sub-bass).
+### [x] Passo 23: Estúdio Generativo Completo — Locução Neural Pro (ElevenLabs / Edge TTS) e Trilha Sonora Dinâmica por IA com Sincronia de Efeitos Sonoros (SFX)
+- [x] Integração de Provedores de Locução Neural Avançada (ElevenLabs BYOK e Gemini Audio):
+  - [x] Implementação de síntese com ElevenLabs Multilingual v2 (`trySynthesizeElevenLabs`) em `src/lib/pipeline/tts-engine.ts` com mapeamento de vozes dramáticas (Adam, Rachel, Antoni, George, Arnold) e ajustes de estabilidade (`stability: 0.65`, `similarity_boost: 0.85`, `style: 0.40`).
+  - [x] Suporte à chave BYOK ElevenLabs no gerenciador de canais (`channel-manager.ts`) e endpoint `/api/pipeline/tts`.
+- [x] Motor de Áudio & Trilha Sonora Cinematográfica com IA (`src/lib/pipeline/audio-engine.ts`):
+  - [x] Curadoria de trilhas sonoras dark / mistério sem royalties (`Dark Mystery Drone`, `Abismo Oceânico`, `Radar & Satélites`, `Maldições Históricas`).
+  - [x] Sistema de **Audio Ducking dinâmico**: cálculo automático de volume reduzindo a trilha para 12-15% durante a fala do narrador e elevando para 50-55% nas pausas e transições de cena.
+  - [x] Biblioteca de efeitos sonoros diegéticos (SFX) com seleção contextual (`getSuggestedSfxForScene`): sonar de radar, sub-bass drops cinematográficos, risers de tensão, tempestades com trovão e vento atmosférico de cabine.
+  - [x] Rota de API dedicada `GET /api/pipeline/audio-tracks` e `POST /api/pipeline/audio-tracks` para mixagem e sugestão contextual de SFX.
+- [x] Interface do Player e Storyboard:
+  - [x] No `VideoPreviewModal.tsx`, seletor de trilhas de fundo com ciclo de temas sonoros, botão de ativação/desativação de SFX e ducking dinâmico em tempo real sincronizado com a narração.
+  - [x] Badges no topo do player exibindo a trilha ativa, status de Ducking 15% e o SFX diegético da cena.
+  - [x] No `StoryboardEditor.tsx`, adição de badge de SFX sugerido por cena e reprodução simultânea do SFX ao pré-visualizar o áudio da cena.
+- [x] Reconstrução e Validação no Docker:
+  - [x] Compilação do Next.js com 28/28 rotas geradas com 0 erros de TypeScript e ESLint.
+  - [x] Atualização da suíte de testes E2E com o teste 19 (`/api/pipeline/audio-tracks`), aprovando 19/19 testes com 100% de sucesso.
+
+---
+
+### [ ] Passo 24: Renderizador Final FFmpeg 1080p — Mixagem de Vídeo Multi-pistas com Trilha Sonora, Ducking, SFX e Legendas Hardcoded
+- [ ] Pipeline de Renderização Multi-pistas FFmpeg:
+  - [ ] Composição do vídeo final em 1080p 60 FPS com intercalação de clipes MP4 e imagens Ken Burns.
+  - [ ] Mixagem de áudio com filtro `sidechaincompress` ou `amix` para Audio Ducking real da trilha sonora com a narração neural.
+  - [ ] Inserção de SFX diegéticos sincronizados nas transições de cena.
+  - [ ] Queima de legendas animadas em amarelo ouro (`ass` / `subtitles`).
 - [ ] Atualização da suíte de testes E2E e validação no Docker.

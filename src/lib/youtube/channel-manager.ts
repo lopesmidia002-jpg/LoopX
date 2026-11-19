@@ -405,6 +405,17 @@ export class ChannelManager {
         ),
       },
       {
+        service: "elevenlabs",
+        name: "ElevenLabs (Locução Neural Pro & Inflecção Dramática)",
+        configured: Boolean(process.env.ELEVENLABS_API_KEY || customKeys.elevenlabs),
+        source: customKeys.elevenlabs
+          ? "CUSTOM_BYOK"
+          : process.env.ELEVENLABS_API_KEY
+          ? "ENVIRONMENT"
+          : "LOOPX_VAULT",
+        maskedKey: maskKey(customKeys.elevenlabs || process.env.ELEVENLABS_API_KEY || "el-vault-multilingual-v2-789"),
+      },
+      {
         service: "unsplash",
         name: "Unsplash API (Acervo 4K de Imagens Cinematográficas)",
         configured: Boolean(process.env.UNSPLASH_ACCESS_KEY || customKeys.unsplash),
@@ -414,6 +425,17 @@ export class ChannelManager {
           ? "ENVIRONMENT"
           : "LOOPX_VAULT",
         maskedKey: maskKey(customKeys.unsplash || process.env.UNSPLASH_ACCESS_KEY || "un-unsplash-vault-4k-5566"),
+      },
+      {
+        service: "pixabay",
+        name: "Pixabay Videos & Mídias (Clipes de Vídeo 1080p)",
+        configured: Boolean(process.env.PIXABAY_API_KEY || customKeys.pixabay),
+        source: customKeys.pixabay
+          ? "CUSTOM_BYOK"
+          : process.env.PIXABAY_API_KEY
+          ? "ENVIRONMENT"
+          : "LOOPX_VAULT",
+        maskedKey: maskKey(customKeys.pixabay || process.env.PIXABAY_API_KEY || "px-pixabay-video-engine-1122"),
       },
       {
         service: "youtube",
@@ -458,6 +480,16 @@ export class ChannelManager {
           success: false,
           error:
             "Chave do Google AI Studio inválida. Chaves da Google Generative AI começam com 'AIza...'.",
+        };
+      }
+    }
+
+    // Validação estrita de formato ElevenLabs
+    if (s === "elevenlabs") {
+      if (cleanKey.length < 20) {
+        return {
+          success: false,
+          error: "Chave da ElevenLabs inválida. Chaves de API da ElevenLabs possuem no mínimo 20 caracteres hexadecimais.",
         };
       }
     }
