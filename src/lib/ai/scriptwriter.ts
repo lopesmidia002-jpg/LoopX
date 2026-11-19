@@ -2,6 +2,7 @@ import { SYSTEM_DOCUMENTARY_WRITER_PROMPT, SYSTEM_TOP10_WRITER_PROMPT } from "./
 import { ResearchResult } from "./researcher";
 import { SceneItem, VideoFormat, Language, MotionEffect, VisualStyle } from "../types";
 import { getCuratedMediaForScene } from "../pipeline/media-curator";
+import { syncSubtitles } from "../pipeline/subtitles-sync";
 
 export interface ScriptGenerationResult {
   title: string;
@@ -580,13 +581,5 @@ export function ensureProfessionalNarrationDensity(
 }
 
 function generateWordTimestamps(text: string, durationSeconds: number) {
-  const words = text.split(/\s+/).filter(Boolean);
-  if (words.length === 0) return [];
-
-  const timePerWord = durationSeconds / words.length;
-  return words.map((word, i) => ({
-    word,
-    start: parseFloat((i * timePerWord).toFixed(2)),
-    end: parseFloat(((i + 1) * timePerWord).toFixed(2)),
-  }));
+  return syncSubtitles(text, durationSeconds);
 }

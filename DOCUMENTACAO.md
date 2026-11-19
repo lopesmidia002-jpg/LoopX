@@ -943,3 +943,43 @@ Acesse as publicações agendadas em: `http://localhost:3000/api/youtube/schedul
 ### 29.4. Validação e Testes no Docker
 - **Build de Produção:** Next.js compilado com 28/28 rotas estáticas e dinâmicas com 0 erros.
 - **Suíte E2E Atualizada:** Adicionado teste 19 cobrindo `/api/pipeline/audio-tracks`, com aprovação de 19/19 testes (100% de sucesso).
+
+
+---
+
+## 30. Correção Crítica de Sincronismo de Legendas, Frases Dinâmicas (Chunks de 4 a 6 Palavras) e Seek Preciso
+
+### 30.1. Diagnóstico da Desincronização de Legendas
+1. **Parede de Texto de 90 Palavras no Player:**
+   - O player de vídeo renderizava todas as 75 a 95 palavras de cada cena em um único parágrafo volumoso de 6 a 8 linhas. A palavra destacada se perdia no meio do bloco, impedindo que o espectador acompanhasse a leitura em sincronia com o ritmo da locução.
+2. **Descompasso entre Duração da Cena (42s) e Fala Real (32s):**
+   - O cálculo anterior dividia linearmente o tempo total da cena pelo número de palavras (`durationSeconds / words.length`).
+   - Como um narrador profissional fala a ~2.35 palavras por segundo (completando 80 palavras em ~34 segundos), a legenda era esticada artificialmente para 42 segundos. Aos 15 segundos de vídeo, a voz já havia narrado 35 palavras, mas a legenda ainda estava na palavra 28 (atraso de mais de 7 palavras).
+3. **Bug do `onboundary` do Google Chrome:**
+   - No Chrome, vozes TTS frequentemente emitem o evento `boundary` para a 1ª palavra e depois engolem os eventos subsequentes. Como a condição do player era `if (boundaryWordIndex > 0) return boundaryWordIndex`, o índice de palavra ativa ficava congelado permanentemente na palavra 1 pelo restante da cena.
+4. **Desalinhamento no Seek da Linha do Tempo:**
+   - Ao avançar ou clicar na barra de progresso para a metade de uma cena, a narração recomeçava desde a palavra 1, enquanto o vídeo e o cursor temporal já estavam no meio da cena.
+5. **Arquivo `.SRT` com Bloco Único Gigante:**
+   - A função `generateSrt` gerava apenas 1 entrada por cena com todas as 90 palavras ocupando 42 segundos ininterruptos, violando os padrões de legibilidade do YouTube e reprodutores de vídeo.
+
+### 30.2. Arquitetura da Solução Implementada
+1. **Frases Dinâmicas Curtas (Chunks de 4 a 6 Palavras) ([subtitles-sync.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/lib/pipeline/subtitles-sync.ts)):**
+   - Implementada a função `buildSubtitlePhrases`: agrupa as palavras em blocos rítmicos de 4 a 6 palavras (ou orações naturais quebradas por vírgula ou ponto final).
+   - O player exibe **apenas o bloco ativo** centralizado na tela, com a palavra falada destacada em amarelo ouro brilhante (`text-amber-400 font-black scale-110 drop-shadow-[0_0_14px_rgba(251,191,36,0.95)]`), palavras passadas em branco nítido e palavras seguintes em cinza suave.
+   - Ao término do bloco, a transição para a próxima frase é imediata.
+   - Após 1.2s do término da fala da cena, a legenda desaparece suavemente para que o vídeo e a atmosfera visual respirem antes da próxima transição.
+2. **Cálculo Fonético e Pausas de Pontuação (`syncSubtitles`):**
+   - A duração de cada palavra é calculada com base na quantidade de caracteres e pausas naturais:
+     - Vírgulas, ponto e vírgula e travessões: pausa de `+0.30s`.
+     - Pontos finais, exclamações e interrogações: pausa dramática de `+0.55s`.
+   - A duração efetiva da fala é ancorada na cadência real de documentários (~2.35 palavras/segundo), garantindo que o fim da fala coincida com o fim das legendas.
+3. **Seek Inteligente da Locução Neural ([VideoPreviewModal.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/VideoPreviewModal.tsx)):**
+   - Ao realizar seek na linha do tempo, o player calcula a palavra correspondente ao segundo exato (`startWordIndex`) e inicia a síntese da fala a partir daquele ponto, mantendo o áudio, a imagem e a legenda 100% alinhados.
+   - Estado reativo `seekCount` garante atualização imediata ao clicar em qualquer ponto da timeline, no botão de reiniciar ou nos botões de cena anterior/próxima.
+4. **Exportação de `.SRT` Rítmico de Alto Padrão:**
+   - A função `generateSrt` agora gera blocos sincronizados de 2 a 3.5 segundos com timecodes exatos `HH:MM:SS,mmm`, prontos para uso em canais dark do YouTube, Premiere, DaVinci Resolve ou players de mídia.
+
+### 30.3. Validação Técnica no Docker
+- **Compilação do Next.js:** 28/28 rotas compiladas com 0 erros.
+- **Teste de Endpoint:** `POST /api/pipeline/subtitles` testado via requisição real no Docker com retorno de blocos `.SRT` de 4 a 5 palavras por intervalo temporal.
+- **Suíte de Testes E2E:** 19/19 testes aprovados no Docker com 100% de sucesso.

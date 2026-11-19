@@ -505,6 +505,29 @@
 
 ---
 
+### [x] Passo 23.1: Correção Crítica de Sincronismo de Legendas, Frases Dinâmicas (Chunks) e Seek Inteligente
+- [x] Diagnóstico da Desincronização de Legendas:
+  - [x] O player exibia todas as 75 a 95 palavras da cena em um único bloco de 6 a 8 linhas, poluindo a tela e impedindo leitura fluida.
+  - [x] O gerador de `.SRT` criava um único bloco por cena cobrindo 42 segundos inteiros para 90 palavras.
+  - [x] O cálculo linear simples (`durationSeconds / words.length`) esticava as palavras por 42s quando a fala real do locutor terminava aos 32s, gerando um atraso cumulativo de mais de 10 palavras.
+  - [x] No Chrome, o evento `speechSynthesis.onboundary` frequentemente parava de emitir após a primeira palavra, travando o índice de palavra ativa permanentemente no início da cena.
+  - [x] Ao avançar ou clicar na linha do tempo (seek), a locução recomeçava da primeira palavra enquanto o vídeo já estava adiantado.
+- [x] Implementação da Nova Arquitetura de Sincronia de Legendas ([subtitles-sync.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/lib/pipeline/subtitles-sync.ts)):
+  - [x] Criação de `buildSubtitlePhrases`: divide automaticamente a cena em frases curtas de 4 a 6 palavras no estilo YouTube Dark / MrBeast, com quebras naturais em pontuações fortes (`.`, `!`, `?`, `,`).
+  - [x] Algoritmo fonético ponderado em `syncSubtitles`: pondera o tamanho das palavras e aplica pausas naturais para vírgulas (`+0.3s`) e pontos finais (`+0.55s`), calibrado para a cadência real de documentários (~2.35 palavras/segundo).
+  - [x] Aprimoramento da exportação de `.SRT` em `generateSrt`: cada cena é exportada em blocos rítmicos de 2 a 3.5 segundos com timecodes exatos `HH:MM:SS,mmm`.
+- [x] Player Interativo com Frases Dinâmicas e Seek Preciso ([VideoPreviewModal.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/VideoPreviewModal.tsx)):
+  - [x] O player agora renderiza **apenas o chunk de 4 a 6 palavras ativo**, com a palavra falada destacada em amarelo ouro (`text-amber-400 font-black scale-110 drop-shadow`), palavras faladas em branco e próximas em cinza.
+  - [x] Ocultamento suave da legenda 1.2s após o término da fala para respiro visual antes da transição da cena.
+  - [x] Resolução do bug de `boundaryWordIndex`: sincronização por timecode ponderado que nunca trava mesmo se o navegador parar de emitir eventos `boundary`.
+  - [x] Seek inteligente (`seekCount`): ao avançar a linha do tempo, a locução e a legenda retomam a partir da palavra exata correspondente ao segundo atual.
+- [x] Validação e Testes no Docker:
+  - [x] 28/28 rotas Next.js compiladas com 0 erros.
+  - [x] Teste de geração de `.SRT` via `/api/pipeline/subtitles` gerando blocos sincronizados de 4 a 5 palavras.
+  - [x] 19/19 testes E2E aprovados no Docker.
+
+---
+
 ### [ ] Passo 24: Renderizador Final FFmpeg 1080p — Mixagem de Vídeo Multi-pistas com Trilha Sonora, Ducking, SFX e Legendas Hardcoded
 - [ ] Pipeline de Renderização Multi-pistas FFmpeg:
   - [ ] Composição do vídeo final em 1080p 60 FPS com intercalação de clipes MP4 e imagens Ken Burns.

@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { SceneItem, MotionEffect } from "@/lib/types";
 import { CINEMATIC_BACKGROUND_TRACKS, getSuggestedSfxForScene } from "@/lib/pipeline/audio-engine";
+import { syncSubtitles, buildSubtitlePhrases, WordTimestamp, SubtitlePhrase } from "@/lib/pipeline/subtitles-sync";
 import ScheduleCalendarModal from "./ScheduleCalendarModal";
 import ABTestingModal from "./ABTestingModal";
 
@@ -73,6 +74,7 @@ export default function VideoPreviewModal({
   const [enableBgm, setEnableBgm] = useState<boolean>(true);
   const [enableSfx, setEnableSfx] = useState<boolean>(true);
   const [isDucking, setIsDucking] = useState<boolean>(false);
+  const [seekCount, setSeekCount] = useState<number>(0);
 
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const timelineBarRef = useRef<HTMLDivElement>(null);
@@ -242,6 +244,62 @@ export default function VideoPreviewModal({
     return () => clearInterval(interval);
   }, [isPlaying, totalDuration]);
 
+  // Timestamps de palavra de alta precisão ponderados por sílabas e pontuações
+  const wordTimestamps = useMemo<WordTimestamp[]>(() => {
+    if (!activeScene || !activeScene.narrationText) return [];
+    if (activeScene.subtitles && activeScene.subtitles.length > 0) {
+      return activeScene.subtitles;
+    }
+    const sceneDuration = Number(activeScene.durationSeconds) || 7.5;
+    return syncSubtitles(activeScene.narrationText, sceneDuration);
+  }, [activeScene]);
+
+  // Agrupa as palavras em frases dinâmicas curtas de 4 a 6 palavras (estilo Dark Channel)
+  const subtitlePhrases = useMemo<SubtitlePhrase[]>(() => {
+    return buildSubtitlePhrases(wordTimestamps, 5);
+  }, [wordTimestamps]);
+
+  // Tempo decorrido exato dentro da cena ativa
+  const sceneElapsed = Math.max(0, currentTime - (activeScene?.startTime || 0));
+
+  // Frase/Chunk de legenda ativo neste momento exato
+  const activePhrase = useMemo<SubtitlePhrase | null>(() => {
+    if (subtitlePhrases.length === 0) return null;
+    const found = subtitlePhrases.find(
+      (p) => sceneElapsed >= p.start && sceneElapsed < p.end
+    );
+    if (found) return found;
+    // Se ainda antes do início da primeira palavra da fala
+    if (sceneElapsed < subtitlePhrases[0].start) return subtitlePhrases[0];
+    // Se após a última palavra
+    const last = subtitlePhrases[subtitlePhrases.length - 1];
+    if (sceneElapsed >= last.end) {
+      // Oculta a legenda suavemente após 1.2s da fala para deixar o vídeo respirar
+      if (sceneElapsed > last.end + 1.2) return null;
+      return last;
+    }
+    return last;
+  }, [subtitlePhrases, sceneElapsed]);
+
+  // Índice global da palavra falada neste instante dentro da cena
+  const activeGlobalWordIndex = useMemo<number>(() => {
+    if (wordTimestamps.length === 0) return 0;
+    // Se o evento boundary nativo estiver próximo do tempo decorrido, usa-o
+    if (boundaryWordIndex > 0 && boundaryWordIndex < wordTimestamps.length) {
+      const boundaryTime = wordTimestamps[boundaryWordIndex]?.start ?? 0;
+      if (Math.abs(boundaryTime - sceneElapsed) < 1.5) {
+        return boundaryWordIndex;
+      }
+    }
+    // Sincronia contínua por timecode ponderado
+    const foundIdx = wordTimestamps.findIndex(
+      (wt) => sceneElapsed >= wt.start && sceneElapsed <= wt.end
+    );
+    if (foundIdx !== -1) return foundIdx;
+    if (sceneElapsed < wordTimestamps[0].start) return 0;
+    return wordTimestamps.length - 1;
+  }, [wordTimestamps, sceneElapsed, boundaryWordIndex]);
+
   // Locução neural em tempo real com cadência e tom documental de alto padrão
   useEffect(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
@@ -252,38 +310,59 @@ export default function VideoPreviewModal({
       return;
     }
 
-    // Cancela locução anterior e dispara narração da cena ativa
+    // Cancela locução anterior com segurança
     window.speechSynthesis.cancel();
-    if (activeScene?.narrationText) {
-      const utterance = new SpeechSynthesisUtterance(activeScene.narrationText);
-      if (neuralVoice) {
-        utterance.voice = neuralVoice;
+    if (!activeScene?.narrationText) return;
+
+    const allWords = activeScene.narrationText.split(/\s+/).filter(Boolean);
+    if (allWords.length === 0) return;
+
+    // Se o usuário deu seek para o meio da cena, fatia o texto para começar da palavra exata
+    const currentSceneElapsed = Math.max(0, currentTime - (activeScene.startTime || 0));
+    let startWordIndex = 0;
+    if (currentSceneElapsed > 0.8 && wordTimestamps.length > 0) {
+      const idx = wordTimestamps.findIndex((wt) => wt.end >= currentSceneElapsed);
+      if (idx !== -1) {
+        startWordIndex = idx;
       }
-      utterance.lang = "pt-BR";
-      utterance.rate = 0.98; // Cadência medida de suspense investigativo
-      utterance.pitch = 0.93; // Timbre grave e cinematográfico
-
-      utterance.onstart = () => {
-        setIsDucking(true);
-      };
-      utterance.onend = () => {
-        setIsDucking(false);
-      };
-      utterance.onerror = () => {
-        setIsDucking(false);
-      };
-
-      // Sincronização nativa da palavra falada
-      utterance.onboundary = (event) => {
-        if (event.name === "word") {
-          const textBefore = activeScene.narrationText.slice(0, event.charIndex);
-          const wordCount = textBefore.trim().split(/\s+/).filter(Boolean).length;
-          setBoundaryWordIndex(wordCount);
-        }
-      };
-
-      window.speechSynthesis.speak(utterance);
     }
+
+    const textToSpeak = allWords.slice(startWordIndex).join(" ");
+    if (!textToSpeak.trim()) return;
+
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    if (neuralVoice) {
+      utterance.voice = neuralVoice;
+    }
+    utterance.lang = "pt-BR";
+    utterance.rate = 0.98; // Cadência medida de suspense investigativo
+    utterance.pitch = 0.93; // Timbre grave e cinematográfico
+
+    utterance.onstart = () => {
+      setIsDucking(true);
+    };
+    utterance.onend = () => {
+      setIsDucking(false);
+    };
+    utterance.onerror = () => {
+      setIsDucking(false);
+    };
+
+    // Sincronização nativa da palavra falada com offset do seek
+    utterance.onboundary = (event) => {
+      if (event.name === "word") {
+        const textBefore = textToSpeak.slice(0, event.charIndex);
+        const relativeWordCount = textBefore.trim().split(/\s+/).filter(Boolean).length;
+        setBoundaryWordIndex(startWordIndex + relativeWordCount);
+      }
+    };
+
+    // Timeout defensivo de 30ms para o driver de áudio do Chrome liberar o buffer
+    const timer = setTimeout(() => {
+      if (isPlaying && !isMuted) {
+        window.speechSynthesis.speak(utterance);
+      }
+    }, 30);
 
     // Heartbeat contra corte inesperado de fala após 15s no Chrome
     const keepAlive = setInterval(() => {
@@ -294,29 +373,13 @@ export default function VideoPreviewModal({
     }, 8000);
 
     return () => {
+      clearTimeout(timer);
       clearInterval(keepAlive);
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }
     };
-  }, [activeSceneIndex, isPlaying, isMuted, activeScene?.narrationText, neuralVoice]);
-
-  // Subtitle word-by-word highlight calculation
-  const words = useMemo(() => {
-    return (activeScene?.narrationText || "").split(/\s+/).filter(Boolean);
-  }, [activeScene?.narrationText]);
-
-  const activeWordIndex = useMemo(() => {
-    if (words.length === 0) return 0;
-    // Se o evento boundary nativo já sincronizou a palavra falada
-    if (boundaryWordIndex > 0) {
-      return Math.min(words.length - 1, boundaryWordIndex);
-    }
-    // Fallback proporcional baseado em cadência natural de locução (~2.2 palavras/segundo)
-    const sceneElapsed = currentTime - (activeScene?.startTime || 0);
-    const estimatedWord = Math.floor(sceneElapsed * 2.2);
-    return Math.min(words.length - 1, Math.max(0, estimatedWord));
-  }, [words.length, boundaryWordIndex, currentTime, activeScene]);
+  }, [activeSceneIndex, isPlaying, isMuted, neuralVoice, seekCount]);
 
   // Format seconds to MM:SS
   const formatTimecode = (seconds: number) => {
@@ -333,9 +396,13 @@ export default function VideoPreviewModal({
     const ratio = Math.max(0, Math.min(1, clickX / rect.width));
     const targetTime = ratio * totalDuration;
     setCurrentTime(targetTime);
+    setBoundaryWordIndex(0);
+    setSeekCount((c) => c + 1);
   };
 
   const handlePrevScene = () => {
+    setBoundaryWordIndex(0);
+    setSeekCount((c) => c + 1);
     if (activeSceneIndex > 0) {
       setCurrentTime(timeline[activeSceneIndex - 1].startTime);
     } else {
@@ -344,6 +411,8 @@ export default function VideoPreviewModal({
   };
 
   const handleNextScene = () => {
+    setBoundaryWordIndex(0);
+    setSeekCount((c) => c + 1);
     if (activeSceneIndex < timeline.length - 1) {
       setCurrentTime(timeline[activeSceneIndex + 1].startTime);
     }
@@ -559,30 +628,35 @@ export default function VideoPreviewModal({
                   </span>
                 </div>
 
-                {/* Subtitles Overlay (Dark Channel Word-by-Word Highlight) */}
-                <div className="absolute bottom-14 left-0 right-0 px-6 sm:px-12 text-center pointer-events-none">
-                  <div className="inline-block bg-black/85 backdrop-blur-md px-5 py-2.5 rounded-2xl border border-white/15 shadow-2xl max-w-2xl mx-auto">
-                    <p className="text-white text-sm sm:text-base md:text-lg font-black tracking-wide leading-relaxed">
-                      {words.map((word, wIdx) => {
-                        const isCurrentWord = isPlaying && wIdx === activeWordIndex;
-                        const isPastWord = wIdx < activeWordIndex;
-                        return (
-                          <span
-                            key={wIdx}
-                            className={`inline-block mx-1 transition-all duration-150 ${isCurrentWord
-                                ? "text-amber-400 scale-110 drop-shadow-[0_0_12px_rgba(251,191,36,0.9)] font-black"
-                                : isPastWord
-                                  ? "text-slate-100"
-                                  : "text-slate-400 opacity-80"
+                {/* Subtitles Overlay (Dark Channel Dynamic Chunks: 4-6 Words Synchronized) */}
+                {activePhrase && (
+                  <div className="absolute bottom-14 left-0 right-0 px-4 sm:px-12 text-center pointer-events-none transition-all duration-150">
+                    <div className="inline-block bg-black/90 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/20 shadow-2xl max-w-xl mx-auto">
+                      <p className="text-white text-base sm:text-lg md:text-xl font-bold tracking-wide leading-relaxed flex items-center justify-center flex-wrap gap-x-2.5 gap-y-1">
+                        {activePhrase.words.map((word, pIdx) => {
+                          const globalIndex = activePhrase.startIndex + pIdx;
+                          const isCurrentWord = isPlaying && globalIndex === activeGlobalWordIndex;
+                          const isPastWord = globalIndex < activeGlobalWordIndex;
+
+                          return (
+                            <span
+                              key={globalIndex}
+                              className={`inline-block transition-all duration-150 ${
+                                isCurrentWord
+                                  ? "text-amber-400 scale-110 drop-shadow-[0_0_14px_rgba(251,191,36,0.95)] font-black"
+                                  : isPastWord
+                                  ? "text-white font-bold"
+                                  : "text-slate-400/80 font-medium"
                               }`}
-                          >
-                            {word}
-                          </span>
-                        );
-                      })}
-                    </p>
+                            >
+                              {word}
+                            </span>
+                          );
+                        })}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Central Click-to-Play/Pause Overlay */}
                 <div
@@ -655,7 +729,11 @@ export default function VideoPreviewModal({
 
                       {/* Restart */}
                       <button
-                        onClick={() => setCurrentTime(0)}
+                        onClick={() => {
+                          setCurrentTime(0);
+                          setBoundaryWordIndex(0);
+                          setSeekCount((c) => c + 1);
+                        }}
                         className="p-1 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
                         title="Reiniciar Vídeo"
                       >
