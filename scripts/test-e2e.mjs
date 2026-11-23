@@ -112,15 +112,15 @@ async function runTestSuite() {
     }
   });
 
-  // 6. Sincronização de Legendas e .SRT
-  await test("6. Sincronização de Legendas & Exportação .SRT (/api/pipeline/subtitles)", async () => {
+  // 6. Sincronização de Legendas, .SRT e Validação Temporal
+  await test("6. Sincronização de Legendas & Validação Temporal (/api/pipeline/subtitles)", async () => {
     const res = await fetch(`${BASE_URL}/api/pipeline/subtitles`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         scenes: [
-          { sceneOrder: 1, narrationText: "Nas profundezas do oceano, a pressão é esmagadora.", durationSeconds: 8 },
-          { sceneOrder: 2, narrationText: "Poucos humanos ousaram descer até aqui.", durationSeconds: 7 },
+          { sceneOrder: 1, narrationText: "Nas profundezas do oceano, a pressão é esmagadora.", durationSeconds: 8, audioDurationSeconds: 7.2 },
+          { sceneOrder: 2, narrationText: "Poucos humanos ousaram descer até aqui.", durationSeconds: 7, audioDurationSeconds: 6.1 },
         ],
       }),
     });
@@ -129,6 +129,12 @@ async function runTestSuite() {
     const srt = data.srt || data.srtContent;
     if (!data.success || !srt || !srt.includes("-->")) {
       throw new Error("Conteúdo do arquivo .SRT inválido");
+    }
+    if (!data.assContent || !data.assContent.includes("Dialogue:")) {
+      throw new Error("Conteúdo de legendas .ASS não gerado");
+    }
+    if (!data.validationReport || !data.validationReport.isValid) {
+      throw new Error("Relatório de validação de sincronia falhou");
     }
   });
 
@@ -642,6 +648,52 @@ async function runTestSuite() {
     }
     if (postData.ducking.bgmVolume > 0.20) {
       throw new Error(`Audio Ducking incorreto durante fala: ${postData.ducking.bgmVolume}`);
+    }
+  });
+
+  // 20. Renderizador Final FFmpeg 1080p 60 FPS (/api/render)
+  await test("20. Renderizador Final FFmpeg 1080p 60 FPS (/api/render)", async () => {
+    // 20.1 Início de job de renderização multi-pistas
+    const postRes = await fetch(`${BASE_URL}/api/render`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        projectId: "proj-test",
+        topic: "Os Segredos das Fossas Abissais",
+        scenes: [
+          {
+            id: "sc-1",
+            durationSeconds: 5,
+            mediaUrl: "https://images.unsplash.com/photo-1544551763-46a013bb70d5",
+            narrationText: "O abismo oceânico permanece inexplorado.",
+          },
+        ],
+      }),
+    });
+    if (!postRes.ok) throw new Error(`Status POST render: ${postRes.status}`);
+    const postData = await postRes.json();
+    if (!postData.success || !postData.renderJobId) {
+      throw new Error("Job de renderização não retornado");
+    }
+
+    // 20.2 Verificação de status do job de renderização
+    const getRes = await fetch(`${BASE_URL}/api/render?jobId=${postData.renderJobId}`);
+    if (!getRes.ok) throw new Error(`Status GET render: ${getRes.status}`);
+    const getData = await getRes.json();
+    if (!getData.success || getData.status !== "COMPLETED") {
+      throw new Error("Status do job de renderização inválido");
+    }
+
+    // 20.3 Download do vídeo renderizado MP4 (binário)
+    const downloadRes = await fetch(`${BASE_URL}/api/render?download=true`);
+    if (!downloadRes.ok) throw new Error(`Status download render: ${downloadRes.status}`);
+    const contentType = downloadRes.headers.get("content-type");
+    if (!contentType || !contentType.includes("video/mp4")) {
+      throw new Error(`Content-Type inesperado: ${contentType}`);
+    }
+    const arrayBuffer = await downloadRes.arrayBuffer();
+    if (arrayBuffer.byteLength < 500) {
+      throw new Error(`Tamanho de arquivo MP4 inválido: ${arrayBuffer.byteLength} bytes`);
     }
   });
 

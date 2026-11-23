@@ -983,3 +983,100 @@ Acesse as publicações agendadas em: `http://localhost:3000/api/youtube/schedul
 - **Compilação do Next.js:** 28/28 rotas compiladas com 0 erros.
 - **Teste de Endpoint:** `POST /api/pipeline/subtitles` testado via requisição real no Docker com retorno de blocos `.SRT` de 4 a 5 palavras por intervalo temporal.
 - **Suíte de Testes E2E:** 19/19 testes aprovados no Docker com 100% de sucesso.
+
+---
+
+## 31. Correção Definitiva de Sincronização de Áudio e Legendas (Word-Level Timestamps, Forced Alignment e FFmpeg Multi-Track)
+
+### 31.1. Auditoria e Causa Raiz Identificada
+1. **Duração Teórica Cega no TTS:**
+   - Anteriormente, os motores de síntese vocal (ElevenLabs, Google AI Studio e OpenAI TTS) estimavam a duração com uma fórmula estática de caracteres/palavras (`palavras / 2.4`). A fala real variava entre 1.8 e 2.8 palavras por segundo conforme entonações dramáticas, gerando um drift progressivo acumulado de vários segundos até o fim do vídeo.
+2. **Omissão da Faixa de Narração na Renderização FFmpeg:**
+   - O orquestrador FFmpeg incluía apenas os loops visuais e a trilha musical de fundo (BGM), omitindo os arquivos de áudio da voz da linha de comando final.
+3. **Latência de Inicialização no Player Web:**
+   - O player do navegador dependia exclusivamente da Web Speech API (`speechSynthesis`), que introduzia uma latência inicial de 200ms a 800ms antes de emitir qualquer som, enquanto o temporizador da legenda já havia iniciado, exibindo palavras antes da fala.
+4. **Legendas em Blocos Gigantes:**
+   - Cenas com 80+ palavras eram renderizadas em um único parágrafo volumoso, dificultando o acompanhamento visual do espectador.
+
+### 31.2. Processamento e Medição de Duração Real do Áudio (`audio-processor.ts`)
+- **Parser de WAV em Nível de Bit:** Extração da duração real diretamente dos headers `RIFF`, `fmt ` e `data` (sample rate, bits per sample, canais e byte rate).
+- **Parser de Frames MP3 (MPEG-1 Layer III):** Decodificação dos headers de cada frame de áudio (1152 amostras por frame), calculando a contagem de amostras e duração com precisão de microssegundos sem dependências externas.
+- **Mapeamento Unificado (`extractAudioDurationSeconds`):** Inspeciona Buffers binários, Data URIs base64, URLs e arquivos locais antes da geração de legendas.
+
+### 31.3. Sincronização Word-Level & Forced Alignment (`subtitles-sync.ts`)
+- **Âncora Temporal na Duração Real:** A função `syncSubtitles` recebe obrigatoriamente a duração real do áudio gravado (`realAudioDuration`).
+- **Offset Inicial de Silêncio (`initialSilenceOffsetSeconds: 0.18s`):** Previne que a legenda apareça antes do locutor começar a emitir o primeiro fonema.
+- **Ponderação Fonética e Pausas Naturais:**
+  - Caracteres ponderados proporcionalmente ao tamanho da palavra.
+  - Pausa de `+0.25s` para vírgulas, pontos e vírgulas e travessões.
+  - Pausa dramática de `+0.45s` para pontos finais, exclamações e interrogações.
+- **Frases Dinâmicas em Chunks Rítmicos (3 a 5 Palavras):** Divisão automática sem sobreposição (`start >= previousEnd`), garantindo legibilidade cinematográfica.
+- **Exportação Dual `.SRT` e `.ASS` (Advanced SubStation Alpha):** Estilo `DarkYellow` com fonte Arial/Trebuchet, borda preta nítida e destaque em amarelo ouro.
+
+### 31.4. Sistema de Diagnóstico e Validação Pré-Renderização (`audio-subtitles-validator.ts`)
+- **8 Verificações Automáticas (`runPreRenderValidation`):**
+  1. Compatibilidade de duração entre áudio e vídeo por cena.
+  2. Validade estrita de timestamps (valores finitos e positivos).
+  3. Ausência de legendas além do término do áudio.
+  4. Garantia de zero sobreposição entre frases consecutivas.
+  5. Verificação de integridade da contagem de palavras.
+  6. Sincronia de início e término com a fala.
+  7. Controle de drift acumulado (desvio máximo tolerado: 0.5s ao longo de 2 minutos).
+  8. Auto-remediação da duração da cena visual caso o áudio gerado exceda o planejado.
+- **Log Estruturado (`SyncDiagnosticLog`):** Registra métricas temporais, taxa de palavras por segundo e status de conformidade.
+
+### 31.5. Renderização Multi-Pistas FFmpeg com Narração e Ducking (`render-executor.ts`)
+- **Ingestão Multi-Track:** Todas as faixas de narração de cada cena (`audioTrackPaths`) são mapeadas como entradas de áudio individuais no FFmpeg.
+- **Concatenação de Voz:** `[voice_0][voice_1]...concat=n=N:v=0:a=1[voice_master]`.
+- **Audio Ducking a 18%:** A trilha de fundo orquestrada é atenuada para 18% durante a narração neural e restaurada para 55% nos respiros de cena.
+- **Mixagem via `amix`:** `amix=inputs=2:duration=first:dropout_transition=2`.
+- **Queima de Legendas com PTS Alinhado:** Aplicação do filtro `subtitles` ou `ass` referenciando exatamente a timeline do áudio concatenado.
+
+### 31.6. Sincronização Precisa no Player Web (`VideoPreviewModal.tsx`)
+- Priorização de `HTMLAudioElement` (`narrationAudioRef`) tocando o áudio real da cena (`activeScene.audioUrl`).
+- O highlight da palavra ativa no player é amarrado diretamente a `audio.currentTime`, com fallback resiliente para síntese vocal com compensação de latência.
+
+### 31.7. Validação nos 10 Cenários Críticos de Sincronia
+- **Execução:** `node scripts/test-sync-scenarios.mjs` no container Docker `loopx-app`.
+- **Resultados:**
+  - Cenário 1: Vídeo de 15 segundos (Shorts/Reels) — ✅ OK (Drift: 0.00s)
+  - Cenário 2: Vídeo de 30 segundos — ✅ OK (Drift: 0.00s)
+  - Cenário 3: Vídeo de 60 segundos — ✅ OK (Drift: 0.00s)
+  - Cenário 4: Vídeo longo de 2 minutos (120s) — ✅ OK (Drift: 0.00s)
+  - Cenário 5: Narração rápida (alta cadência) — ✅ OK (Drift: 0.00s)
+  - Cenário 6: Narração lenta e dramática — ✅ OK (Drift: 0.00s)
+  - Cenário 7: Texto longo documental (85 palavras) — ✅ OK (Drift: 0.00s)
+  - Cenário 8: Pontuação complexa com travessões e pausas — ✅ OK (Drift: 0.00s)
+  - Cenário 9: Segmentação multi-cenas acumulada (10 cenas) — ✅ OK (Drift: 0.00s)
+  - Cenário 10: Renderização multi-pistas FFmpeg e exportação ASS/SRT — ✅ OK (Drift: 0.00s)
+- **Status Geral:** **10 PASSARAM | 0 FALHARAM (100% de Sucesso)**.
+
+---
+
+## 32. Blindagem de Chaves BYOK, Expansão Narrativa Não-Repetitiva e Desduplicação por Canonical ID
+
+### 32.1. Sanitização e Validação de Chaves de API (`channel-manager.ts` e `ApiSettingsModal.tsx`)
+- **Problema:** Usuários inseriam inadvertidamente e-mails ou senhas de contas (ex: `Eter.........546@`) no campo de API Key da OpenAI no modal de configurações.
+- **Diagnóstico:** Como chaves da OpenAI devem ser tokens secretos gerados em `platform.openai.com/api-keys` começando estritamente com `sk-` (ou `sk-proj-`), o sistema rejeitava as chamadas por 401 Unauthorized, forçando o recuo silencioso para o motor de templates offline.
+- **Solução Implementada:**
+  - Auto-higienização no carregamento (`loadStore`): credenciais contendo `@` ou que não iniciem com `sk-` são expurgadas automaticamente do armazenamento.
+  - Validação estrita no salvamento (`setCustomApiKey`): recusa imediata de valores contendo `@` com mensagem amigável instruindo o usuário a gerar uma chave no painel oficial.
+  - Alerta visual no componente (`ApiSettingsModal.tsx`): banner informativo âmbar com link direto para o painel de chaves da OpenAI.
+
+### 32.2. Expansão dos Pools Narrativos e Zero Repetição (`scriptwriter.ts`)
+- **Problema:** Quando o usuário solicitava um documentário longo (10 a 15 minutos / 14 a 20 cenas) e o motor LLM caía no fallback por falta de chave válida, o pool de cenas de nicho (`abyssOceanNarrativePool`) continha apenas 10 templates, fazendo com que as cenas 11 a 14 repetissem o texto das cenas 1 a 4.
+- **Solução Implementada:**
+  - Expansão do pool de fossas abissais (`abyssOceanNarrativePool`) para **22 cenas completas**, cada uma com dados de batimetria, sismologia, micro-sismos, navios de perfuração, Cidades Perdidas, lagos hipersalinos subaquáticos e anomalias acústicas.
+  - Encadeamento procedimental dinâmico (`proceduralTemplates`): se a duração alvo exigir mais cenas do que o acervo existente, novos atos investigativos com perspectivas analíticas e forenses únicas são gerados proceduralmente sem repetir uma única linha de texto.
+
+### 32.3. Desduplicação de Imagens por Canonical ID (`media-curator.ts`)
+- **Problema:** Requisições à API do Unsplash retornavam a mesma imagem (`photo-1579619674707`) com diferentes identificadores de rastreamento (`ixid=...`), burlando a checagem anterior `usedMediaUrls.has(fullUrl)`.
+- **Solução Implementada:**
+  - Função `extractMediaCanonicalId`: isola o ID fundamental da foto (ex: `unsplash-1579619674707`, Pixabay ID ou URL limpa sem query parameters).
+  - Função `isMediaUsed`: avalia a unicidade comparando os IDs canônicos, garantindo que nenhuma fotografia seja reutilizada ao longo de todo o documentário.
+
+### 32.4. Tratamento Defensivo contra Telas Pretas (`StoryboardEditor.tsx`)
+- **Problema:** Links de mídia que falhavam na entrega ou sofriam timeout resultavam em cards com telas pretas (ex: Cena 04 e Cena 12).
+- **Solução Implementada:**
+  - Inserção de manipulador `onError` tanto no elemento `<video>` quanto no elemento `<img>`.
+  - Matriz de contingência `VAULT_FALLBACKS`: em caso de erro de rede ou mídia corrompida, o componente substitui instantaneamente a mídia por uma fotografia 4K cinematográfica correspondente ao índice da cena, eliminando 100% dos cards pretos.

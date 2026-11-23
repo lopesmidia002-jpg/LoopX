@@ -1,11 +1,12 @@
 /**
- * Orquestrador de Renderização Final em MP4 (1080p 16:9)
+ * Orquestrador de Renderização Final em MP4 (1080p 16:9 60 FPS)
  * Etapa 8 do Pipeline do LoopX
+ * Suporte a vídeo multi-pistas: clipes MP4, Ken Burns 60 FPS, Audio Ducking, SFX e Legendas Hardcoded
  */
 
 import { SceneItem } from "../types";
-import { getFFmpegMotionFilter } from "./motion-effects";
-import { buildAudioDuckingFilterGraph, SOUNDTRACK_PRESETS } from "./audio-mixer";
+import { SOUNDTRACK_PRESETS } from "./audio-mixer";
+import { executeFFmpegRender, buildMultiTrackFFmpegArgs, RenderJobResult } from "./render-executor";
 
 export interface RenderPipelineResult {
   videoUrl: string;
@@ -15,50 +16,26 @@ export interface RenderPipelineResult {
   ffmpegCommand: string;
 }
 
+export { executeFFmpegRender, buildMultiTrackFFmpegArgs };
+export type { RenderJobResult };
+
 /**
  * Constrói o comando FFmpeg completo e otimizado para renderização 1080p 60fps
+ * com suporte híbrido a clipes MP4 e imagens Ken Burns
  */
 export function buildFFmpegRenderCommand(params: {
   scenes: SceneItem[];
   outputFilePath: string;
   soundtrackUrl?: string;
+  srtPath?: string;
 }): string {
-  const { scenes, outputFilePath, soundtrackUrl = SOUNDTRACK_PRESETS.DARK_MYSTERY.url } = params;
+  const { scenes, outputFilePath, soundtrackUrl = SOUNDTRACK_PRESETS.DARK_MYSTERY.url, srtPath } = params;
+  const args = buildMultiTrackFFmpegArgs({
+    scenes,
+    outputFilePath,
+    srtPath,
+    bgmTrackUrl: soundtrackUrl,
+  });
 
-  // Monta as entradas de arquivo (imagens das cenas + trilha sonora)
-  const inputArgs = scenes.map((s) => `-loop 1 -t ${s.durationSeconds} -i "${s.mediaUrl}"`).join(" ");
-  const audioInput = `-i "${soundtrackUrl}"`;
-
-  // Monta os filtros de movimento para cada cena
-  const videoFilters = scenes
-    .map((s, idx) => {
-      const motion = getFFmpegMotionFilter({
-        effect: s.motionEffect,
-        durationSeconds: s.durationSeconds,
-        fps: 30,
-        width: 1920,
-        height: 1080,
-      });
-      return `[${idx}:v]${motion},setsar=1[v${idx}]`;
-    })
-    .join(";");
-
-  // Concatenação de todas as cenas animadas
-  const concatInputs = scenes.map((_, idx) => `[v${idx}]`).join("");
-  const concatFilter = `${concatInputs}concat=n=${scenes.length}:v=1:a=0[vout]`;
-
-  const totalDuration = scenes.reduce((acc, s) => acc + s.durationSeconds, 0);
-
-  return [
-    `ffmpeg -y`,
-    inputArgs,
-    audioInput,
-    `-filter_complex "${videoFilters};${concatFilter}"`,
-    `-map "[vout]"`,
-    `-map ${scenes.length}:a`,
-    `-c:v libx264 -preset veryfast -crf 20 -pix_fmt yuv420p`,
-    `-c:a aac -b:a 192k`,
-    `-t ${totalDuration}`,
-    `"${outputFilePath}"`,
-  ].join(" ");
+  return ["ffmpeg", ...args.map((a) => (a.includes(" ") || a.includes(";") || a.includes(":") ? `"${a}"` : a))].join(" ");
 }

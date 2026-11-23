@@ -62,11 +62,23 @@ export default function ApiSettingsModal({ isOpen, onClose }: ApiSettingsModalPr
     if (!key) return;
 
     // Validação preventiva no cliente para OpenAI
-    if (service === "openai" && (!key.startsWith("sk-") || key.length < 20)) {
+    if (service === "openai") {
+      if (key.includes("@") || !key.startsWith("sk-") || key.length < 20) {
+        setErrorMessages((prev) => ({
+          ...prev,
+          openai:
+            "Chave inválida. Você inseriu um e-mail ou senha pessoal. Uma API Key da OpenAI é um código secreto gerado no painel oficial que sempre começa com 'sk-' (ex: sk-proj-... ou sk-...). Obtenha em platform.openai.com/api-keys.",
+        }));
+        return;
+      }
+    }
+
+    // Validação preventiva para Google AI Studio
+    if (service === "google_ai_studio" && (!key.startsWith("AIza") || key.length < 20)) {
       setErrorMessages((prev) => ({
         ...prev,
-        openai:
-          "Chave inválida. Uma API Key da OpenAI sempre começa com 'sk-'. Não insira sua senha de login.",
+        google_ai_studio:
+          "Chave do Google AI Studio inválida. Chaves da Google Generative AI começam com 'AIza...'. Obtenha em aistudio.google.com.",
       }));
       return;
     }
@@ -215,6 +227,22 @@ export default function ApiSettingsModal({ isOpen, onClose }: ApiSettingsModalPr
                   </div>
                 </div>
 
+                {/* Aviso Proativo caso o usuário tenha inserido e-mail/senha em vez de chave sk- */}
+                {item.service === "openai" && (item.maskedKey.includes("@") || (item.source === "CUSTOM_BYOK" && !item.maskedKey.toLowerCase().startsWith("sk"))) && (
+                  <div className="p-2.5 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-200 text-xs flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-amber-300">Atenção: Chave de API inválida detectada</p>
+                      <p className="text-[11px] text-amber-200/90 mt-0.5">
+                        O valor salvo (<code>{item.maskedKey}</code>) parece ser um e-mail ou senha pessoal. Uma API Key da OpenAI é um código secreto que começa com <code>sk-</code> (ou <code>sk-proj-</code>). Clique em &quot;Restaurar&quot; ou gere sua chave em{" "}
+                        <a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer" className="underline font-bold text-amber-100 hover:text-white">
+                          platform.openai.com/api-keys
+                        </a>.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Input for Custom Key */}
                 <div>
                   <div className="flex items-center gap-2">
@@ -262,6 +290,49 @@ export default function ApiSettingsModal({ isOpen, onClose }: ApiSettingsModalPr
                     <p className="text-[11px] text-rose-400 flex items-center gap-1 mt-1.5 font-sans">
                       <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-400" />
                       <span>{errorMessages[item.service]}</span>
+                    </p>
+                  )}
+                  {item.service === "openai" && (
+                    <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1 font-sans">
+                      <span>💡 Obtenha sua chave oficial em</span>
+                      <a
+                        href="https://platform.openai.com/api-keys"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-brand-400 hover:text-brand-300 underline font-medium inline-flex items-center gap-0.5"
+                      >
+                        platform.openai.com/api-keys
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                      <span className="text-amber-400/80">(Não use sua senha pessoal)</span>
+                    </p>
+                  )}
+                  {item.service === "pollinations" && (
+                    <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1 font-sans">
+                      <span>💡 Para gerar imagens IA ilimitadas sem espera de 45s:</span>
+                      <a
+                        href="https://enter.pollinations.ai"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-brand-400 hover:text-brand-300 underline font-medium inline-flex items-center gap-0.5"
+                      >
+                        enter.pollinations.ai
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    </p>
+                  )}
+                  {item.service === "google_ai_studio" && (
+                    <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1 font-sans">
+                      <span>💡 Obtenha sua chave gratuita em</span>
+                      <a
+                        href="https://aistudio.google.com"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-brand-400 hover:text-brand-300 underline font-medium inline-flex items-center gap-0.5"
+                      >
+                        aistudio.google.com
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
                     </p>
                   )}
                 </div>

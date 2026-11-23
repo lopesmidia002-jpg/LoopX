@@ -1,5 +1,6 @@
 import { SYSTEM_RESEARCHER_PROMPT } from "./prompts";
 import { Language, VideoFormat } from "../types";
+import { getEffectiveApiKey } from "../youtube/channel-manager";
 
 export interface ResearchFact {
   title: string;
@@ -77,14 +78,15 @@ export async function conductResearch(params: {
     }
   }
 
-  // 2. Se houver chave OpenAI configurada, consulta via API LLM
-  if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.startsWith("sk-")) {
+  // 2. Se houver chave OpenAI configurada (BYOK ou ambiente), consulta via API LLM
+  const openAiKey = getEffectiveApiKey("openai");
+  if (openAiKey && openAiKey.startsWith("sk-")) {
     try {
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          Authorization: `Bearer ${openAiKey}`,
         },
         body: JSON.stringify({
           model: "gpt-4o-mini",

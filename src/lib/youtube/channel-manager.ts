@@ -23,10 +23,10 @@ export interface DarkChannel {
 }
 
 export interface ApiServiceStatus {
-  service: "openai" | "google_ai_studio" | "elevenlabs" | "unsplash" | "pixabay" | "youtube";
+  service: "openai" | "google_ai_studio" | "elevenlabs" | "unsplash" | "pixabay" | "youtube" | "pollinations";
   name: string;
   configured: boolean;
-  source: "ENVIRONMENT" | "CUSTOM_BYOK" | "LOOPX_VAULT";
+  source: "ENVIRONMENT" | "CUSTOM_BYOK" | "LOOPX_VAULT" | "FREE_TIER";
   maskedKey: string;
 }
 
@@ -104,18 +104,25 @@ const DEFAULT_CHANNELS: DarkChannel[] = [
 
 function loadStore(): ChannelsStoreData {
   try {
+    let parsed: any = null;
     if (fs.existsSync(STORE_PATH)) {
       const content = fs.readFileSync(STORE_PATH, "utf-8");
-      const parsed = JSON.parse(content);
-      if (parsed && Array.isArray(parsed.channels) && parsed.channels.length > 0) {
-        return parsed;
-      }
+      parsed = JSON.parse(content);
     } else if (fs.existsSync("/tmp/loopx-channels.json")) {
       const content = fs.readFileSync("/tmp/loopx-channels.json", "utf-8");
-      const parsed = JSON.parse(content);
-      if (parsed && Array.isArray(parsed.channels) && parsed.channels.length > 0) {
-        return parsed;
+      parsed = JSON.parse(content);
+    }
+
+    if (parsed && Array.isArray(parsed.channels) && parsed.channels.length > 0) {
+      // Auto-higienização de segurança: remove credenciais de e-mail/senha que foram inseridas por engano
+      if (parsed.customApiKeys?.openai) {
+        const k = String(parsed.customApiKeys.openai).trim();
+        if (k.includes("@") || !k.startsWith("sk-") || k.length < 20) {
+          delete parsed.customApiKeys.openai;
+          saveStore(parsed);
+        }
       }
+      return parsed;
     }
   } catch (e) {
     console.warn("Aviso ao ler .loopx-channels.json, usando padrão:", e);
@@ -385,6 +392,17 @@ export class ChannelManager {
         maskedKey: maskKey(customKeys.openai || process.env.OPENAI_API_KEY || "lx-sk-vault-ai-987"),
       },
       {
+        service: "pollinations",
+        name: "Pollinations AI (Imagens Ilimitadas Sem Espera de 45s)",
+        configured: Boolean(process.env.POLLINATIONS_API_KEY || customKeys.pollinations),
+        source: customKeys.pollinations
+          ? "CUSTOM_BYOK"
+          : process.env.POLLINATIONS_API_KEY
+          ? "ENVIRONMENT"
+          : "FREE_TIER",
+        maskedKey: maskKey(customKeys.pollinations || process.env.POLLINATIONS_API_KEY || "pk-pollinations-free"),
+      },
+      {
         service: "google_ai_studio",
         name: "Google AI Studio (Narração Neural Hiper-realista Gemini)",
         configured: Boolean(
@@ -464,11 +482,11 @@ export class ChannelManager {
 
     // Validação estrita de formato da OpenAI
     if (s === "openai") {
-      if (!cleanKey.startsWith("sk-") || cleanKey.length < 20) {
+      if (cleanKey.includes("@") || !cleanKey.startsWith("sk-") || cleanKey.length < 20) {
         return {
           success: false,
           error:
-            "Chave da OpenAI inválida. Tokens de API da OpenAI sempre começam com 'sk-'. Não insira senhas pessoais ou de e-mail.",
+            "Chave da OpenAI inválida. Tokens de API da OpenAI sempre começam com 'sk-' (ex: sk-proj-... ou sk-...). Você inseriu um e-mail ou senha pessoal. Gere uma Secret Key em platform.openai.com/api-keys.",
         };
       }
     }
@@ -530,4 +548,40 @@ export class ChannelManager {
     }
     return key;
   }
+
+  /**
+   * Retorna a chave de API efetiva, priorizando BYOK customizado e recorrendo ao ambiente (.env)
+   */
+  static getEffectiveApiKey(service: string): string | undefined {
+    const s = service.toLowerCase();
+    const custom = ChannelManager.getCustomApiKey(s);
+    if (custom) return custom;
+
+    switch (s) {
+      case "openai":
+        return process.env.OPENAI_API_KEY;
+      case "google_ai_studio":
+      case "gemini":
+        return process.env.GOOGLE_AI_STUDIO_API_KEY || process.env.GEMINI_API_KEY;
+      case "elevenlabs":
+        return process.env.ELEVENLABS_API_KEY;
+      case "unsplash":
+        return process.env.UNSPLASH_ACCESS_KEY;
+      case "pixabay":
+        return process.env.PIXABAY_API_KEY;
+      case "pollinations":
+        return process.env.POLLINATIONS_API_KEY;
+      case "youtube":
+        return process.env.YOUTUBE_CLIENT_ID;
+      default:
+        return undefined;
+    }
+  }
+}
+
+/**
+ * Função utilitária exportada para obter chaves ativas (BYOK ou ambiente)
+ */
+export function getEffectiveApiKey(service: string): string | undefined {
+  return ChannelManager.getEffectiveApiKey(service);
 }

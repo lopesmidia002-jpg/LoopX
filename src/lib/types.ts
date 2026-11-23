@@ -47,6 +47,8 @@ export interface SceneItem {
   videoMotionPrompt?: string;
   isAiGenerated?: boolean;
   videoUrl?: string;
+  audioUrl?: string;
+  audioDurationSeconds?: number;
 }
 
 export interface PlanPricing {

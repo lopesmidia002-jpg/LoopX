@@ -4,6 +4,8 @@ import {
   getAiGeneratedImageUrl,
   getCuratedMediaForScene,
 } from "@/lib/pipeline/media-curator";
+import { tryGenerateDallE3 } from "@/lib/pipeline/ai-video-generator";
+import { getEffectiveApiKey } from "@/lib/youtube/channel-manager";
 
 export async function POST(req: Request) {
   try {
@@ -23,10 +25,29 @@ export async function POST(req: Request) {
         ? customPrompt.trim()
         : buildCinematicAiImagePrompt(topic, normalizedKeywords, sceneIndex, narrationText);
 
-    let imageUrl = getAiGeneratedImageUrl(finalPrompt, seed);
+    // 1. Prioridade Máxima: OpenAI DALL-E 3 se houver chave configurada (BYOK ou ambiente)
+    const openAiKey = getEffectiveApiKey("openai");
+    if (openAiKey && openAiKey.startsWith("sk-")) {
+      const dallEUrl = await tryGenerateDallE3(finalPrompt);
+      if (dallEUrl) {
+        return NextResponse.json({
+          success: true,
+          imageUrl: dallEUrl,
+          prompt: finalPrompt,
+          seed,
+          model: "OpenAI DALL-E 3 (16:9 Widescreen)",
+          usedFallback: false,
+          rateLimited: false,
+        });
+      }
+    }
+
+    // 2. Pollinations AI com suporte à chave de alta cota e proteção estrita contra banner de 45s
+    const pollinationsKey = getEffectiveApiKey("pollinations");
+    let imageUrl = getAiGeneratedImageUrl(finalPrompt, seed, pollinationsKey);
     let usedFallback = false;
 
-    // Sonda se a API gratuita de IA está livre ou bloqueada por rate-limit (evita banner amarelo de 45s)
+    // Sonda ativa: se a API gratuita estiver em rate-limit (402, 429 ou headers de bloqueio), recorre ao acervo 4K
     try {
       const probe = await fetch(imageUrl, {
         method: "HEAD",
@@ -36,11 +57,10 @@ export async function POST(req: Request) {
       const paymentReq = probe.headers.get("payment-required");
       const contentType = probe.headers.get("content-type") || "";
 
-      // Se retornar 402 (Payment/Free Limit), 429 (Too Many Requests), JSON de erro ou headers de bloqueio:
       if (
         probe.status !== 200 ||
-        retryAfter ||
-        paymentReq ||
+        Boolean(retryAfter) ||
+        Boolean(paymentReq) ||
         contentType.includes("json")
       ) {
         imageUrl = await getCuratedMediaForScene({

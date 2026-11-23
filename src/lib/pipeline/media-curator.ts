@@ -4,6 +4,8 @@
  */
 
 import { MediaType, VisualStyle } from "../types";
+import { getEffectiveApiKey } from "../youtube/channel-manager";
+import { tryGenerateDallE3 } from "./ai-video-generator";
 
 export interface CuratedMediaItem {
   id: string;
@@ -18,8 +20,60 @@ export interface CuratedMediaItem {
   duration?: number;
 }
 
-// Acervo Cinematográfico HD/4K categorizado para canais Dark (LoopX Vault 4K com 24 fotografias verificadas por nicho)
+// Acervo Cinematográfico HD/4K categorizado para canais Dark (LoopX Vault 4K com fotografias verificadas por nicho)
 export const VAULT_CATEGORIES: Record<string, string[]> = {
+  abyss_ocean: [
+    "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1920&q=80", // Deep underwater blue abyss
+    "https://images.unsplash.com/photo-1498084393753-b411b2d26b34?auto=format&fit=crop&w=1920&q=80", // Deep ocean underwater sunbeams trench
+    "https://images.unsplash.com/photo-1509099836639-18ba1795216d?auto=format&fit=crop&w=1920&q=80", // Dark deep abyss water
+    "https://images.unsplash.com/photo-1559827291-72ee739d0d9a?auto=format&fit=crop&w=1920&q=80", // Underwater deep sea exploration
+    "https://images.unsplash.com/photo-1544552866-d3ed42536cfd?auto=format&fit=crop&w=1920&q=80", // Oceanic trench dark waters
+    "https://images.unsplash.com/photo-1682687220063-4742bd7fd538?auto=format&fit=crop&w=1920&q=80", // Submarine reef trench
+    "https://images.unsplash.com/photo-1702474447694-e8c8dc2508e0?auto=format&fit=crop&w=1920&q=80", // Underwater submarine lights
+    "https://images.unsplash.com/photo-1667857431728-00884201d629?auto=format&fit=crop&w=1920&q=80", // Sonar wave underwater
+    "https://images.unsplash.com/photo-1580920790557-43158492adb5?auto=format&fit=crop&w=1920&q=80", // Abyssal creature depth
+    "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1920&q=80", // Underwater sonar ping
+    "https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=1920&q=80", // Ocean search vessel storm
+    "https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1920&q=80", // Dark stormy ocean waves sea night
+    "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80", // Vast lonely ocean horizon dark
+    "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1920&q=80", // Sonar bathymetric topography screen
+    "https://images.unsplash.com/photo-1522163723043-478ef79a5bb4?auto=format&fit=crop&w=1920&q=80", // Midnight ocean waves
+    "https://images.unsplash.com/photo-1496156298940-6902fc34e55d?auto=format&fit=crop&w=1920&q=80", // Cold dark ocean currents
+    "https://images.unsplash.com/photo-1489846986031-7cea03ab8fd0?auto=format&fit=crop&w=1920&q=80", // Remote ocean expanse
+    "https://images.unsplash.com/photo-1476362555312-ab9e108a0b7e?auto=format&fit=crop&w=1920&q=80", // Deep water solitary horizon
+    "https://images.unsplash.com/photo-1506452305024-9d3f02d1c9b5?auto=format&fit=crop&w=1920&q=80", // Enigmatic stormy coastline night
+    "https://images.unsplash.com/photo-1494376877685-d3d2559d4f82?auto=format&fit=crop&w=1920&q=80", // Dark foggy sea horizon
+    "https://images.unsplash.com/photo-1483982258113-b72862e6cff6?auto=format&fit=crop&w=1920&q=80", // Ominous ocean waves storm
+    "https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?auto=format&fit=crop&w=1920&q=80", // Twilight maritime horizon mist
+    "https://images.unsplash.com/photo-1597839219216-a773cb2473e4?auto=format&fit=crop&w=1920&q=80", // Dark water reflections night
+    "https://images.unsplash.com/photo-1632307941173-5d541ea1d940?auto=format&fit=crop&w=1920&q=80", // Dramatic ocean tempest
+  ],
+  gaming: [
+    "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1920&q=80", // Esports neon gaming arena
+    "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1920&q=80", // Retro arcade dark neon lighting
+    "https://images.unsplash.com/photo-1612287230202-1ff1d85d1bdf?auto=format&fit=crop&w=1920&q=80", // Glowing illuminated controller dark
+    "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1920&q=80", // Retro cyber gaming hardware
+    "https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?auto=format&fit=crop&w=1920&q=80", // Professional gamer dark room screens
+    "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?auto=format&fit=crop&w=1920&q=80", // Neon game on dark typography
+    "https://images.unsplash.com/photo-1593305841991-05c297ba4575?auto=format&fit=crop&w=1920&q=80", // Gaming setup dark moody rgb
+    "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?auto=format&fit=crop&w=1920&q=80", // Pixelated game screen dark room
+    "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=1920&q=80", // Matrix code terminal game engine
+    "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1920&q=80", // Cyber server cluster dark
+    "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=1920&q=80", // Quantum computer glowing circuit
+    "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=1920&q=80", // Confidential game prototype archive
+    "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1920&q=80", // Microchip silicon wafer
+    "https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=1920&q=80", // Dark surveillance signal
+    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1920&q=80", // Global digital network
+    "https://images.unsplash.com/photo-1519074069444-1ba4ea16e676?auto=format&fit=crop&w=1920&q=80", // Command console screens
+    "https://images.unsplash.com/photo-1580920790557-43158492adb5?auto=format&fit=crop&w=1920&q=80", // Cryptographic computing terminal
+    "https://images.unsplash.com/photo-1489846986031-7cea03ab8fd0?auto=format&fit=crop&w=1920&q=80", // Server mainframe chamber
+    "https://images.unsplash.com/photo-1667857431728-00884201d629?auto=format&fit=crop&w=1920&q=80", // Optical fiber cables glowing
+    "https://images.unsplash.com/photo-1632307941173-5d541ea1d940?auto=format&fit=crop&w=1920&q=80", // Situation room monitors
+    "https://images.unsplash.com/photo-1702474447694-e8c8dc2508e0?auto=format&fit=crop&w=1920&q=80", // Advanced sensor spectrograph
+    "https://images.unsplash.com/photo-1496156298940-6902fc34e55d?auto=format&fit=crop&w=1920&q=80", // Operations control center
+    "https://images.unsplash.com/photo-1522163723043-478ef79a5bb4?auto=format&fit=crop&w=1920&q=80", // Cyber dark room screens
+    "https://images.unsplash.com/photo-1476362555312-ab9e108a0b7e?auto=format&fit=crop&w=1920&q=80", // Research vault terminal
+  ],
   aviation_mh370: [
     "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1920&q=80", // Airplane cockpit at night glowing dials
     "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1920&q=80", // Military radar screen green display
@@ -236,22 +290,44 @@ export const VAULT_CATEGORIES: Record<string, string[]> = {
 export function detectCategoryForTopic(topic: string): string {
   const clean = (topic || "").toLowerCase();
 
-  if (clean.includes("mh370") || clean.includes("voo") || clean.includes("aviao") || clean.includes("aereo") || clean.includes("desaparecido")) {
+  if (
+    clean.includes("fossa") ||
+    clean.includes("abiss") ||
+    clean.includes("mariana") ||
+    clean.includes("abismo") ||
+    clean.includes("submarino") ||
+    clean.includes("profundezas") ||
+    clean.includes("bloop") ||
+    clean.includes("leito marinho")
+  ) {
+    return "abyss_ocean";
+  }
+  if (
+    clean.includes("game") ||
+    clean.includes("jogo") ||
+    clean.includes("playstation") ||
+    clean.includes("gamer") ||
+    clean.includes("console") ||
+    clean.includes("videogame")
+  ) {
+    return "gaming";
+  }
+  if (clean.includes("mh370") || clean.includes("voo") || clean.includes("aviao") || clean.includes("aereo") || clean.includes("desaparecido") || clean.includes("cockpit")) {
     return "aviation_mh370";
   }
-  if (clean.includes("mar") || clean.includes("oceano") || clean.includes("fossa") || clean.includes("mariana") || clean.includes("abismo") || clean.includes("submarino") || clean.includes("agua")) {
+  if (clean.includes("mar") || clean.includes("oceano") || clean.includes("agua") || clean.includes("naufragio")) {
     return "ocean";
   }
-  if (clean.includes("guerra") || clean.includes("militar") || clean.includes("armas") || clean.includes("exercito") || clean.includes("soldado") || clean.includes("batalha") || clean.includes("segunda guerra")) {
+  if (clean.includes("guerra") || clean.includes("militar") || clean.includes("armas") || clean.includes("exercito") || clean.includes("soldado") || clean.includes("batalha") || clean.includes("segunda guerra") || clean.includes("bunker")) {
     return "military";
   }
-  if (clean.includes("espaco") || clean.includes("cosmos") || clean.includes("galaxia") || clean.includes("planeta") || clean.includes("sol") || clean.includes("universo") || clean.includes("astronomia") || clean.includes("buraco negro")) {
+  if (clean.includes("espaco") || clean.includes("cosmos") || clean.includes("galaxia") || clean.includes("planeta") || clean.includes("sol") || clean.includes("universo") || clean.includes("astronomia") || clean.includes("buraco negro") || clean.includes("telescopio")) {
     return "space";
   }
   if (clean.includes("gelo") || clean.includes("antartida") || clean.includes("polo") || clean.includes("neve") || clean.includes("glaciar")) {
     return "ice";
   }
-  if (clean.includes("civilizacao") || clean.includes("antiga") || clean.includes("piramide") || clean.includes("arqueologia") || clean.includes("perdida") || clean.includes("historia")) {
+  if (clean.includes("civilizacao") || clean.includes("antiga") || clean.includes("piramide") || clean.includes("arqueologia") || clean.includes("perdida") || clean.includes("historia") || clean.includes("tumba")) {
     return "ancient";
   }
   if (clean.includes("tecnologia") || clean.includes("ia") || clean.includes("computador") || clean.includes("quantica") || clean.includes("futuro") || clean.includes("chip") || clean.includes("cyber")) {
@@ -289,6 +365,18 @@ export function buildUnsplashSearchQuery(
   // 2. Mapeamento semântico de termos narrativos para fotografia cinematográfica 4K
   const text = `${topic} ${(keywords || []).join(" ")} ${narrationText || ""}`.toLowerCase();
 
+  // Fossas abissais / Mariana / Profundezas
+  if (text.includes("fossa") || text.includes("abiss") || text.includes("mariana") || text.includes("hadal") || text.includes("profundezas")) {
+    return "deep sea trench hadal zone abyss dark underwater cinematic";
+  }
+  // Bioluminescência / Criaturas do abismo
+  if (text.includes("bioluminesc") || text.includes("criatura") || text.includes("peixe abissal") || text.includes("monstro")) {
+    return "bioluminescent deep sea creatures dark ocean glowing cinematic";
+  }
+  // Games / Jogos / Console
+  if (text.includes("game") || text.includes("jogo") || text.includes("gamer") || text.includes("playstation") || text.includes("console")) {
+    return "dark cinematic gaming setup neon futuristic";
+  }
   // Radar / Controle aéreo / Transponder
   if (text.includes("radar") || text.includes("torre") || text.includes("transponder") || text.includes("tráfego aéreo") || text.includes("trajetória")) {
     return "air traffic control room radar screens dark";
@@ -370,10 +458,41 @@ export function buildCinematicAiImagePrompt(
 /**
  * Retorna URL direta da imagem gerada por IA via Flux (Pollinations AI)
  */
-export function getAiGeneratedImageUrl(prompt: string, seed?: number): string {
+export function getAiGeneratedImageUrl(prompt: string, seed?: number, apiKey?: string): string {
   const cleanSeed = seed !== undefined ? seed : Math.floor(Math.random() * 999999);
   const encoded = encodeURIComponent(prompt.trim());
-  return `https://image.pollinations.ai/prompt/${encoded}?width=1280&height=720&model=flux&nologo=true&seed=${cleanSeed}`;
+  const keyParam = apiKey ? `&key=${encodeURIComponent(apiKey)}` : "";
+  return `https://image.pollinations.ai/prompt/${encoded}?width=1280&height=720&model=flux&nologo=true&seed=${cleanSeed}${keyParam}`;
+}
+
+/**
+ * Extrai o identificador canônico de uma mídia (Unsplash ID, Pixabay ID ou URL limpa)
+ * para evitar repetição da mesma fotografia mesmo quando query params ou ixid mudam.
+ */
+export function extractMediaCanonicalId(url: string): string {
+  if (!url) return "";
+  const unsplashMatch = url.match(/photo-([a-zA-Z0-9\-]+)/);
+  if (unsplashMatch) return `unsplash-${unsplashMatch[1]}`;
+  const pixabayMatch = url.match(/get\/([a-zA-Z0-9_]+)/);
+  if (pixabayMatch) return `pixabay-${pixabayMatch[1].slice(0, 24)}`;
+  try {
+    const parsed = new URL(url);
+    return `${parsed.origin}${parsed.pathname}`;
+  } catch {
+    return url.split("?")[0];
+  }
+}
+
+export function isMediaUsed(url: string, usedUrls?: Set<string>): boolean {
+  if (!usedUrls || !url) return false;
+  if (usedUrls.has(url)) return true;
+  const canonicalId = extractMediaCanonicalId(url);
+  for (const item of usedUrls) {
+    if (extractMediaCanonicalId(item) === canonicalId) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -391,12 +510,29 @@ export async function getCuratedMediaForScene(params: {
 }): Promise<string> {
   const { topic, keywords, sceneIndex, visualStyle = "STOCK_4K", narrationText, usedMediaUrls } = params;
 
-  // 1. Se visualStyle for AI_GENERATED, tenta a IA mas valida que não esteja em rate-limit (evita banner amarelo)
+  // 1. Se visualStyle for AI_GENERATED, tenta DALL-E 3 (OpenAI BYOK) ou Pollinations com proteção anti-rate-limit
   if (visualStyle === "AI_GENERATED") {
+    // 1.1 Tenta OpenAI DALL-E 3 se chave configurada
+    const openAiKey = getEffectiveApiKey("openai");
+    if (openAiKey && openAiKey.startsWith("sk-")) {
+      try {
+        const prompt = buildCinematicAiImagePrompt(topic, keywords, sceneIndex, narrationText);
+        const dallEUrl = await tryGenerateDallE3(prompt);
+        if (dallEUrl) {
+          usedMediaUrls?.add(dallEUrl);
+          return dallEUrl;
+        }
+      } catch (e) {
+        console.warn("Aviso DALL-E 3 na curadoria de cena:", e);
+      }
+    }
+
+    // 1.2 Tenta Pollinations AI com verificação rigorosa anti-banner de rate limit
     try {
       const prompt = buildCinematicAiImagePrompt(topic, keywords, sceneIndex, narrationText);
       const seed = (sceneIndex + 1) * 31337 + 101;
-      const candidateAiUrl = getAiGeneratedImageUrl(prompt, seed);
+      const pollinationsKey = getEffectiveApiKey("pollinations");
+      const candidateAiUrl = getAiGeneratedImageUrl(prompt, seed, pollinationsKey);
 
       // Sonda se o provedor gratuito está livre de rate limit
       const probe = await fetch(candidateAiUrl, {
@@ -406,7 +542,13 @@ export async function getCuratedMediaForScene(params: {
       const retryAfter = probe.headers.get("retry-after");
       const paymentReq = probe.headers.get("payment-required");
 
-      if (probe.status === 200 && !retryAfter && !paymentReq) {
+      if (
+        probe.status === 200 &&
+        !retryAfter &&
+        !paymentReq &&
+        probe.status !== 402 &&
+        probe.status !== 429
+      ) {
         if (!usedMediaUrls || !usedMediaUrls.has(candidateAiUrl)) {
           usedMediaUrls?.add(candidateAiUrl);
           return candidateAiUrl;
@@ -418,7 +560,7 @@ export async function getCuratedMediaForScene(params: {
   }
 
   // 2. Acervo Fotográfico Cinematográfico 4K (Unsplash API Oficial)
-  const unsplashKey = process.env.UNSPLASH_ACCESS_KEY;
+  const unsplashKey = getEffectiveApiKey("unsplash");
   if (unsplashKey) {
     try {
       const queryTerm = buildUnsplashSearchQuery(topic, keywords, narrationText);
@@ -433,9 +575,9 @@ export async function getCuratedMediaForScene(params: {
           // Escolhe o melhor resultado que ainda NÃO foi usado neste vídeo
           const candidate = data.results.find((p: any) => {
             const u = p.urls?.regular || p.urls?.full;
-            return u && (!usedMediaUrls || !usedMediaUrls.has(u));
+            return u && !isMediaUsed(u, usedMediaUrls);
           });
-          const chosen = candidate || data.results[sceneIndex % data.results.length];
+          const chosen = candidate || data.results.find((p: any) => p.urls?.regular || p.urls?.full) || data.results[sceneIndex % data.results.length];
           const imgUrl = chosen?.urls?.regular || chosen?.urls?.full;
           if (imgUrl) {
             usedMediaUrls?.add(imgUrl);
@@ -449,7 +591,7 @@ export async function getCuratedMediaForScene(params: {
   }
 
   // 3. Acervo Fotográfico Pixabay API (5.000 requisições/hora gratuitas, sem rate-limit)
-  const pixabayKey = process.env.PIXABAY_API_KEY;
+  const pixabayKey = getEffectiveApiKey("pixabay");
   if (pixabayKey) {
     try {
       const queryTerm = buildUnsplashSearchQuery(topic, keywords, narrationText);
@@ -461,9 +603,9 @@ export async function getCuratedMediaForScene(params: {
         if (data.hits && data.hits.length > 0) {
           const candidate = data.hits.find((h: any) => {
             const u = h.largeImageURL || h.webformatURL;
-            return u && (!usedMediaUrls || !usedMediaUrls.has(u));
+            return u && !isMediaUsed(u, usedMediaUrls);
           });
-          const chosen = candidate || data.hits[sceneIndex % data.hits.length];
+          const chosen = candidate || data.hits.find((h: any) => h.largeImageURL || h.webformatURL) || data.hits[sceneIndex % data.hits.length];
           const imgUrl = chosen?.largeImageURL || chosen?.webformatURL;
           if (imgUrl) {
             usedMediaUrls?.add(imgUrl);
@@ -484,7 +626,7 @@ export async function getCuratedMediaForScene(params: {
   if (usedMediaUrls) {
     for (let i = 0; i < fallbackList.length; i++) {
       const candidate = fallbackList[(sceneIndex + i) % fallbackList.length];
-      if (!usedMediaUrls.has(candidate)) {
+      if (!isMediaUsed(candidate, usedMediaUrls)) {
         usedMediaUrls.add(candidate);
         return candidate;
       }
@@ -551,8 +693,8 @@ export async function curateMediaForKeywords(params: {
               const bestFile = v.videos?.large?.url
                 ? v.videos.large
                 : v.videos?.medium?.url
-                ? v.videos.medium
-                : v.videos?.small || { url: "", width: 1280, height: 720 };
+                  ? v.videos.medium
+                  : v.videos?.small || { url: "", width: 1280, height: 720 };
 
               return {
                 id: `pixabay-vid-${v.id}`,

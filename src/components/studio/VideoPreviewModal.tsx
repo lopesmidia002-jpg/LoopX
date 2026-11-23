@@ -79,6 +79,7 @@ export default function VideoPreviewModal({
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const timelineBarRef = useRef<HTMLDivElement>(null);
   const bgmAudioRef = useRef<HTMLAudioElement | null>(null);
+  const narrationAudioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -129,6 +130,10 @@ export default function VideoPreviewModal({
       if (bgmAudioRef.current) {
         bgmAudioRef.current.pause();
         bgmAudioRef.current.currentTime = 0;
+      }
+      if (narrationAudioRef.current) {
+        narrationAudioRef.current.pause();
+        narrationAudioRef.current.currentTime = 0;
       }
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
@@ -251,7 +256,7 @@ export default function VideoPreviewModal({
       return activeScene.subtitles;
     }
     const sceneDuration = Number(activeScene.durationSeconds) || 7.5;
-    return syncSubtitles(activeScene.narrationText, sceneDuration);
+    return syncSubtitles(activeScene.narrationText, sceneDuration, activeScene.audioDurationSeconds);
   }, [activeScene]);
 
   // Agrupa as palavras em frases dinâmicas curtas de 4 a 6 palavras (estilo Dark Channel)
@@ -312,8 +317,36 @@ export default function VideoPreviewModal({
 
     // Cancela locução anterior com segurança
     window.speechSynthesis.cancel();
+    if (narrationAudioRef.current) {
+      narrationAudioRef.current.pause();
+    }
     if (!activeScene?.narrationText) return;
 
+    // 1. Se a cena possui arquivo de áudio real do motor TTS (ElevenLabs / Gemini / OpenAI)
+    if (activeScene.audioUrl) {
+      const audio = new Audio(activeScene.audioUrl);
+      const currentSceneElapsed = Math.max(0, currentTime - (activeScene.startTime || 0));
+      if (currentSceneElapsed > 0.1) {
+        audio.currentTime = Math.min(currentSceneElapsed, activeScene.audioDurationSeconds || activeScene.durationSeconds);
+      }
+      audio.volume = isMuted ? 0 : 1.0;
+      narrationAudioRef.current = audio;
+
+      audio.onplay = () => setIsDucking(true);
+      audio.onended = () => setIsDucking(false);
+      audio.onerror = () => setIsDucking(false);
+
+      if (isPlaying && !isMuted) {
+        audio.play().catch(() => {});
+      }
+
+      return () => {
+        audio.pause();
+        audio.currentTime = 0;
+      };
+    }
+
+    // 2. Fallback de alta fidelidade via SpeechSynthesis nativa
     const allWords = activeScene.narrationText.split(/\s+/).filter(Boolean);
     if (allWords.length === 0) return;
 

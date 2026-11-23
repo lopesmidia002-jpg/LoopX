@@ -52,6 +52,19 @@ const SAMPLE_MEDIA_LIBRARY = [
   "https://images.unsplash.com/photo-1579965342575-16428a7c8881?q=80&w=1200&auto=format&fit=crop",
 ];
 
+const VAULT_FALLBACKS = [
+  "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1920&q=80",
+  "https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1920&q=80",
+  "https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=1920&q=80",
+  "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1920&q=80",
+  "https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?auto=format&fit=crop&w=1920&q=80",
+  "https://images.unsplash.com/photo-1506452305024-9d3f02d1c9b5?auto=format&fit=crop&w=1920&q=80",
+  "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=1920&q=80",
+  "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=1920&q=80",
+  "https://images.unsplash.com/photo-1509099836639-18ba1795216d?auto=format&fit=crop&w=1920&q=80",
+  "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1920&q=80",
+];
+
 export default function StoryboardEditor({
   scenes,
   onUpdateScene,
@@ -515,6 +528,10 @@ export default function StoryboardEditor({
                     muted
                     playsInline
                     className="w-full h-full object-cover"
+                    onError={() => {
+                      const safeFallback = VAULT_FALLBACKS[scene.sceneOrder % VAULT_FALLBACKS.length];
+                      onUpdateScene(scene.id, { mediaType: "IMAGE", videoUrl: undefined, mediaUrl: safeFallback });
+                    }}
                   />
                 ) : (
                   <img
@@ -523,9 +540,22 @@ export default function StoryboardEditor({
                     className="w-full h-full object-cover ken-burns-active"
                     onError={(e) => {
                       const target = e.currentTarget;
-                      const safeFallback = "https://images.unsplash.com/photo-1506452305024-9d3f02d1c9b5?auto=format&fit=crop&w=1920&q=80";
+                      const safeFallback = VAULT_FALLBACKS[scene.sceneOrder % VAULT_FALLBACKS.length];
                       if (target.src !== safeFallback) {
                         target.src = safeFallback;
+                        onUpdateScene(scene.id, { mediaUrl: safeFallback });
+                      }
+                    }}
+                    onLoad={(e) => {
+                      const target = e.currentTarget;
+                      // Detecção proativa do card de rate-limit da Pollinations para substituição imediata por 4K
+                      if (
+                        target.src.includes("pollinations.ai") &&
+                        (target.naturalWidth < 800 || target.naturalWidth === target.naturalHeight)
+                      ) {
+                        const safeFallback = VAULT_FALLBACKS[scene.sceneOrder % VAULT_FALLBACKS.length];
+                        target.src = safeFallback;
+                        onUpdateScene(scene.id, { mediaUrl: safeFallback });
                       }
                     }}
                   />

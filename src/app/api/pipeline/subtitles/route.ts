@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { generateSrt, syncSubtitles } from "@/lib/pipeline/subtitles-sync";
+import { generateSrt, generateAssSubtitles, syncSubtitles, validateSubtitlesAndAudio } from "@/lib/pipeline/subtitles-sync";
 import { SceneItem } from "@/lib/types";
 
 export async function POST(req: Request) {
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Normaliza campos para suportar tanto sceneOrder/narrationText quanto number/narration
+    // Normaliza campos para suportar sceneOrder/narrationText/audioDuration
     const scenes: SceneItem[] = rawScenes.map((s, idx) => ({
       id: s.id || `scene-${idx + 1}`,
       sceneOrder: s.sceneOrder || s.number || idx + 1,
@@ -25,25 +25,33 @@ export async function POST(req: Request) {
       motionEffect: s.motionEffect || "KEN_BURNS_ZOOM_IN",
       keywords: s.keywords || [],
       subtitles: s.subtitles,
+      audioUrl: s.audioUrl,
+      audioDurationSeconds: s.audioDurationSeconds ? Number(s.audioDurationSeconds) : undefined,
     }));
 
-    // Gera o texto formatado no padrão .SRT
-    const srtContent = generateSrt(scenes);
-
-    // Sincroniza palavra por palavra se necessário
+    // Sincroniza palavra por palavra calibrada pela duração de áudio real (se presente)
     const syncedScenes = scenes.map((s) => ({
       ...s,
       subtitles:
         s.subtitles && s.subtitles.length > 0
           ? s.subtitles
-          : syncSubtitles(s.narrationText, s.durationSeconds),
+          : syncSubtitles(s.narrationText, s.durationSeconds, s.audioDurationSeconds),
     }));
+
+    // Gera legendas formatadas nos padrões .SRT e .ASS
+    const srtContent = generateSrt(syncedScenes);
+    const assContent = generateAssSubtitles(syncedScenes);
+
+    // Validação automática de integridade temporal
+    const validationReport = validateSubtitlesAndAudio(syncedScenes);
 
     return NextResponse.json({
       success: true,
       srt: srtContent,
       srtContent,
+      assContent,
       syncedScenes,
+      validationReport,
     });
   } catch (error: any) {
     console.error("Erro na geração de legendas:", error);

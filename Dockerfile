@@ -50,9 +50,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/.eslintrc.json ./.eslintrc.json
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 
-# Ensure /app root directory and all child assets have full ownership and write permissions
-RUN chown -R nextjs:nodejs /app
-
 USER nextjs
 
 EXPOSE 3000

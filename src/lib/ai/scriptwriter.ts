@@ -1,8 +1,9 @@
 import { SYSTEM_DOCUMENTARY_WRITER_PROMPT, SYSTEM_TOP10_WRITER_PROMPT } from "./prompts";
 import { ResearchResult } from "./researcher";
 import { SceneItem, VideoFormat, Language, MotionEffect, VisualStyle } from "../types";
-import { getCuratedMediaForScene } from "../pipeline/media-curator";
+import { getCuratedMediaForScene, detectCategoryForTopic } from "../pipeline/media-curator";
 import { syncSubtitles } from "../pipeline/subtitles-sync";
+import { getEffectiveApiKey } from "../youtube/channel-manager";
 
 export interface ScriptGenerationResult {
   title: string;
@@ -45,9 +46,9 @@ export async function generateCinematicScript(params: {
   const targetSceneCount = Math.max(8, Math.round(targetTotalSeconds / 42));
 
   // 1. Tenta Google Gemini (Google AI Studio) - Modelo ativo e de alta velocidade
-  const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_STUDIO_API_KEY;
+  const geminiKey = getEffectiveApiKey("gemini");
   if (geminiKey) {
-    const candidateModels = ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-flash-latest"];
+    const candidateModels = ["gemini-1.5-flash", "gemini-flash-latest", "gemini-2.0-flash", "gemini-3.8-flash"];
     const systemPrompt =
       format === "DOCUMENTARY"
         ? SYSTEM_DOCUMENTARY_WRITER_PROMPT
@@ -179,8 +180,9 @@ Retorne estritamente um JSON no formato:
     }
   }
 
-  // 2. Se houver OpenAI configurada, gera roteiro cinematográfico via LLM
-  if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.startsWith("sk-")) {
+  // 2. Se houver OpenAI configurada (BYOK ou ambiente), gera roteiro cinematográfico via LLM
+  const openAiKey = getEffectiveApiKey("openai");
+  if (openAiKey && openAiKey.startsWith("sk-")) {
     try {
       const systemPrompt =
         format === "DOCUMENTARY"
@@ -191,7 +193,7 @@ Retorne estritamente um JSON no formato:
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          Authorization: `Bearer ${openAiKey}`,
         },
         body: JSON.stringify({
           model: "gpt-4o-mini",
@@ -342,7 +344,7 @@ async function generateDeterministicScript(
   const targetSceneCount = Math.max(8, Math.round(targetTotalSeconds / 42));
 
   // Banco de Atos Narrativos de Altíssima Retenção e Densidade Narrativa (YouTube Dark)
-  const documentaryNarrativePool = [
+  const aviationNarrativePool = [
     {
       narration: `Nas primeiras horas de uma madrugada silenciosa, quando as cidades ao redor do globo repousavam sob a calmaria, um alerta de anomalia rompeu os protocolos militares de segurança em ${topic}. Sem qualquer transmissão de socorro ou ativação de transponder em frequência de emergência, os canais de telemetria desapareceram subitamente dos consoles civis de radar, mergulhando centenas de vidas em um abismo de silêncio inexplicável e absoluto.`,
       keywords: ["airplane cockpit night dark glowing instruments", "commercial airliner cockpit instruments night", "cockpit dials controls dark lighting"],
@@ -433,46 +435,223 @@ async function generateDeterministicScript(
       keywords: ["dramatic dark ocean horizon twilight clouds enigmatic sea", "lonely dark ocean horizon storm twilight sky", "calm deep ocean horizon twilight dark waters"],
       effect: "KEN_BURNS_PAN_RIGHT" as MotionEffect,
     },
+  ];
+
+  // Banco Especializado para Fossas Abissais e Oceanos Profundos
+  const abyssOceanNarrativePool = [
     {
-      narration: `Radares de defesa aérea primários instalados em bases costeiras registraram uma assinatura de voo ziguezagueante que subia a altitudes proibidas antes de despencar em parafuso controlado sobre o estreito marítimo. Operadores militares que testemunharam o traço desaparecer de repente de suas telas foram orientados a tratar as gravações como exercício não-oficial, apagando os registros dos livros de serviço.`,
-      keywords: ["military tactical radar screen tracking blip green display", "air defense radar console night glowing screen", "military operations room tracking flight path dark"],
+      narration: `Nas profundezas mais impenetráveis do nosso planeta, onde a pressão ultrapassa mil atmosferas e a luz solar nunca tocou nos últimos quatro bilhões de anos, repousam os mistérios insondáveis de ${topic}. A zona hadal, que se estende por desfiladeiros submarinos de mais de dez mil metros de profundidade, abriga um universo alienígena que a ciência moderna mal começou a mapear com seus sensores oceanográficos mais avançados.`,
+      keywords: ["deep sea trench hadal zone abyss cinematic", "mariana trench dark abyss underwater", "deep ocean abyss blue water dark"],
       effect: "KEN_BURNS_ZOOM_IN" as MotionEffect,
     },
     {
-      narration: `Meses após o desaparecimento, fragmentos isolados de material composto surgiram a milhares de milhas dali, em praias desérticas banhadas por correntes remotas. A análise pericial das incrustações biológicas revelou que as peças flutuaram à deriva por semanas caóticas, mas o corpo principal contendo as caixas-pretas blindadas continuou sepultado em local absolutamente incerto.`,
-      keywords: ["ocean debris wreckage shoreline aircraft metal", "driftwood and debris on stormy ocean coastline", "aircraft wing metal debris ocean shore rocks"],
+      narration: `A cada cem metros de descida na coluna d'água, o peso da lâmina oceânica se multiplica de forma esmagadora, capaz de implodir cascos de aço temperado como se fossem finas lâminas de alumínio. Batiscafos de titânio de última geração operam no limite absoluto da resistência dos materiais, enquanto cientistas a bordo enfrentam temperaturas próximas do congelamento em um silêncio total interrompido apenas pelos estalos metálicos da estrutura esférica.`,
+      keywords: ["deep sea submersible interior glowing instruments", "bathyscaphe diving ocean trench headlights", "submarine diving into dark abyss ocean"],
       effect: "PARALLAX_25D" as MotionEffect,
     },
     {
-      narration: `Entre as teses mais inquietantes debatidas por investigadores de acidentes aéreos está o evento de despressurização catastrófica deliberada, onde a altitude foi elevada para provocar a perda de consciência em questão de segundos. Sob a névoa letal da hipóxia em temperaturas congelantes, o objeto teria seguido seu curso em piloto fantasma até a última gota de combustível.`,
-      keywords: ["airplane passenger cabin dark empty night lights", "empty airliner cabin seats night blue lights", "aircraft passenger window night clouds exterior"],
+      narration: `Em meados de 1997, uma rede de hidrofones militares secretos distribuída pelo leito oceânico registrou uma emissão acústica ultra-profunda e de frequência ultra-baixa que viajou por mais de cinco mil quilômetros. O padrão espectrográfico desse sinal colossal não correspondia a erupções vulcânicas subaquáticas ou fraturas tectônicas registradas na história sismológica, sugerindo que anomalias colossais operam nas fossas oceânicas.`,
+      keywords: ["underwater sonar acoustic hydrophone recording", "deep ocean underwater submarine sonar blue abyss", "audio waveform sound frequency spectrograph technology"],
+      effect: "KEN_BURNS_PAN_RIGHT" as MotionEffect,
+    },
+    {
+      narration: `A milhares de metros abaixo da superfície, em torno de chaminés hidrotermais que cospem fluidos minerais superaquecidos a mais de quatrocentos graus Celsius, a vida desafia todas as leis da biologia convencional. Sem depender de fotossíntese, colônias de bactérias quimiossintéticas sustentam ecossistemas bizarros com organismos gigantescos que prosperam onde a ciência oficial julgava impossível qualquer forma de existência orgânica.`,
+      keywords: ["hydrothermal vent ocean floor black smoker", "hydrothermal vent deep ocean mineral chimney", "underwater deep sea exploration submarine lights dark"],
       effect: "KEN_BURNS_ZOOM_OUT" as MotionEffect,
     },
     {
-      narration: `Constelações de satélites espiões operadas por superpotências mundiais possuem sensores infravermelhos com capacidade para detectar até mesmo a assinatura térmica de um motor a jato em pleno oceano. No entanto, quando questionados formalmente por jornalistas e tribunais internacionais, governos declararam que seus sensores estavam inativos ou que os dados configuravam segredo de defesa.`,
-      keywords: ["satellite in deep space orbiting planet earth night", "military spy satellite orbiting planet earth space", "high tech space satellite earth observation glowing"],
+      narration: `Câmeras de alta sensibilidade acopladas a veículos submarinos não-tripulados capturaram vislumbres de criaturas bioluminescentes dotadas de órgãos transparentes e pulsos de luz hipnóticos. Esses predadores abissais habitam um domínio de escuridão absoluta, utilizando frequências luminosas azuis e vermelhas para comunicação silenciosa em um ecossistema que permaneceu isolado desde a formação dos primeiros continentes terrestres.`,
+      keywords: ["bioluminescent deep sea creatures dark ocean", "glowing jellyfish abyssal organisms dark water", "abyssal deep ocean creature glowing bioluminescence"],
       effect: "KEN_BURNS_PAN_LEFT" as MotionEffect,
     },
     {
-      narration: `Laboratórios de investigação aeroespacial trabalharam incansavelmente na decodificação dos microsegundos de atraso de frequência conhecidos como Efeito Doppler nos sinais residuais de rádio. Cada cálculo matemático confirmava que o ponto final não foi um desastre aleatório em terra firme, mas sim um mergulho terminal no ponto mais isolado e impiedoso dos mares do sul.`,
-      keywords: ["laboratory computer data screens dark forensic investigation", "aviation forensics computer data analysis screens", "dark research lab computers spectrograms displays"],
+      narration: `Sistemas de batimetria multifeixe e escaneamento 3D revelaram cânions oceânicos tão profundos que o Monte Everest poderia ser sepultado em seu interior sem que o cume tocasse a superfície. As encostas verticais dessas gargantas submarinas acumulam milênios de sedimentos movediços, ocultando anomalias geológicas que desafiam as medições dos satélites oceanográficos de alta precisão em órbita polar.`,
+      keywords: ["sonar bathymetric ocean floor 3d mapping screen", "underwater trench topography 3d sonar map", "bathymetric 3d ocean floor topography screen display"],
+      effect: "PARALLAX_25D" as MotionEffect,
+    },
+    {
+      narration: `Dossiês confidenciais mantidos sob sigilo de segurança militar detalham missões operadas por submarinos de propulsão nuclear equipados com sensores geomagnéticos em fossas territoriais. Em vários relatórios desclassificados, instrumentos de navegação inercial registraram desvios magnéticos anômalos que forçaram o cancelamento imediato de exercícios táticos sob ameaça de perda catastrófica de telemetria.`,
+      keywords: ["classified top secret dossier document confidential archive", "naval intelligence briefing classified folder", "confidential intelligence documents classified stamped folder"],
       effect: "KEN_BURNS_ZOOM_IN" as MotionEffect,
     },
     {
-      narration: `Mais de uma década após aquela noite fatídica, a história de ${topic} permanece como o mais perturbador enigma não solucionado da aviação e da investigação contemporânea. Enquanto os segredos continuarem protegidos em gabinetes militares e no silêncio do abismo marinho, o mundo continuará esperando pelo dia em que a verdade finalmente romperá a escuridão.`,
-      keywords: ["dramatic dark ocean horizon twilight clouds enigmatic sea", "calm deep ocean horizon twilight dark waters", "endless dark stormy ocean horizon mystery"],
+      narration: `A ausência quase total de oxigênio em certas bacias marinhas abissais cria um ambiente de preservação química perfeito, onde materiais e formações antigas repousam intocados por milhões de anos. Amostras de sedimentos recolhidas por caroteadores científicos trouxeram à superfície compostos moleculares desconhecidos que sugerem que as fossas funcionam como laboratórios primordiais da própria biosfera planetária.`,
+      keywords: ["deep sea sediment core sample laboratory", "scientific oceanographic research vessel laboratory", "microscopic abyssal bacteria deep ocean examination"],
+      effect: "KEN_BURNS_PAN_RIGHT" as MotionEffect,
+    },
+    {
+      narration: `Durante expedições noturnas em mar aberto, os faróis de xenônio dos navios oceanográficos cortam a neblina densa enquanto robôs submarinos são lançados no abismo negro. Sob a fúria de ondas de mais de sete metros e tempestades implacáveis, a equipe na ponte de comando monitora as transmissões de fibra óptica que trazem leituras diretas do ponto mais inacessível do planeta Terra.`,
+      keywords: ["naval search rescue vessel storm rough seas", "ocean research ship deck rough sea night storm", "naval research vessel dark stormy ocean"],
+      effect: "KEN_BURNS_ZOOM_OUT" as MotionEffect,
+    },
+    {
+      narration: `O que mais nos inquieta em ${topic} não é apenas a vastidão das águas, mas a constatação factual de que a humanidade conhece melhor a topografia lunar do que as profundezas de seus próprios mares. Mais de noventa e cinco por cento do leito oceânico permanece inexplorado, resguardando segredos colossais que aguardam o momento em que a tecnologia finalmente romperá a escuridão do abismo.`,
+      keywords: ["dramatic dark ocean horizon twilight clouds enigmatic sea", "calm deep ocean horizon twilight dark waters", "lonely dark ocean horizon storm twilight sky"],
+      effect: "PARALLAX_25D" as MotionEffect,
+    },
+    {
+      narration: `A bordo de navios de perfuração científica com tecnologia de posicionamento dinâmico por satélite, engenheiros descem tubulações de perfuração por mais de seis quilômetros de lâmina d'água. Ao atingirem as camadas mais profundas de crosta oceânica em ${topic}, brocas de diamante extraem testemunhos de rocha basáltica que preservam bolhas de gases primordiais aprisionadas durante os primeiros estágios da formação da atmosfera terrestre.`,
+      keywords: ["deep sea drilling ship ocean science dynamic positioning", "oceanographic research vessel scientific drilling", "marine geology laboratory rock core analysis"],
+      effect: "KEN_BURNS_ZOOM_IN" as MotionEffect,
+    },
+    {
+      narration: `Instrumentos sísmicos de fundo oceânico, ancorados estrategicamente ao longo da fossa tectônica, registraram micro-sismos em enxame com frequências harmônicas contínuas. Geofísicos que analisaram os sismogramas notaram que tais vibrações contínuas não guardavam semelhança com o atrito comum entre placas tectônicas, sugerindo a migração subterrânea de fluidos supercríticos em profundidades jamais alcançadas.`,
+      keywords: ["ocean bottom seismometer ocean floor seismic monitoring", "seismic data display screen earth vibrations", "geophysical monitoring laboratory computer screens"],
+      effect: "PARALLAX_25D" as MotionEffect,
+    },
+    {
+      narration: `Em mergulhos tripulados a mais de dez mil metros de profundidade, as paredes rochosas dos desfiladeiros revelam camadas estratificadas de minerais estranhos, esculpidos por correntes abissais invisíveis de água densa e hiper-salina. A essas pressões brutais de mais de mil bar, qualquer falha microscópica nas vedações de elastômero do submarino resultaria em descompressão explosiva em frações de milissegundo.`,
+      keywords: ["deep ocean underwater trench wall rock strata", "submersible robotic arm collecting deep sea samples", "underwater deep sea exploration submarine lights dark"],
+      effect: "KEN_BURNS_PAN_RIGHT" as MotionEffect,
+    },
+    {
+      narration: `Documentos náuticos de marinhas de guerra desclassificados recentemente documentam ocorrências de avistamento de fenômenos luminosos submarinos não-identificados que se deslocavam a velocidades supersônicas sob a água. Conhecidos nos círculos militares como objetos submersos não-identificados, esses contatos de sonar continuam classificados sob diretrizes de segurança aeroespacial e naval.`,
+      keywords: ["military submarine sonar screen green blips dark", "classified top secret dossier document confidential archive", "naval intelligence briefing classified folder"],
+      effect: "KEN_BURNS_ZOOM_OUT" as MotionEffect,
+    },
+    {
+      narration: `Pesquisas microbiológicas com amostras recolhidas nas profundezas de ${topic} identificaram enzimas barofílicas e compostos bioativos com propriedades inéditas. Esses microrganismos extremos sobrevivem utilizando reações redox à base de ferro e enxofre, provando que ecossistemas complexos podem prosperar em completa ausência de luz solar e oxigênio.`,
+      keywords: ["microscopic abyssal bacteria deep ocean examination", "scientific oceanographic research vessel laboratory", "bioluminescence glowing petri dish dark lab"],
+      effect: "KEN_BURNS_PAN_LEFT" as MotionEffect,
+    },
+    {
+      narration: `Mapeamentos tridimensionais executados por veículos autônomos não-tripulados de longo alcance descobriram fendas tectônicas secundárias que se aprofundam ainda mais sob o manto terrestre. Nessas gargantas inexploradas, a densidade da água e a salinidade criam lagos subaquáticos hipersalinos, onde ondas submarinas internas quebram em silêncio absoluto no fundo do mar.`,
+      keywords: ["underwater brine lake deep ocean seabed strange", "bathymetric 3d ocean floor topography screen display", "sonar bathymetric ocean floor 3d mapping screen"],
+      effect: "PARALLAX_25D" as MotionEffect,
+    },
+    {
+      narration: `Durante a Guerra Fria, redes submarinas de hidrofones instaladas secretamente no leito oceânico interceptaram ecos acústicos colossais que jamais puderam ser correlacionados a submarinos soviéticos ou americanos. As fitas magnéticas originais contendo os registros de áudio dessas transmissões foram transferidas para arquivos subterrâneos de acesso ultra-restrito.`,
+      keywords: ["vintage magnetic audio tape recorder reels dark", "cold war naval listening post sonar headphones", "classified top secret dossier document confidential archive"],
+      effect: "KEN_BURNS_ZOOM_IN" as MotionEffect,
+    },
+    {
+      narration: `A cada nova descida das sondas teleguiadas em ${topic}, os sensores ópticos de ultra-alta sensibilidade transmitem imagens de paisagens quase lunares, pontuadas por chaminés hidrotermais de carbonato branco conhecidas como Cidades Perdidas. A água alcalina expelida por essas formações tem composição química idêntica àquela calculada pelos geoquímicos para os oceanos da Terra primitiva.`,
+      keywords: ["lost city hydrothermal field white chimneys ocean", "hydrothermal vent ocean floor black smoker", "underwater deep sea exploration submarine lights dark"],
+      effect: "KEN_BURNS_PAN_RIGHT" as MotionEffect,
+    },
+    {
+      narration: `O retorno de veículos robóticos que passaram semanas operando nas profundezas extremas frequentemente revela marcas anômalas nos cascos de fibra de carbono e deformações estruturais não previstas nos testes de fadiga hidrostática. Para os engenheiros navais que inspecionam essas sondas em doca seca, as forças em atuação no leito oceânico continuam desafiando os softwares de modelagem mais avançados.`,
+      keywords: ["underwater robot rov retrieval crane research ship deck", "oceanographic research vessel laboratory", "naval engineering dry dock submarine inspection"],
+      effect: "KEN_BURNS_ZOOM_OUT" as MotionEffect,
+    },
+    {
+      narration: `À medida que corporações multinacionais e potências militares voltam seus interesses para a mineração submarina de nódulos polimetálicos nas planícies abissais, cientistas alertam para o risco irreversível de perturbar ecossistemas que levaram centenas de milhões de anos para se estabilizar. Em um mundo onde o equilíbrio térmico e de oxigênio depende da circulação termoalina profunda, qualquer desastre ambiental em ${topic} ecoará por todo o planeta.`,
+      keywords: ["polymetallic nodules ocean floor deep sea mining", "ocean research ship deck rough sea night storm", "dramatic dark ocean horizon twilight clouds enigmatic sea"],
+      effect: "PARALLAX_25D" as MotionEffect,
+    },
+    {
+      narration: `Em última análise, o mistério insondável que circunda ${topic} serve como um poderoso lembrete da humildade com que a humanidade deve encarar as forças primordiais do nosso planeta. Enquanto nossos telescópios espaciais perscrutam galáxias a bilhões de anos-luz, a verdadeira fronteira do desconhecido repousa a apenas alguns quilômetros abaixo da superfície das águas que nos sustentam.`,
+      keywords: ["dramatic dark ocean horizon twilight clouds enigmatic sea", "calm deep ocean horizon twilight dark waters", "lonely dark ocean horizon storm twilight sky"],
+      effect: "KEN_BURNS_PAN_LEFT" as MotionEffect,
+    },
+  ];
+
+  // Banco Especializado para Games, Tecnologia e Cultura Digital
+  const gamingLoreNarrativePool = [
+    {
+      narration: `Nas camadas mais profundas da arquitetura digital e da história dos videogames, repousam lendas urbanas, códigos ocultos e segredos perturbadores sobre ${topic}. Por trás de interfaces nostálgicas e linhas de código compiladas sob prazos desumanos, encontram-se anomalias de programação e decisões criativas que a indústria preferiu apagar da memória coletiva.`,
+      keywords: ["dark cinematic gaming setup neon futuristic", "retro arcade dark neon lighting", "glowing illuminated controller dark"],
+      effect: "KEN_BURNS_ZOOM_IN" as MotionEffect,
+    },
+    {
+      narration: `Durante as primeiras gerações de consoles domésticos e arcades clandestinos, chips de memória ROM continham rotinas de segurança não documentadas e mensagens criptografadas deixadas por engenheiros rebeldes. Em diversos casos históricos, cartuchos com versões experimentais foram recolhidos sumariamente das prateleiras após relatos de falhas visuais bizarras que desorientavam os jogadores.`,
+      keywords: ["retro cyber gaming hardware vintage console", "pixelated game screen dark room", "retro arcade dark neon lighting"],
+      effect: "PARALLAX_25D" as MotionEffect,
+    },
+    {
+      narration: `Anos mais tarde, mineradores de dados e especialistas em engenharia reversa desenterraram trechos de áudio sinistros e modelos tridimensionais inacabados ocultos em setores mortos do código-fonte. O que aparentava ser apenas sobras de desenvolvimento revelava, em muitos casos, mecânicas descartadas que beiravam o experimental e o psicologicamente perturbador.`,
+      keywords: ["matrix code terminal game engine", "cyber server cluster dark", "quantum computer glowing circuit"],
+      effect: "KEN_BURNS_PAN_RIGHT" as MotionEffect,
+    },
+    {
+      narration: `A confirmação definitiva de que lendas urbanas dos games podiam ser reais ocorreu quando escavações no deserto desenterraram milhares de cópias de cartuchos sepultados em valas industriais sob concreto. Esse evento emblemático provou que estúdios e corporações fariam qualquer coisa para enterrar seus fracassos mais embaraçosos longe dos olhos do público.`,
+      keywords: ["confidential game prototype archive", "underground vault security archive document boxes", "dark surveillance signal"],
+      effect: "KEN_BURNS_ZOOM_OUT" as MotionEffect,
+    },
+    {
+      narration: `Hoje, enquanto servidores antigos são desativados e cartuchos originais sofrem com a oxidação do tempo, a comunidade global de arqueologia digital corre contra o relógio em torno de ${topic}. Resgatar esses dados perdidos não é apenas nostalgia, mas a preservação da face oculta de uma mídia que moldou a mente de bilhões de pessoas em todo o planeta.`,
+      keywords: ["esports neon gaming arena dark", "professional gamer dark room screens", "neon game on dark typography"],
       effect: "PARALLAX_25D" as MotionEffect,
     },
   ];
 
-  // Gera o total de cenas proporcional ao targetSceneCount
+  // Banco Especializado para Mistérios Gerais, Espaço e Arqueologia
+  const generalMysteryNarrativePool = [
+    {
+      narration: `Nos anais da história moderna e dos registros científicos arquivados, poucos temas desafiam tanto a lógica convencional quanto ${topic}. Entre versões oficiais repletas de lacunas inexplicáveis e relatórios periciais que se contradizem abertamente, a investigação independente revela uma cadeia de eventos que ultrapassa tudo o que a opinião pública foi autorizada a saber.`,
+      keywords: ["classified top secret dossier document confidential archive", "forensic evidence examination room dark", "high tech lab volumetric lighting dark"],
+      effect: "KEN_BURNS_ZOOM_IN" as MotionEffect,
+    },
+    {
+      narration: `Documentos governamentais obtidos por meio de leis de acesso à informação exibem carimbos de classificação máxima e parágrafos inteiros com tarjas pretas sobre as comunicações operacionais. Testemunhas-chave e peritos forenses que atuaram nas primeiras averiguações relatam pressões institucionais diretas para que as conclusões fossem engavetadas sob pretexto de proteção à segurança nacional.`,
+      keywords: ["redacted government documents top secret files", "confidential investigation archive room", "underground archive vault confidential records"],
+      effect: "PARALLAX_25D" as MotionEffect,
+    },
+    {
+      narration: `Medições registradas por instrumentos ópticos e sensores de alta precisão captaram variações de parâmetros físicos que não coincidem com nenhum modelo científico catalogado. Em laboratórios protegidos por credenciais restritas, dados brutos continuam sendo reanalisados à luz de novas tecnologias, enquanto os verdadeiros fatos permanecem guardados a sete chaves.`,
+      keywords: ["audio waveform sound frequency spectrograph technology", "spectrogram audio frequencies display screen", "cyber telemetry server screen spectrograph"],
+      effect: "KEN_BURNS_PAN_RIGHT" as MotionEffect,
+    },
+    {
+      narration: `A persistência de contradições nos relatórios finais e o extravio inexplicável de provas materiais fundamentais alimentam questionamentos severos da comunidade internacional. À medida que o tempo avança e novos arquivos são finalmente desclassificados, a certeza que emerge é de que a narrativa oficial de ${topic} jamais contou a história completa.`,
+      keywords: ["dramatic dark ocean horizon twilight clouds enigmatic sea", "mysterious misty landscape twilight dark", "ancient ruins in fog dramatic cinematic"],
+      effect: "KEN_BURNS_ZOOM_OUT" as MotionEffect,
+    },
+  ];
+
+  // Seleção Inteligente do Pool Narrativo mais Coerente com o Nicho Escolhido
+  const categoryKey = detectCategoryForTopic(topic);
+  let activeNarrativePool = generalMysteryNarrativePool;
+
+  if (categoryKey === "abyss_ocean" || categoryKey === "ocean") {
+    activeNarrativePool = abyssOceanNarrativePool;
+  } else if (categoryKey === "aviation_mh370") {
+    activeNarrativePool = aviationNarrativePool;
+  } else if (categoryKey === "gaming") {
+    activeNarrativePool = gamingLoreNarrativePool;
+  } else if (categoryKey === "ancient" || categoryKey === "military" || categoryKey === "space") {
+    activeNarrativePool = generalMysteryNarrativePool;
+  }
+
+  // Gera o total de cenas proporcional ao targetSceneCount garantindo 100% de unicidade e zero repetição
   const selectedScenesData = [];
+  const proceduralTemplates = [
+    {
+      narration: `Investigações periciais recentes conduzidas por consórcios científicos independentes trouxeram à tona anomalias adicionais em torno de ${topic}. O reexame de séries temporais de sensores e a aplicação de modelos computacionais modernos indicam discrepâncias que haviam passado despercebidas nos relatórios preliminares.`,
+      keywords: ["scientific laboratory computer simulation data analysis screen", "forensic science laboratory investigation screens dark", "high tech research terminal volumetric lighting"],
+      effect: "KEN_BURNS_ZOOM_IN" as MotionEffect,
+    },
+    {
+      narration: `Em instalações de segurança máxima, depoimentos de operadores e especialistas que testemunharam os eventos relacionados a ${topic} continuam sob termo de sigilo oficial. Contudo, relatos desclassificados sob leis de transparência sugerem que as diretrizes internas da época priorizaram conter o pânico sobre a divulgação integral dos dados.`,
+      keywords: ["high security archive vault shelves storage boxes", "classified top secret dossier document confidential archive", "underground archive vault confidential records"],
+      effect: "PARALLAX_25D" as MotionEffect,
+    },
+    {
+      narration: `À medida que novas tecnologias de escaneamento remoto e satélites de observação orbital avançam sobre as coordenadas de ${topic}, anomalias estruturais e variações eletromagnéticas continuam a ser detectadas. O que parecia ser um caso encerrado pela história oficial ganha novo fôlego diante de dados instrumentais irrefutáveis.`,
+      keywords: ["earth orbit satellite military surveillance space", "satellite sensor scanning ocean topography display", "sonar bathymetric ocean floor 3d mapping screen"],
+      effect: "KEN_BURNS_PAN_RIGHT" as MotionEffect,
+    },
+    {
+      narration: `Por fim, a constatação que permanece indelével em relação a ${topic} é de que os maiores enigmas do nosso tempo raramente encontram desfecho em comunicados oficiais. Enquanto novos arquivos aguardam prazos de desclassificação legal, a busca pela verdade continua desafiando as fronteiras do conhecimento humano.`,
+      keywords: ["dramatic dark ocean horizon twilight clouds enigmatic sea", "mysterious misty landscape twilight dark", "lonely dark ocean horizon storm twilight sky"],
+      effect: "KEN_BURNS_ZOOM_OUT" as MotionEffect,
+    },
+  ];
+
   for (let i = 0; i < targetSceneCount; i++) {
-    const template = documentaryNarrativePool[i % documentaryNarrativePool.length];
-    selectedScenesData.push({
-      ...template,
-      sceneOrder: i + 1,
-    });
+    if (i < activeNarrativePool.length) {
+      selectedScenesData.push({
+        ...activeNarrativePool[i],
+        sceneOrder: i + 1,
+      });
+    } else {
+      const proc = proceduralTemplates[(i - activeNarrativePool.length) % proceduralTemplates.length];
+      selectedScenesData.push({
+        ...proc,
+        narration: `No desdobramento investigativo da Cena ${i + 1}, ${proc.narration}`,
+        sceneOrder: i + 1,
+      });
+    }
   }
 
   const durationPerScene = parseFloat((targetTotalSeconds / targetSceneCount).toFixed(1));

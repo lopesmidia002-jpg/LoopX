@@ -5,6 +5,7 @@
 
 import { SceneItem } from "../types";
 import { getCuratedMediaForScene } from "./media-curator";
+import { getEffectiveApiKey } from "../youtube/channel-manager";
 
 export interface AiGenerationOptions {
   topic: string;
@@ -83,8 +84,8 @@ export function buildVideoMotionPrompt(
 /**
  * Tenta gerar imagem fotorrealista via OpenAI DALL-E 3 se chave configurada
  */
-async function tryGenerateDallE3(prompt: string): Promise<string | null> {
-  const apiKey = process.env.OPENAI_API_KEY;
+export async function tryGenerateDallE3(prompt: string): Promise<string | null> {
+  const apiKey = getEffectiveApiKey("openai");
   if (!apiKey || !apiKey.startsWith("sk-")) return null;
 
   try {
@@ -122,7 +123,7 @@ async function fetchHighQualityVideoClip(
   query: string,
   preferredDuration: number = 8
 ): Promise<{ videoUrl: string; duration: number } | null> {
-  const pixabayKey = process.env.PIXABAY_API_KEY;
+  const pixabayKey = getEffectiveApiKey("pixabay");
   if (!pixabayKey) return null;
 
   try {

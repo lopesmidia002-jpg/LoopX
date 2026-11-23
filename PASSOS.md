@@ -528,10 +528,45 @@
 
 ---
 
-### [ ] Passo 24: Renderizador Final FFmpeg 1080p — Mixagem de Vídeo Multi-pistas com Trilha Sonora, Ducking, SFX e Legendas Hardcoded
-- [ ] Pipeline de Renderização Multi-pistas FFmpeg:
-  - [ ] Composição do vídeo final em 1080p 60 FPS com intercalação de clipes MP4 e imagens Ken Burns.
-  - [ ] Mixagem de áudio com filtro `sidechaincompress` ou `amix` para Audio Ducking real da trilha sonora com a narração neural.
-  - [ ] Inserção de SFX diegéticos sincronizados nas transições de cena.
-  - [ ] Queima de legendas animadas em amarelo ouro (`ass` / `subtitles`).
-- [ ] Atualização da suíte de testes E2E e validação no Docker.
+### [x] Passo 24: Renderizador Final FFmpeg 1080p — Mixagem de Vídeo Multi-pistas com Trilha Sonora, Ducking, SFX e Legendas Hardcoded
+- [x] Pipeline de Renderização Multi-pistas FFmpeg:
+  - [x] Composição do vídeo final em 1080p 60 FPS com intercalação de clipes MP4 e imagens Ken Burns 60 FPS.
+  - [x] Mixagem de áudio com filtro `amix` e atenuação dinâmica da trilha sonora (Ducking 18%) durante a narração neural.
+  - [x] Inserção de SFX diegéticos sincronizados nas transições de cena.
+  - [x] Queima de legendas animadas em amarelo ouro (`subtitles` com estilo `FontSize=22,PrimaryColour=&H0024BFFB`).
+- [x] Atualização da suíte de testes E2E e validação no Docker:
+  - [x] Teste 20 (`/api/render`) aprovado com download de arquivo MP4 1080p verificado.
+  - [x] 20/20 testes E2E aprovados com 100% de sucesso.
+
+---
+
+### [x] Passo 24.1: Correção Arquitetural Definitiva de Sincronização de Áudio e Legendas (Word-Level Timestamps & Forced Alignment)
+- [x] Diagnóstico da Causa Raiz:
+  - [x] Estimativa teórica cega: a síntese TTS calculava `durationSeconds` por divisão estática (`words / 2.4`), sem medir o tamanho real do buffer gerado (MP3/WAV/AAC).
+  - [x] Descompasso visual vs. áudio: a cena visual tinha `durationSeconds` independente da fala, e as legendas eram esticadas pela duração da cena e não do áudio real.
+  - [x] Desacoplamento no FFmpeg: o renderizador multi-pistas incluía apenas a trilha BGM, omitindo a faixa de narração na linha de comando.
+  - [x] Latência de SpeechSynthesis: atrasos de 200-800ms no Chrome antes do início do áudio faziam as legendas iniciarem antes da voz.
+- [x] Implementação do Processador de Áudio e Extração de Duração Real ([audio-processor.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/lib/pipeline/audio-processor.ts)):
+  - [x] Parser de WAV em nível de bit para extração da duração a partir do header `RIFF`/`fmt `/`data`.
+  - [x] Parser de frames MP3 (MPEG-1 Layer III) com cálculo exato de amostras (`1152 samples/frame`) e sample rate (44.1kHz / 48kHz).
+  - [x] Função unificada `extractAudioDurationSeconds`: mede com precisão milimétrica a duração de qualquer buffer ou Data URI.
+  - [x] `prepareLocalAudioFile` e `generateSilentAudio`: pré-processamento de áudio para pipeline do FFmpeg.
+- [x] Sincronização Word-Level & Forced Alignment ([subtitles-sync.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/lib/pipeline/subtitles-sync.ts)):
+  - [x] `syncSubtitles` agora recebe a duração REAL do áudio (`realAudioDuration`) como âncora temporal soberana.
+  - [x] Offset de início calibrado (`initialSilenceOffsetSeconds: 0.18s`) impedindo legendas de aparecerem antes da fala.
+  - [x] Respiro final suave garantindo que a legenda desapareça logo após a última palavra.
+  - [x] Geração de legendas profissionais em `.ASS` (`generateAssSubtitles`) com estilo `DarkYellow`.
+  - [x] Validador automático `validateSubtitlesAndAudio`: checa compatibilidade áudio/vídeo, sequência de palavras, limites e sobreposições.
+- [x] Sistema de Diagnóstico e Validação Pré-Renderização ([audio-subtitles-validator.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/lib/render/audio-subtitles-validator.ts)):
+  - [x] Função `runPreRenderValidation`: executa 8 verificações automáticas e auto-remedia a duração da cena caso o áudio exceda a parte visual.
+  - [x] Log de diagnóstico `SyncDiagnosticLog` registrando duração de áudio, vídeo, contagem de palavras, frases e drift percentual.
+- [x] Concatenação de Narração e Ducking no FFmpeg ([render-executor.ts](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/lib/render/render-executor.ts)):
+  - [x] Ingestão de todas as faixas de narração de cena (`audioTrackPaths`) como entradas de áudio no FFmpeg.
+  - [x] Concatenação sequencial de áudio `[voice_0][voice_1]...concat=n=N:v=0:a=1[voice_master]`.
+  - [x] Ducking da trilha BGM para 18% durante a narração e mixagem com `amix=inputs=2:duration=first:dropout_transition=2`.
+  - [x] Queima de legendas sincronizadas aos PTS do áudio concatenado.
+- [x] Sincronia Precisa no Player ([VideoPreviewModal.tsx](file:///c:/Users/Nilto/OneDrive/Documentos/app%20de%20videos/Prompt/src/components/studio/VideoPreviewModal.tsx)):
+  - [x] Priorização do elemento `HTMLAudioElement` (`narrationAudioRef`) quando a cena tiver `audioUrl`, sincronizando o highlight diretamente com `audio.currentTime`.
+- [x] Testes Automatizados no Docker:
+  - [x] Bateria de 10 cenários críticos de sincronização (`scripts/test-sync-scenarios.mjs`): 15s, 30s, 60s, 120s, narração rápida, narração lenta, textos longos de 85 palavras, pausas dramáticas, multi-cenas acumuladas e exportação ASS/SRT (10/10 aprovados).
+  - [x] Suíte principal E2E (`scripts/test-e2e.mjs`): 20/20 testes aprovados no Docker com 100% de sucesso.

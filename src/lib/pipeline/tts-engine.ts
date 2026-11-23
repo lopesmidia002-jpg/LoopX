@@ -5,6 +5,8 @@
  */
 
 import { Language } from "../types";
+import { getEffectiveApiKey } from "../youtube/channel-manager";
+import { extractAudioDurationSeconds } from "./audio-processor";
 
 export interface TTSResult {
   audioUrl: string;
@@ -72,10 +74,12 @@ async function trySynthesizeElevenLabs(
 
     if (res.ok) {
       const arrayBuffer = await res.arrayBuffer();
-      const base64Audio = Buffer.from(arrayBuffer).toString("base64");
+      const buffer = Buffer.from(arrayBuffer);
+      const realDuration = await extractAudioDurationSeconds(buffer);
+      const base64Audio = buffer.toString("base64");
       return {
         audioUrl: `data:audio/mp3;base64,${base64Audio}`,
-        durationSeconds: estimatedDuration,
+        durationSeconds: realDuration > 0.5 ? realDuration : estimatedDuration,
         voiceId,
         provider: "ELEVENLABS",
       };
@@ -98,13 +102,13 @@ export async function synthesizeNeuralVoice(params: {
   const estimatedDuration = Math.max(5.0, parseFloat((wordCount / 2.4).toFixed(1)));
 
   // 1. Tenta sintetizar via ElevenLabs se chave configurada
-  const elevenLabsKey = customApiKey || process.env.ELEVENLABS_API_KEY;
+  const elevenLabsKey = customApiKey || getEffectiveApiKey("elevenlabs");
   if (elevenLabsKey && elevenLabsKey.length >= 20) {
     const elResult = await trySynthesizeElevenLabs(text, voiceId, elevenLabsKey, estimatedDuration);
     if (elResult) return elResult;
   }
 
-  const googleApiKey = process.env.GOOGLE_AI_STUDIO_API_KEY || process.env.GEMINI_API_KEY;
+  const googleApiKey = getEffectiveApiKey("google_ai_studio") || getEffectiveApiKey("gemini");
 
   // 2. Tenta sintetizar via Google AI Studio (Gemini 2.0 Flash Audio)
   if (googleApiKey) {
@@ -152,9 +156,11 @@ export async function synthesizeNeuralVoice(params: {
 
         if (audioPart && audioPart.inlineData?.data) {
           const mime = audioPart.inlineData.mimeType || "audio/mp3";
+          const buffer = Buffer.from(audioPart.inlineData.data, "base64");
+          const realDuration = await extractAudioDurationSeconds(buffer);
           return {
             audioUrl: `data:${mime};base64,${audioPart.inlineData.data}`,
-            durationSeconds: estimatedDuration,
+            durationSeconds: realDuration > 0.5 ? realDuration : estimatedDuration,
             voiceId,
             provider: "GOOGLE_AI_STUDIO",
           };
@@ -165,15 +171,16 @@ export async function synthesizeNeuralVoice(params: {
     }
   }
 
-  // 3. Tenta sintetizar via OpenAI TTS se houver OPENAI_API_KEY
-  if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.startsWith("sk-")) {
+  // 3. Tenta sintetizar via OpenAI TTS se houver chave OpenAI (BYOK ou ambiente)
+  const openAiKey = getEffectiveApiKey("openai");
+  if (openAiKey && openAiKey.startsWith("sk-")) {
     try {
       const openAiVoice = OPENAI_VOICE_MAP[voiceId] || "onyx";
       const response = await fetch("https://api.openai.com/v1/audio/speech", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          Authorization: `Bearer ${openAiKey}`,
         },
         body: JSON.stringify({
           model: "tts-1-hd",
@@ -186,10 +193,12 @@ export async function synthesizeNeuralVoice(params: {
 
       if (response.ok) {
         const arrayBuffer = await response.arrayBuffer();
-        const base64Audio = Buffer.from(arrayBuffer).toString("base64");
+        const buffer = Buffer.from(arrayBuffer);
+        const realDuration = await extractAudioDurationSeconds(buffer);
+        const base64Audio = buffer.toString("base64");
         return {
           audioUrl: `data:audio/mp3;base64,${base64Audio}`,
-          durationSeconds: estimatedDuration,
+          durationSeconds: realDuration > 0.5 ? realDuration : estimatedDuration,
           voiceId,
           provider: "OPENAI_TTS",
         };
